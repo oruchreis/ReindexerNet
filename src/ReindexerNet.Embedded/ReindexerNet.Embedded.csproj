@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net472;netstandard2.1</TargetFrameworks>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>ReindexerNet.Embedded</RootNamespace>
+    <PackageId>ReindexerNet.Embedded</PackageId>    
+    <Title>ReindexerNet.Embedded</Title>
+    <Description>Reindexer Embedded library to embed and run in .net projects.</Description>
+    <PackageTags>reindexer embedded document-db in-memory</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <Version>0.1.0.263</Version>
+    <AssemblyVersion>0.1.0</AssemblyVersion>
+    <FileVersion>0.1.0</FileVersion>
+    <Authors>oruchreis</Authors>
+    <Copyright>oruchreis</Copyright>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.4" Condition="'$(TargetFramework)'=='net472' or '$(TargetFramework)'=='netstandard2.0'" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageReference Include="Utf8Json" Version="1.3.7" />
+  </ItemGroup>
+
+  <ItemGroup> 
+    <None Include="runtimes\**\*" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes" />
+    <None Include="images\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReindexerNet.Core\ReindexerNet.Core.csproj" />
+  </ItemGroup>
+
+</Project>
