@@ -167,7 +167,7 @@ namespace ReindexerNet.EmbeddedTest
                         Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
 
                         var reader = new CJsonReader(rsp.@out);
-                        var rawQueryParams = reader.ReadRawQueryParams(null);
+                        var rawQueryParams = reader.ReadRawQueryParams();
 
                         Assert.AreEqual(1, rawQueryParams.count);
 
@@ -294,7 +294,7 @@ namespace ReindexerNet.EmbeddedTest
                             Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
 
                             var reader = new CJsonReader(rsp.@out);
-                            var rawQueryParams = reader.ReadRawQueryParams(nsid => { });
+                            var rawQueryParams = reader.ReadRawQueryParams();
 
                             Assert.AreEqual(1, rawQueryParams.count);
 

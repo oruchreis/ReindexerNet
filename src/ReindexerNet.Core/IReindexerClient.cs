@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace ReindexerNet
 {
-    public interface IReindexerClient
+    public interface IReindexerClient: IDisposable
     {
-        void Connect(string connectionString, ConnectionOptions options);
+        void Connect(string connectionString, ConnectionOptions options = null);
         void Ping();
-        void OpenNamespace(string nsName, NamespaceOptions options);
+        void OpenNamespace(string nsName, NamespaceOptions options = null);
         void DropNamespace(string nsName);
         void CloseNamespace(string nsName);
         void TruncateNamespace(string nsName);
@@ -19,12 +19,16 @@ namespace ReindexerNet
         void DropIndex(string nsName, params string[] indexName);
         ReindexerTransaction StartTransaction(string nsName);
         int ModifyItem(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts);
+        int Insert<T>(string nsName, T item, params string[] precepts);
+        int Update<T>(string nsName, T item, params string[] precepts);
+        int Upsert<T>(string nsName, T item, params string[] precepts);
+        int Delete<T>(string nsName, T item, params string[] precepts);
         QueryItemsOf<T> ExecuteSql<T>(string sql);
         QueryItemsOf<byte[]> ExecuteSql(string sql);
 
-        Task ConnectAsync(string connectionString, ConnectionOptions options);
+        Task ConnectAsync(string connectionString, ConnectionOptions options = null);
         Task PingAsync();
-        Task OpenNamespaceAsync(string nsName, NamespaceOptions options);
+        Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null);
         Task DropNamespaceAsync(string nsName);
         Task CloseNamespaceAsync(string nsName);
         Task TruncateNamespaceAsync(string nsName);
@@ -34,6 +38,10 @@ namespace ReindexerNet
         Task DropIndexAsync(string nsName, params string[] indexName);
         Task<ReindexerTransaction> StartTransactionAsync(string nsName);
         Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts);
+        Task<int> InsertAsync<T>(string nsName, T item, params string[] precepts);
+        Task<int> UpdateAsync<T>(string nsName, T item, params string[] precepts);
+        Task<int> UpsertAsync<T>(string nsName, T item, params string[] precepts);
+        Task<int> DeleteAsync<T>(string nsName, T item, params string[] precepts);
         Task<QueryItemsOf<T>> ExecuteSqlAsync<T>(string sql);
         Task<QueryItemsOf<byte[]>> ExecuteSqlAsync(string sql);
     }

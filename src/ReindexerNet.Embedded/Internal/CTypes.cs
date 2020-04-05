@@ -212,6 +212,13 @@ namespace ReindexerNet.Embedded.Internal
     }
 
     enum DataFormat { FormatJson, FormatCJson }
+
+    enum QueryResultTag
+    {
+        End = 0,
+        Aggregation = 1,
+        Explain = 2
+    }
 }
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore RCS1018 // Add accessibility modifiers.

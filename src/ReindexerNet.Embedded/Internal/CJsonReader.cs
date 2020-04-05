@@ -9,10 +9,6 @@ namespace ReindexerNet.Embedded.Internal
 {
     ref struct CJsonReader
     {
-        public const int QueryResultEnd = 0;
-        public const int QueryResultAggregation = 1;
-        public const int QueryResultExplain = 2;
-
         public const int ResultsFormatMask = 0xF;
         public const int ResultsPure = 0x0;
         public const int ResultsPtrs = 0x1;
@@ -70,7 +66,7 @@ namespace ReindexerNet.Embedded.Internal
             return v;
         }
 
-        public RawResultQueryParams ReadRawQueryParams(Action<int> updatePayloadType = null)
+        public RawResultQueryParams ReadRawQueryParams(/*Action<int> updatePayloadType = null*/)
         {
             var v = new RawResultQueryParams();
             v.aggResults = new List<byte[]>();
@@ -85,12 +81,14 @@ namespace ReindexerNet.Embedded.Internal
                 for (var i = 0; i < ptCount; i++)
                 {
                     var nsid = (int)GetVarUInt();
-                    GetVString();//var nsname=
-                    if (updatePayloadType == null)
-                    {
-                        throw new Exception("Internal error: Got payload types from raw query params, but there are no updatePayloadType");
-                    }
-                    updatePayloadType(nsid);
+                    var nsName = GetVString();
+                    //if (updatePayloadType == null)
+                    //{
+                    //    throw new Exception("Internal error: Got payload types from raw query params, but there are no updatePayloadType");
+                    //}
+                    //updatePayloadType(nsid);
+
+                    ReadPayloadType();
                 }
             }
             ReadExtraResults(ref v);
@@ -103,8 +101,8 @@ namespace ReindexerNet.Embedded.Internal
         {
             while (true)
             {
-                var tag = GetVarUInt();
-                if (tag == QueryResultEnd)
+                var tag = (QueryResultTag)GetVarUInt();
+                if (tag == QueryResultTag.End)
                 {
                     break;
                 }
@@ -112,14 +110,67 @@ namespace ReindexerNet.Embedded.Internal
                 var data = GetBytes();
                 switch (tag)
                 {
-                    case QueryResultExplain:
+                    case QueryResultTag.Explain:
                         v.explainResults = data;
                         break;
-                    case QueryResultAggregation:
+                    case QueryResultTag.Aggregation:
                         v.aggResults.Add(data.ToArray());
                         break;
                 }
             }
+        }
+
+        public void ReadPayloadType()
+        {
+            var stateToken = GetVarUInt();
+            var version = GetVarUInt();
+                    
+         //   skip := state.Version >= version && state.StateToken == stateToken
+
+	        //if !skip {
+		       // state.StateData = &StateData{Version: version, StateToken: stateToken}
+	        //}
+
+
+	        //state.tagsMatcher.Read(s, skip)
+            var tagsCount = (int) GetVarUInt();
+	        //if !skip {
+		       // tm.Tags = make([]string, tagsCount, tagsCount)
+		       // tm.Names = make(map[string]int)
+
+		       // for i := 0; i < tagsCount; i++ {
+			      //  tm.Tags[i] = ser.GetVString()
+			      //  tm.Names[tm.Tags[i]] = i
+		       // }
+	        //} else {
+		        for (var i = 0; i < tagsCount; i++) {
+			        var tag = GetVString();
+		        }
+	        //}
+
+
+	        //state.payloadType.Read(s, skip)
+            var pStringHdrOffset = (UIntPtr) GetVarUInt();
+	        var fieldsCount = (int)GetVarUInt();
+	        //fields := make([]payloadFieldType, fieldsCount, fieldsCount)
+            var fields = new PayloadFieldType[fieldsCount];
+	        for (var i = 0; i < fieldsCount; i++) {
+                var payloadFieldType = new PayloadFieldType();
+		        payloadFieldType.Type = (int)GetVarUInt();
+		        payloadFieldType.Name = GetVString();
+		        payloadFieldType.Offset = (UIntPtr)GetVarUInt();
+		        payloadFieldType.Size = (UIntPtr)GetVarUInt();
+		        payloadFieldType.IsArray = GetVarUInt() != 0;
+
+                fields[i] = payloadFieldType;
+		        var jsonPathCnt = GetVarUInt();
+		        for (; jsonPathCnt != 0; jsonPathCnt--) {
+			        GetVString();
+		        }
+	        }
+	        //if !skip {
+		       // pt.Fields = fields
+	        //}
         }
 
         private
@@ -220,22 +271,23 @@ namespace ReindexerNet.Embedded.Internal
         private long ReadIntBits(int size)
         {
             long v = 0;
-	        for (var i = size - 1; i >= 0; i--)
+            for (var i = size - 1; i >= 0; i--)
             {
-		        v = ((long)(_buffer[i+_pos]) & 0xFF) | (v << 8);
-	        }
-	        _pos += size;
-	        return v;
+                v = ((long)(_buffer[i + _pos]) & 0xFF) | (v << 8);
+            }
+            _pos += size;
+            return v;
         }
 
-        private ulong ReadUIntBits(int size) {
-	        ulong v = 0;
-	        for (var i = size - 1; i >= 0; i--)
+        private ulong ReadUIntBits(int size)
+        {
+            ulong v = 0;
+            for (var i = size - 1; i >= 0; i--)
             {
-		        v = ((ulong)(_buffer[i+_pos]) & 0xFF) | (v << 8);
-	        }
-	        _pos += size;
-	        return v;
+                v = ((ulong)(_buffer[i + _pos]) & 0xFF) | (v << 8);
+            }
+            _pos += size;
+            return v;
         }
 
         private uint GetUInt32()
@@ -310,5 +362,14 @@ namespace ReindexerNet.Embedded.Internal
         public int count;
         public List<byte[]> aggResults;
         public ReadOnlySpan<byte> explainResults;
+    }
+
+    internal class PayloadFieldType
+    {
+        internal int Type;
+        internal string Name;
+        internal UIntPtr Offset;
+        internal UIntPtr Size;
+        internal bool IsArray;
     }
 }

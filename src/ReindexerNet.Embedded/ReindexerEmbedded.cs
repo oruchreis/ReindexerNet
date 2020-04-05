@@ -6,10 +6,11 @@ using Utf8Json;
 using System.Text;
 using Utf8Json.Resolvers;
 using System.Collections.Generic;
+using System.IO;
 
 namespace ReindexerNet.Embedded
 {
-    public partial class ReindexerEmbedded : IReindexerClient, IDisposable
+    public partial class ReindexerEmbedded : IReindexerClient
     {
         private readonly UIntPtr _rx;
         private reindexer_ctx_info _ctxInfo = new reindexer_ctx_info { ctx_id = 0, exec_timeout = -1 }; //TODO: Implement async/await logic.
@@ -28,6 +29,8 @@ namespace ReindexerNet.Embedded
         {
             foreach (var index in indexDefinitions)
             {
+                if (index.JsonPaths == null)
+                    index.JsonPaths = new List<string> { index.Name };
                 Assert.ThrowIfError(() =>
                     ReindexerBinding.reindexer_add_index(_rx, nsName, SerializeJson(index), _ctxInfo)
                 );
@@ -52,16 +55,21 @@ namespace ReindexerNet.Embedded
             return Task.CompletedTask;
         }
 
-        public void Connect(string connectionString, ConnectionOptions options)
+        public void Connect(string connectionString, ConnectionOptions options = null)
         {
+            if (!Directory.Exists(connectionString))
+            {
+                Directory.CreateDirectory(connectionString); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
+                ReindexerBinding.reindexer_init_system_namespaces(_rx);
+            }                
             Assert.ThrowIfError(() =>
                ReindexerBinding.reindexer_connect(_rx,
                    $"builtin://{connectionString}",
-                   options, ReindexerBinding.ReindexerVersion)
+                   options ?? new ConnectionOptions(), ReindexerBinding.ReindexerVersion)
            );
         }
 
-        public Task ConnectAsync(string connectionString, ConnectionOptions options)
+        public Task ConnectAsync(string connectionString, ConnectionOptions options = null)
         {
             Connect(connectionString, options);
             return Task.CompletedTask;
@@ -96,14 +104,14 @@ namespace ReindexerNet.Embedded
             return Task.CompletedTask;
         }
 
-        public void OpenNamespace(string nsName, NamespaceOptions options)
+        public void OpenNamespace(string nsName, NamespaceOptions options = null)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_open_namespace(_rx, nsName, options, _ctxInfo)
+                ReindexerBinding.reindexer_open_namespace(_rx, nsName, options ?? new NamespaceOptions(), _ctxInfo)
             );
         }
 
-        public Task OpenNamespaceAsync(string nsName, NamespaceOptions options)
+        public Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null)
         {
             OpenNamespace(nsName, options);
             return Task.CompletedTask;
@@ -179,7 +187,7 @@ namespace ReindexerNet.Embedded
             return Task.CompletedTask;
         }
 
-        public int ModifyItem(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts)
+        public int ModifyItem(string nsName, ItemModifyMode mode, byte[] itemJson, params string[] precepts)
         {
             var result = 0;
             Assert.ThrowIfError(() =>
@@ -200,7 +208,7 @@ namespace ReindexerNet.Embedded
                     var error = new reindexer_error();
                     reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
                     {
-                        using (var data = reindexer_buffer.From(Encoding.UTF8.GetBytes(itemJson ?? $"{{\"Id\":1, \"Guid\":\"{Guid.NewGuid()}\"}}")))
+                        using (var data = reindexer_buffer.From(itemJson))
                         {
                             var rsp = ReindexerBinding.reindexer_modify_item_packed(_rx, args, data.Buffer, _ctxInfo);
                             if (rsp.err_code != 0)
@@ -211,7 +219,7 @@ namespace ReindexerNet.Embedded
                             }
 
                             var reader = new CJsonReader(rsp.@out);
-                            var rawQueryParams = reader.ReadRawQueryParams(null);
+                            var rawQueryParams = reader.ReadRawQueryParams();
 
                             result = rawQueryParams.count;
                         }
@@ -221,6 +229,11 @@ namespace ReindexerNet.Embedded
             });
 
             return result;
+        }
+
+        public int ModifyItem(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts)
+        {
+            return ModifyItem(nsName, mode, Encoding.UTF8.GetBytes(itemJson), precepts);
         }
 
         public Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts)
@@ -291,6 +304,46 @@ namespace ReindexerNet.Embedded
         public Task<QueryItemsOf<byte[]>> ExecuteSqlAsync(string sql)
         {
             return Task.FromResult(ExecuteSql(sql));
+        }
+
+        public int Insert<T>(string nsName, T item, params string[] precepts)
+        {
+            return ModifyItem(nsName, ItemModifyMode.ModeInsert, SerializeJson(item), precepts);
+        }
+
+        public int Update<T>(string nsName, T item, params string[] precepts)
+        {
+            return ModifyItem(nsName, ItemModifyMode.ModeUpdate, SerializeJson(item), precepts);
+        }
+
+        public int Upsert<T>(string nsName, T item, params string[] precepts)
+        {
+            return ModifyItem(nsName, ItemModifyMode.ModeUpsert, SerializeJson(item), precepts);
+        }
+
+        public int Delete<T>(string nsName, T item, params string[] precepts)
+        {
+            return ModifyItem(nsName, ItemModifyMode.ModeDelete, SerializeJson(item), precepts);
+        }
+
+        public Task<int> InsertAsync<T>(string nsName, T item, params string[] precepts)
+        {
+            return Task.FromResult(Insert<T>(nsName, item, precepts));
+        }
+
+        public Task<int> UpdateAsync<T>(string nsName, T item, params string[] precepts)
+        {
+            return Task.FromResult(Update<T>(nsName, item, precepts));
+        }
+
+        public Task<int> UpsertAsync<T>(string nsName, T item, params string[] precepts)
+        {
+            return Task.FromResult(Upsert<T>(nsName, item, precepts));
+        }
+
+        public Task<int> DeleteAsync<T>(string nsName, T item, params string[] precepts)
+        {
+            return Task.FromResult(Delete<T>(nsName, item, precepts));
         }
     }
 }
