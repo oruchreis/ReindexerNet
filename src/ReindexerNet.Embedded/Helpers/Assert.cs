@@ -23,6 +23,24 @@ namespace ReindexerNet.Embedded.Helpers
 				throw new ReindexerException(error.code, error.what);
         }
 
+		public static reindexer_ret ThrowIfError(Func<reindexer_ret> action)
+        {
+			reindexer_ret rsp;
+			try
+			{
+				rsp = action();
+			}
+			catch (Exception e)
+			{
+				throw new ReindexerInternalException(e);
+			}
+
+			if (rsp.err_code != 0)
+				throw new ReindexerException(rsp.err_code, rsp.@out);
+
+			return rsp;
+        }
+
 		public static bool FalseIfError(Func<reindexer_error> action)
         {
 			reindexer_error error;

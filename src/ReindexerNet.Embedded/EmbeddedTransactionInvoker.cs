@@ -1,4 +1,5 @@
-﻿using ReindexerNet.Embedded.Internal;
+﻿using ReindexerNet.Embedded.Helpers;
+using ReindexerNet.Embedded.Internal;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,30 +20,53 @@ namespace ReindexerNet.Embedded
             _ctxInfo = ctxInfo;
         }
 
-        public void Commit()
+        public int Commit()
         {
-            ReindexerBinding.reindexer_commit_transaction(_rx, _tr, _ctxInfo);
+            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_commit_transaction(_rx, _tr, _ctxInfo));
+            var reader = new CJsonReader(rsp.@out);
+            var rawQueryParams = reader.ReadRawQueryParams();
+
+            return rawQueryParams.count;
         }
 
-        public Task CommitAsync()
+        public Task<int> CommitAsync()
         {
-            Commit();
+            return Task.FromResult(Commit());
+        }
+
+        public void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+        {           
+            using (var writer = new CJsonWriter())
+            {
+                writer.PutVarCUInt((int)DataFormat.FormatJson);//format;
+                writer.PutVarCUInt((int)mode);//mode;
+                writer.PutVarCUInt(0);//stateToken;
+
+                writer.PutVarCUInt(precepts.Length);//len(precepts);
+                foreach (var precept in precepts)
+                {
+                    writer.PutVString(precept);
+                }
+
+                reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
+                {
+                    using (var data = reindexer_buffer.From(itemJson))
+                    {
+                        Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed_tx(_rx, _tr, args, data.Buffer));
+                    }
+                });
+            }
+        }
+
+        public Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+        {
+            ModifyItem(mode, itemJson, precepts);
             return Task.CompletedTask;
-        }
-
-        public int ModifyItem(ItemModifyMode mode, string itemJson, params string[] precepts)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> ModifyItemAsync(ItemModifyMode mode, string itemJson, params string[] precepts)
-        {
-            throw new NotImplementedException();
         }
 
         public void Rollback()
         {
-            ReindexerBinding.reindexer_rollback_transaction(_rx, _tr);
+            Assert.ThrowIfError(() => ReindexerBinding.reindexer_rollback_transaction(_rx, _tr));
         }
 
         public Task RollbackAsync()

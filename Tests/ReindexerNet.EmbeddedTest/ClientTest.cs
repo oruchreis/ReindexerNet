@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Utf8Json;
 
 namespace ReindexerNet.EmbeddedTest
 {
@@ -19,6 +20,8 @@ namespace ReindexerNet.EmbeddedTest
         {
             _client = new ReindexerEmbedded();
             _client.Connect("ReindexerEmbeddedClientTest");
+            _client.OpenNamespace(_nsName);
+            _client.TruncateNamespace(_nsName);
         }
 
         [TestCleanup]
@@ -120,8 +123,6 @@ namespace ReindexerNet.EmbeddedTest
         [TestMethod]
         public void ExecuteSql()
         {
-            _client.OpenNamespace(_nsName);
-            _client.TruncateNamespace(_nsName);
             AddIndexes();
 
             AddItems(0, 1000);
@@ -166,6 +167,40 @@ namespace ReindexerNet.EmbeddedTest
             Assert.AreEqual(100, nullableIntQ.NullableIntPayload);
             var nullableIntQ2 = _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=101").Items.First();
             Assert.AreEqual(null, nullableIntQ2.NullableIntPayload);
+        }
+
+        [TestMethod]
+        public void Transaction()
+        {
+            AddIndexes();
+
+            using (var tran = _client.StartTransaction(_nsName))
+            {
+                tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10500 }));
+                Assert.AreEqual(0, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10500").QueryTotalItems);
+                tran.Commit();
+            }
+            Assert.AreEqual(1, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10500").QueryTotalItems);
+
+            using (var tran = _client.StartTransaction(_nsName))
+            {
+                tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10501 }));
+                tran.Rollback();
+            }
+            Assert.AreEqual(0, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10501").QueryTotalItems);
+
+            try
+            {
+                using (var tran = _client.StartTransaction(_nsName))
+                {
+                    tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10502 }));
+                    throw new Exception();
+                }
+            }
+            catch
+            {
+            }
+            Assert.AreEqual(0, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10502").QueryTotalItems);
         }
     }
 }

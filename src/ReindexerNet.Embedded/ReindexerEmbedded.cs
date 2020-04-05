@@ -22,7 +22,7 @@ namespace ReindexerNet.Embedded
 
         private byte[] SerializeJson<T>(T obj)
         {
-            return JsonSerializer.Serialize(obj, Utf8Json.Resolvers.StandardResolver.ExcludeNull);
+            return JsonSerializer.Serialize(obj, StandardResolver.ExcludeNull);
         }
 
         public void AddIndex(string nsName, params Index[] indexDefinitions)
@@ -61,7 +61,7 @@ namespace ReindexerNet.Embedded
             {
                 Directory.CreateDirectory(connectionString); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
                 ReindexerBinding.reindexer_init_system_namespaces(_rx);
-            }                
+            }
             Assert.ThrowIfError(() =>
                ReindexerBinding.reindexer_connect(_rx,
                    $"builtin://{connectionString}",
@@ -190,43 +190,32 @@ namespace ReindexerNet.Embedded
         public int ModifyItem(string nsName, ItemModifyMode mode, byte[] itemJson, params string[] precepts)
         {
             var result = 0;
-            Assert.ThrowIfError(() =>
+
+            using (var writer = new CJsonWriter())
             {
-                using (var writer = new CJsonWriter())
+                writer.PutVString(nsName);
+                writer.PutVarCUInt((int)DataFormat.FormatJson);//format;
+                writer.PutVarCUInt((int)mode);//mode;
+                writer.PutVarCUInt(0);//stateToken;
+
+                writer.PutVarCUInt(precepts.Length);//len(precepts);
+                foreach (var precept in precepts)
                 {
-                    writer.PutVString(nsName);
-                    writer.PutVarCUInt((int)DataFormat.FormatJson);//format;
-                    writer.PutVarCUInt((int)mode);//mode;
-                    writer.PutVarCUInt(0);//stateToken;
-
-                    writer.PutVarCUInt(precepts.Length);//len(precepts);
-                    foreach (var precept in precepts)
-                    {
-                        writer.PutVString(precept);
-                    }
-
-                    var error = new reindexer_error();
-                    reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
-                    {
-                        using (var data = reindexer_buffer.From(itemJson))
-                        {
-                            var rsp = ReindexerBinding.reindexer_modify_item_packed(_rx, args, data.Buffer, _ctxInfo);
-                            if (rsp.err_code != 0)
-                            {
-                                error.code = rsp.err_code;
-                                error.what = rsp.@out;
-                                return;
-                            }
-
-                            var reader = new CJsonReader(rsp.@out);
-                            var rawQueryParams = reader.ReadRawQueryParams();
-
-                            result = rawQueryParams.count;
-                        }
-                    });
-                    return error;
+                    writer.PutVString(precept);
                 }
-            });
+
+                reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
+                {
+                    using (var data = reindexer_buffer.From(itemJson))
+                    {
+                        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(_rx, args, data.Buffer, _ctxInfo));
+                        var reader = new CJsonReader(rsp.@out);
+                        var rawQueryParams = reader.ReadRawQueryParams();
+
+                        result = rawQueryParams.count;
+                    }
+                });
+            }
 
             return result;
         }
@@ -247,42 +236,31 @@ namespace ReindexerNet.Embedded
             {
                 Items = new List<T>()
             };
-            Assert.ThrowIfError(() =>
+
+            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(_rx, sql, 1, new int[0], 0, _ctxInfo));
+            var reader = new CJsonReader(rsp.@out);
+            var rawQueryParams = reader.ReadRawQueryParams();
+            var explain = rawQueryParams.explainResults;
+
+            result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
+            if (explain.Length > 0)
             {
-                var rsp = ReindexerBinding.reindexer_select(_rx, sql, 1, new int[0], 0, _ctxInfo);
-                var error = new reindexer_error();
+                result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
+                    StandardResolver.ExcludeNull);
+            }
 
-                if (rsp.err_code != 0)
-                {
-                    error.code = rsp.err_code;
-                    error.what = rsp.@out;
-                    return error;
-                }
+            for (var i = 0; i < rawQueryParams.count; i++)
+            {
+                var item = reader.ReadRawItemParams();
+                if (item.data.Length > 0)
+                    result.Items.Add(serializeFunc(item.data.ToArray())); //todo: use span when utf8json supports it.
+            }
 
-                var reader = new CJsonReader(rsp.@out);
-                var rawQueryParams = reader.ReadRawQueryParams();
-                var explain = rawQueryParams.explainResults;
+            if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
+            {
+                throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
+            }
 
-                result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
-                if (explain.Length > 0)
-                {
-                    result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
-                        StandardResolver.ExcludeNull);
-                }
-
-                for (var i = 0; i < rawQueryParams.count; i++)
-                {
-                    var item = reader.ReadRawItemParams();
-                    if (item.data.Length > 0)
-                        result.Items.Add(serializeFunc(item.data.ToArray())); //todo: use span when utf8json supports it.
-                }
-
-                if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
-                {
-                    throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
-                }
-                return error;
-            });
             return result;
         }
 

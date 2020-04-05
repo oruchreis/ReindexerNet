@@ -7,12 +7,12 @@ namespace ReindexerNet
 {
     public interface ITransactionInvoker
     {
-        void Commit();
-        Task CommitAsync();
+        int Commit();
+        Task<int> CommitAsync();
         void Rollback();
         Task RollbackAsync();        
 
-        int ModifyItem(ItemModifyMode mode, string itemJson, params string[] precepts);
-        Task<int> ModifyItemAsync(ItemModifyMode mode, string itemJson, params string[] precepts);
+        void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts);
+        Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts);
     }
 }
