@@ -13,5 +13,6 @@ Currently only embedded mode has been implemented for win-x64 and linux-x64. And
  - [ ] Query Interface
  - [ ] Embedded bindings for OSX dylib and x86
  - [ ] CJson Serializer
+ - [ ] Dsl Query Builder
  - [ ] CProto connector for remote servers
 
