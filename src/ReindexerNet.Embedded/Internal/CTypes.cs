@@ -170,7 +170,7 @@ namespace ReindexerNet.Embedded.Internal
 
         public static implicit operator reindexer_string(string str)
         {
-            return new reindexer_string { p = str, n = str.Length };
+            return new reindexer_string { p = str, n = str?.Length ?? 0 };
         }
 
         public static implicit operator reindexer_string(byte[] byteArray)

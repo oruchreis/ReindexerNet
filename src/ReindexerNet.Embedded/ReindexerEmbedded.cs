@@ -12,12 +12,14 @@ namespace ReindexerNet.Embedded
 {
     public partial class ReindexerEmbedded : IReindexerClient
     {
-        private readonly UIntPtr _rx;
+        public static ReindexerEmbeddedServer Server { get; } = new ReindexerEmbeddedServer();
+
+        protected UIntPtr Rx;
         private reindexer_ctx_info _ctxInfo = new reindexer_ctx_info { ctx_id = 0, exec_timeout = -1 }; //TODO: Implement async/await logic.
 
         public ReindexerEmbedded()
         {
-            _rx = ReindexerBinding.init_reindexer();
+            Rx = ReindexerBinding.init_reindexer();
         }
 
         private byte[] SerializeJson<T>(T obj)
@@ -54,7 +56,7 @@ namespace ReindexerNet.Embedded
                 if (index.JsonPaths == null)
                     index.JsonPaths = new List<string> { index.Name };
                 Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_add_index(_rx, nsName, SerializeJson(index), _ctxInfo)
+                    ReindexerBinding.reindexer_add_index(Rx, nsName, SerializeJson(index), _ctxInfo)
                 );
             }
         }
@@ -68,7 +70,7 @@ namespace ReindexerNet.Embedded
         public void CloseNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
-            ReindexerBinding.reindexer_close_namespace(_rx, nsName, _ctxInfo));
+            ReindexerBinding.reindexer_close_namespace(Rx, nsName, _ctxInfo));
         }
 
         public Task CloseNamespaceAsync(string nsName)
@@ -77,15 +79,15 @@ namespace ReindexerNet.Embedded
             return Task.CompletedTask;
         }
 
-        public void Connect(string connectionString, ConnectionOptions options = null)
+        public virtual void Connect(string connectionString, ConnectionOptions options = null)
         {
             if (!Directory.Exists(connectionString))
             {
                 Directory.CreateDirectory(connectionString); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
-                ReindexerBinding.reindexer_init_system_namespaces(_rx);
+                ReindexerBinding.reindexer_init_system_namespaces(Rx);
             }
             Assert.ThrowIfError(() =>
-               ReindexerBinding.reindexer_connect(_rx,
+               ReindexerBinding.reindexer_connect(Rx,
                    $"builtin://{connectionString}",
                    options ?? new ConnectionOptions(), ReindexerBinding.ReindexerVersion)
            );
@@ -102,7 +104,7 @@ namespace ReindexerNet.Embedded
             foreach (var iname in indexName)
             {
                 Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_drop_index(_rx, nsName, iname, _ctxInfo)
+                    ReindexerBinding.reindexer_drop_index(Rx, nsName, iname, _ctxInfo)
                 );
             }
         }
@@ -116,7 +118,7 @@ namespace ReindexerNet.Embedded
         public void DropNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_drop_namespace(_rx, nsName, _ctxInfo)
+                ReindexerBinding.reindexer_drop_namespace(Rx, nsName, _ctxInfo)
             );
         }
 
@@ -129,7 +131,7 @@ namespace ReindexerNet.Embedded
         public void OpenNamespace(string nsName, NamespaceOptions options = null)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_open_namespace(_rx, nsName, options ?? new NamespaceOptions(), _ctxInfo)
+                ReindexerBinding.reindexer_open_namespace(Rx, nsName, options ?? new NamespaceOptions(), _ctxInfo)
             );
         }
 
@@ -142,7 +144,7 @@ namespace ReindexerNet.Embedded
         public void Ping()
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_ping(_rx));
+                ReindexerBinding.reindexer_ping(Rx));
         }
 
         public Task PingAsync()
@@ -154,7 +156,7 @@ namespace ReindexerNet.Embedded
         public void RenameNamespace(string oldName, string newName)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_rename_namespace(_rx, oldName, newName, _ctxInfo));
+                ReindexerBinding.reindexer_rename_namespace(Rx, oldName, newName, _ctxInfo));
         }
 
         public Task RenameNamespaceAsync(string oldName, string newName)
@@ -168,11 +170,11 @@ namespace ReindexerNet.Embedded
             UIntPtr tr = UIntPtr.Zero;
             Assert.ThrowIfError(() =>
             {
-                var rsp = ReindexerBinding.reindexer_start_transaction(_rx, nsName);
+                var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsName);
                 tr = rsp.tx_id;
                 return rsp.err;
             });
-            return new ReindexerTransaction(new EmbeddedTransactionInvoker(_rx, tr, _ctxInfo));
+            return new ReindexerTransaction(new EmbeddedTransactionInvoker(Rx, tr, _ctxInfo));
         }
 
         public Task<ReindexerTransaction> StartTransactionAsync(string nsName)
@@ -183,7 +185,7 @@ namespace ReindexerNet.Embedded
         public void TruncateNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_truncate_namespace(_rx, nsName, _ctxInfo)
+                ReindexerBinding.reindexer_truncate_namespace(Rx, nsName, _ctxInfo)
             );
         }
 
@@ -198,7 +200,7 @@ namespace ReindexerNet.Embedded
             foreach (var index in indexDefinitions)
             {
                 Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_update_index(_rx, nsName, SerializeJson(index), _ctxInfo)
+                    ReindexerBinding.reindexer_update_index(Rx, nsName, SerializeJson(index), _ctxInfo)
                 );
             }
         }
@@ -230,7 +232,7 @@ namespace ReindexerNet.Embedded
                 {
                     using (var data = reindexer_buffer.From(itemJson))
                     {
-                        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(_rx, args, data.Buffer, _ctxInfo));
+                        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data.Buffer, _ctxInfo));
                         var reader = new CJsonReader(rsp.@out);
                         var rawQueryParams = reader.ReadRawQueryParams();
 
@@ -259,7 +261,7 @@ namespace ReindexerNet.Embedded
                 Items = new List<T>()
             };
 
-            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(_rx, sql, 1, new int[0], 0, _ctxInfo));
+            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sql, 1, new int[0], 0, _ctxInfo));
             var reader = new CJsonReader(rsp.@out);
             var rawQueryParams = reader.ReadRawQueryParams();
             var explain = rawQueryParams.explainResults;

@@ -7,8 +7,6 @@ namespace ReindexerNet.Embedded
 {
     public partial class ReindexerEmbedded
     {
-        
-
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls        
 
@@ -18,7 +16,7 @@ namespace ReindexerNet.Embedded
             {
                 if (disposing)
                 {
-                    ReindexerBinding.destroy_reindexer(_rx);
+                    ReindexerBinding.destroy_reindexer(Rx);
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.

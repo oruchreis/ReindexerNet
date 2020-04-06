@@ -15,9 +15,10 @@ namespace ReindexerNet.Embedded.Internal
 {
     internal static class ReindexerBinding
     {
-        private const string BindingLibrary = "reindexer_binding";
+        private const string BindingLibrary = "reindexer_embedded_server";
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
+        #region reindexer_c.h
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern uintptr_t init_reindexer();
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -125,11 +126,27 @@ namespace ReindexerNet.Embedded.Internal
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
-        
+
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Auto)]
         public static extern void reindexer_enable_logger(LogWriterAction logWriter);//(void (* logWriter)(int level, char* msg));
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern void reindexer_disable_logger();
+        #endregion
+
+        #region server_c.h
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern void init_reindexer_server();
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern void destroy_reindexer_server();
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern reindexer_error start_reindexer_server(reindexer_string config);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern reindexer_error stop_reindexer_server();
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern reindexer_error get_reindexer_instance(reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern int check_server_ready(); 
+        #endregion
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
