@@ -9,7 +9,7 @@ Currently only embedded mode has been implemented for win-x64 and linux-x64. And
 ## To Do List
  - [x] RestApi models [![Core  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square)](https://www.nuget.org/packages/ReindexerNet.Core)
  - [x] Embedded mode binding (Builtin) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square)](https://www.nuget.org/packages/ReindexerNet.Embedded)
- - [ ] Embedded Server mode binding (Builtin-server)
+ - [x] Embedded Server mode binding (Builtin-server) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square)](https://www.nuget.org/packages/ReindexerNet.Embedded)
  - [ ] Query Interface
  - [ ] Embedded bindings for OSX dylib and x86
  - [ ] CJson Serializer
