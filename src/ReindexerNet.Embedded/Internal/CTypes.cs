@@ -206,11 +206,6 @@ namespace ReindexerNet.Embedded.Internal
         cancel_on_timeout
     }
 
-    enum LogLevel
-    {
-        LogNone, LogError, LogWarning, LogInfo, LogTrace
-    }
-
     enum DataFormat { FormatJson, FormatCJson }
 
     enum QueryResultTag

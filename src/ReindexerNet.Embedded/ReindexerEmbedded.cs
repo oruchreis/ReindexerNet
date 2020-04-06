@@ -25,6 +25,28 @@ namespace ReindexerNet.Embedded
             return JsonSerializer.Serialize(obj, StandardResolver.ExcludeNull);
         }
 
+        private readonly object _logWriterLocker = new object();
+        private LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
+
+        public void EnableLogger(LogWriterAction logWriterAction)
+        {
+            lock(_logWriterLocker)
+            {
+                ReindexerBinding.reindexer_disable_logger(); //if we free previous delegate before disabling, gc may collect before enabling.
+                _logWriter = logWriterAction;
+                ReindexerBinding.reindexer_enable_logger(_logWriter);
+            }
+        }
+
+        public void DisableLogger()
+        {
+            lock(_logWriterLocker)
+            {
+                ReindexerBinding.reindexer_disable_logger();//if we free previous delegate before disabling, gc may collect before enabling.
+                _logWriter = null;
+            }
+        }
+
         public void AddIndex(string nsName, params Index[] indexDefinitions)
         {
             foreach (var index in indexDefinitions)

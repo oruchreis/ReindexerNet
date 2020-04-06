@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Utf8Json;
 
 namespace ReindexerNet.EmbeddedTest
@@ -15,13 +16,22 @@ namespace ReindexerNet.EmbeddedTest
         private IReindexerClient _client;
         private readonly string _nsName = nameof(ClientTest);
 
+        public TestContext TestContext { get; set; }
+
         [TestInitialize]
-        public void Init()
+        public async Task InitAsync()
         {
             _client = new ReindexerEmbedded();
-            _client.Connect("ReindexerEmbeddedClientTest");
-            _client.OpenNamespace(_nsName);
-            _client.TruncateNamespace(_nsName);
+            ((ReindexerEmbedded)_client).EnableLogger(Log);
+            await _client.ConnectAsync("ReindexerEmbeddedClientTest");
+            await _client.OpenNamespaceAsync(_nsName);
+            await _client.TruncateNamespaceAsync(_nsName);
+        }
+
+        void Log(LogLevel level, string msg)
+        {
+            if (level <= LogLevel.Info)
+                TestContext.WriteLine("{0}: {1}", level, msg);
         }
 
         [TestCleanup]
@@ -30,9 +40,9 @@ namespace ReindexerNet.EmbeddedTest
             _client.Dispose();
         }
 
-        private void AddIndexes()
+        private async Task AddIndexesAsync()
         {
-            _client.AddIndex(_nsName,
+            await _client.AddIndexAsync(_nsName,
                 new Index
                 {
                     Name = "Id",
@@ -76,7 +86,7 @@ namespace ReindexerNet.EmbeddedTest
                 }
                 );
 
-            var nsInfo = _client.ExecuteSql<Namespace>($"SELECT * FROM #namespaces WHERE name=\"{_nsName}\" LIMIT 1").Items.FirstOrDefault();
+            var nsInfo = (await _client.ExecuteSqlAsync<Namespace>($"SELECT * FROM #namespaces WHERE name=\"{_nsName}\" LIMIT 1")).Items.FirstOrDefault();
             Assert.IsNotNull(nsInfo);
             Assert.AreEqual(_nsName, nsInfo.Name);
             var indexNames = nsInfo.Indexes.Select(i => i.Name).ToList();
@@ -99,12 +109,12 @@ namespace ReindexerNet.EmbeddedTest
             public int? NullableIntPayload { get; set; }
         }
 
-        private void AddItems(int idStart, int idEnd)
+        private async Task AddItemsAsync(int idStart, int idEnd)
         {
             var insertedItemCount = 0;
             for (int i = idStart; i < idEnd; i++)
             {
-                insertedItemCount += _client.Upsert(_nsName,
+                insertedItemCount += await _client.UpsertAsync(_nsName,
                     new TestDocument
                     {
                         Id = i,
@@ -121,13 +131,13 @@ namespace ReindexerNet.EmbeddedTest
         }
 
         [TestMethod]
-        public void ExecuteSql()
+        public async Task ExecuteSql()
         {
-            AddIndexes();
+            await AddIndexesAsync();
 
-            AddItems(0, 1000);
+            await AddItemsAsync(0, 1000);
 
-            var docs = _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id < 1000");
+            var docs = await _client.ExecuteSqlAsync<TestDocument>($"SELECT * FROM {_nsName} WHERE Id < 1000");
             Assert.AreEqual(1000, docs.QueryTotalItems);
             var item = docs.Items.FirstOrDefault(i => i.Id == 2);
             Assert.AreEqual($"Name of 2", item.Name);
@@ -141,7 +151,7 @@ namespace ReindexerNet.EmbeddedTest
             var rangeQueryDocs = _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE RangeIndex > 5.1 AND RangeIndex < 6");
             Assert.AreEqual(5.125, rangeQueryDocs.Items.FirstOrDefault()?.RangeIndex);
 
-            var deletedCount = _client.Delete(_nsName, new TestDocument { Id = 500 });
+            var deletedCount = await _client.DeleteAsync(_nsName, new TestDocument { Id = 500 });
             Assert.AreEqual(1, deletedCount);
             var deletedQ = _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=500");
             Assert.AreEqual(0, deletedQ.QueryTotalItems);
@@ -151,7 +161,7 @@ namespace ReindexerNet.EmbeddedTest
             var multipleDeletedCount = _client.ExecuteSql($"DELETE FROM {_nsName} WHERE Id > 501");
             Assert.AreEqual(498, multipleDeletedCount.QueryTotalItems);
 
-            var preceptQueryCount = _client.Update(_nsName, new TestDocument { Id = 1, Name = "Updated" }, "SerialPrecept=SERIAL()", "UpdateTime=NOW(msec)");
+            var preceptQueryCount = await _client.UpdateAsync(_nsName, new TestDocument { Id = 1, Name = "Updated" }, "SerialPrecept=SERIAL()", "UpdateTime=NOW(msec)");
             Assert.AreEqual(1, preceptQueryCount);
             var preceptQ = _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=1").Items.First();
             Assert.AreEqual("Updated", preceptQ.Name);
@@ -170,11 +180,11 @@ namespace ReindexerNet.EmbeddedTest
         }
 
         [TestMethod]
-        public void Transaction()
+        public async Task Transaction()
         {
-            AddIndexes();
+            await AddIndexesAsync();
 
-            using (var tran = _client.StartTransaction(_nsName))
+            using (var tran = await _client.StartTransactionAsync(_nsName))
             {
                 tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10500 }));
                 Assert.AreEqual(0, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10500").QueryTotalItems);
@@ -184,8 +194,8 @@ namespace ReindexerNet.EmbeddedTest
 
             using (var tran = _client.StartTransaction(_nsName))
             {
-                tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10501 }));
-                tran.Rollback();
+                await tran.ModifyItemAsync(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10501 }));
+                await tran.RollbackAsync();
             }
             Assert.AreEqual(0, _client.ExecuteSql<TestDocument>($"SELECT * FROM {_nsName} WHERE Id=10501").QueryTotalItems);
 

@@ -125,10 +125,9 @@ namespace ReindexerNet.Embedded.Internal
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
-
-        public delegate void LogWriter(LogLevel level, string msg);
+        
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Auto)]
-        public static extern void reindexer_enable_logger(LogWriter logWriter);//(void (* logWriter)(int level, char* msg));
+        public static extern void reindexer_enable_logger(LogWriterAction logWriter);//(void (* logWriter)(int level, char* msg));
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern void reindexer_disable_logger();
 #pragma warning restore S101 // Types should be named in PascalCase

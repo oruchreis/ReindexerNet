@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReindexerNet;
+using ReindexerNet.Embedded;
 using ReindexerNet.Embedded.Internal;
 using System;
 using System.Collections;
@@ -30,9 +31,11 @@ namespace ReindexerNet.EmbeddedTest
 
         void Log(LogLevel level, string msg)
         {
-            if (level <= LogLevel.LogInfo)
+            if (level <= LogLevel.Info)
                 TestContext.WriteLine("{0}: {1}", level, msg);
         }
+
+        private LogWriterAction _logWriter;
 
         [TestInitialize]
         public void InitReindexer()
@@ -40,7 +43,8 @@ namespace ReindexerNet.EmbeddedTest
             _rx = ReindexerBinding.init_reindexer();
             Assert.AreNotEqual(UIntPtr.Zero, _rx);
 
-            ReindexerBinding.reindexer_enable_logger(Log);
+            _logWriter = new LogWriterAction(Log);
+            ReindexerBinding.reindexer_enable_logger(_logWriter);
             Connect();
         }
 
@@ -279,7 +283,7 @@ namespace ReindexerNet.EmbeddedTest
                 ser1.PutVarCUInt((int)ItemModifyMode.ModeUpsert);
                 ser1.PutVarCUInt(0);
                 ser1.PutVarCUInt(0);
-                ReindexerBinding.reindexer_disable_logger(); //logger parallel işlemde ExecutionEngine hatası fırlatıyor
+                
                 reindexer_buffer.PinBufferFor(ser1.CurrentBuffer, args =>
                 {
                     Parallel.For(0, 300000, i =>

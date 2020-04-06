@@ -41,19 +41,19 @@ namespace ReindexerNet.Embedded.Helpers
 			return rsp;
         }
 
-		public static bool FalseIfError(Func<reindexer_error> action)
-        {
-			reindexer_error error;
-			try
-			{
-				error = action();
-			}
-			catch (Exception e)
-			{
-				throw new ReindexerInternalException(e);
-			}
+		//public static bool FalseIfError(Func<reindexer_error> action)
+  //      {
+		//	reindexer_error error;
+		//	try
+		//	{
+		//		error = action();
+		//	}
+		//	catch (Exception e)
+		//	{
+		//		throw new ReindexerInternalException(e);
+		//	}
 
-			return error.code == 0;
-        }
+		//	return error.code == 0;
+  //      }
     }
 }
