@@ -76,7 +76,7 @@ namespace ReindexerNet.Embedded
         {
             foreach (var index in indexDefinitions)
             {
-                if (index.JsonPaths == null)
+                if (index.JsonPaths == null || index.JsonPaths.Count == 0)
                     index.JsonPaths = new List<string> { index.Name };
                 Assert.ThrowIfError(() =>
                     ReindexerBinding.reindexer_add_index(Rx, nsName, SerializeJson(index), _ctxInfo)
@@ -242,6 +242,8 @@ namespace ReindexerNet.Embedded
         {
             foreach (var index in indexDefinitions)
             {
+                if (index.JsonPaths == null || index.JsonPaths.Count == 0)
+                    index.JsonPaths = new List<string> { index.Name };
                 Assert.ThrowIfError(() =>
                     ReindexerBinding.reindexer_update_index(Rx, nsName, SerializeJson(index), _ctxInfo)
                 );
