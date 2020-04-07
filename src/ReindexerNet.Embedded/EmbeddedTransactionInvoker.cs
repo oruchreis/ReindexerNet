@@ -23,10 +23,17 @@ namespace ReindexerNet.Embedded
         public int Commit()
         {
             var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_commit_transaction(_rx, _tr, _ctxInfo));
-            var reader = new CJsonReader(rsp.@out);
-            var rawQueryParams = reader.ReadRawQueryParams();
+            try
+            {
+                var reader = new CJsonReader(rsp.@out);
+                var rawQueryParams = reader.ReadRawQueryParams();
 
-            return rawQueryParams.count;
+                return rawQueryParams.count;
+            }
+            finally
+            {
+                rsp.@out.Free();
+            }
         }
 
         public Task<int> CommitAsync()
@@ -35,7 +42,7 @@ namespace ReindexerNet.Embedded
         }
 
         public void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
-        {           
+        {
             using (var writer = new CJsonWriter())
             {
                 writer.PutVarCUInt((int)DataFormat.FormatJson);//format;

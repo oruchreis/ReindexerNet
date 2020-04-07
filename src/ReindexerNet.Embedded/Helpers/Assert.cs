@@ -36,7 +36,11 @@ namespace ReindexerNet.Embedded.Helpers
 			}
 
 			if (rsp.err_code != 0)
+			{
+				if (rsp.@out.results_ptr != default)
+					rsp.@out.Free();
 				throw new ReindexerException(rsp.err_code, rsp.@out);
+			}				
 
 			return rsp;
         }

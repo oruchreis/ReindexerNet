@@ -51,6 +51,9 @@ namespace ReindexerNet.Embedded
 
         public override void Connect(string connectionString, ConnectionOptions options = null)
         {
+            if (IsStarted)
+                throw new ReindexerNetException("Server has been already started. Stop first.");
+
             var config = new Dictionary<string, string>
             {
                 ["httpaddr"] = "0.0.0.0:9088",
@@ -78,13 +81,12 @@ namespace ReindexerNet.Embedded
                 Directory.CreateDirectory(dbPath); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
 
-            Stop();
-            Rx = default;
-            Start(string.Format(_defaultServerYamlConfig, config["storagepath"], config["httpaddr"], config["rpcaddr"]));            
+            Start(string.Format(_defaultServerYamlConfig, config["storagepath"], config["httpaddr"], config["rpcaddr"]));
             Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(config["dbname"], config["user"], config["pass"], ref Rx));
         }
 
         private long _isServerThreadStarted = 0;
+        public bool IsStarted => Interlocked.Read(ref _isServerThreadStarted) == 1;
         private readonly object _serverStartupLocker = new object();
 
         public void Start(string serverConfigYaml)
@@ -133,6 +135,7 @@ namespace ReindexerNet.Embedded
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server()
             );
+            Rx = default;
         }
     }
 }

@@ -10,9 +10,9 @@
     <Description>Reindexer Embedded library to embed and run in .net projects.</Description>
     <PackageTags>reindexer embedded document-db in-memory</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>0.1.2.263</Version>
-    <AssemblyVersion>0.1.2</AssemblyVersion>
-    <FileVersion>0.1.2</FileVersion>
+    <Version>0.1.3.263</Version>
+    <AssemblyVersion>0.1.3</AssemblyVersion>
+    <FileVersion>0.1.3</FileVersion>
     <Authors>oruchreis</Authors>
     <Copyright>oruchreis</Copyright>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>

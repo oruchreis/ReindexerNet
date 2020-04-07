@@ -32,7 +32,7 @@ namespace ReindexerNet.Embedded
 
         public void EnableLogger(LogWriterAction logWriterAction)
         {
-            lock(_logWriterLocker)
+            lock (_logWriterLocker)
             {
                 ReindexerBinding.reindexer_disable_logger(); //if we free previous delegate before disabling, gc may collect before enabling.
                 _logWriter = logWriterAction;
@@ -42,7 +42,7 @@ namespace ReindexerNet.Embedded
 
         public void DisableLogger()
         {
-            lock(_logWriterLocker)
+            lock (_logWriterLocker)
             {
                 ReindexerBinding.reindexer_disable_logger();//if we free previous delegate before disabling, gc may collect before enabling.
                 _logWriter = null;
@@ -233,10 +233,17 @@ namespace ReindexerNet.Embedded
                     using (var data = reindexer_buffer.From(itemJson))
                     {
                         var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data.Buffer, _ctxInfo));
-                        var reader = new CJsonReader(rsp.@out);
-                        var rawQueryParams = reader.ReadRawQueryParams();
+                        try
+                        {
+                            var reader = new CJsonReader(rsp.@out);
+                            var rawQueryParams = reader.ReadRawQueryParams();
 
-                        result = rawQueryParams.count;
+                            result = rawQueryParams.count;
+                        }
+                        finally
+                        {
+                            rsp.@out.Free();
+                        }
                     }
                 });
             }
@@ -262,30 +269,37 @@ namespace ReindexerNet.Embedded
             };
 
             var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sql, 1, new int[0], 0, _ctxInfo));
-            var reader = new CJsonReader(rsp.@out);
-            var rawQueryParams = reader.ReadRawQueryParams();
-            var explain = rawQueryParams.explainResults;
-
-            result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
-            if (explain.Length > 0)
+            try
             {
-                result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
-                    StandardResolver.ExcludeNull);
-            }
+                var reader = new CJsonReader(rsp.@out);
+                var rawQueryParams = reader.ReadRawQueryParams();
+                var explain = rawQueryParams.explainResults;
 
-            for (var i = 0; i < rawQueryParams.count; i++)
+                result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
+                if (explain.Length > 0)
+                {
+                    result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
+                        StandardResolver.ExcludeNull);
+                }
+
+                for (var i = 0; i < rawQueryParams.count; i++)
+                {
+                    var item = reader.ReadRawItemParams();
+                    if (item.data.Length > 0)
+                        result.Items.Add(serializeFunc(item.data.ToArray())); //todo: use span when utf8json supports it.
+                }
+
+                if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
+                {
+                    throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
+                }
+
+                return result;
+            }
+            finally
             {
-                var item = reader.ReadRawItemParams();
-                if (item.data.Length > 0)
-                    result.Items.Add(serializeFunc(item.data.ToArray())); //todo: use span when utf8json supports it.
+                rsp.@out.Free();
             }
-
-            if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
-            {
-                throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
-            }
-
-            return result;
         }
 
         public QueryItemsOf<T> ExecuteSql<T>(string sql)
