@@ -1,13 +1,11 @@
 ﻿using ReindexerNet.Embedded.Helpers;
 using ReindexerNet.Embedded.Internal;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ReindexerNet.Embedded
 {
-    class EmbeddedTransactionInvoker : ITransactionInvoker
+    internal class EmbeddedTransactionInvoker : ITransactionInvoker
     {
         private readonly UIntPtr _rx;
         private readonly UIntPtr _tr;
@@ -45,11 +43,11 @@ namespace ReindexerNet.Embedded
         {
             using (var writer = new CJsonWriter())
             {
-                writer.PutVarCUInt((int)DataFormat.FormatJson);//format;
-                writer.PutVarCUInt((int)mode);//mode;
-                writer.PutVarCUInt(0);//stateToken;
+                writer.PutVarCUInt((int)DataFormat.FormatJson); // format
+                writer.PutVarCUInt((int)mode);// mode
+                writer.PutVarCUInt(0);// stateToken
 
-                writer.PutVarCUInt(precepts.Length);//len(precepts);
+                writer.PutVarCUInt(precepts.Length);// len(precepts)
                 foreach (var precept in precepts)
                 {
                     writer.PutVString(precept);

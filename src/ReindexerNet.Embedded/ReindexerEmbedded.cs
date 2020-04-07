@@ -1,22 +1,37 @@
-﻿using ReindexerNet.Embedded.Helpers;
+﻿#pragma warning disable S1135 // Track uses of "TODO" tags
+#pragma warning disable S4136 // Method overloads should be grouped together
+using ReindexerNet.Embedded.Helpers;
 using ReindexerNet.Embedded.Internal;
 using System;
-using System.Threading.Tasks;
-using Utf8Json;
-using System.Text;
-using Utf8Json.Resolvers;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using Utf8Json;
+using Utf8Json.Resolvers;
 
 namespace ReindexerNet.Embedded
 {
+    /// <summary>
+    /// Reindexer Embedded database mode. It creates a new embedded Reindexer native database and disposes on <see cref="IDisposable.Dispose"/> method.
+    /// It is thread-safe, so you can use in multiple threads. If your database will be long lived, you don't have to dispose.
+    /// </summary>
     public partial class ReindexerEmbedded : IReindexerClient
     {
+        /// <summary>
+        /// Reindexer Server singleton object.
+        /// </summary>
         public static ReindexerEmbeddedServer Server { get; } = new ReindexerEmbeddedServer();
 
+        /// <summary>
+        /// Reindexer native object pointer.
+        /// </summary>
         protected UIntPtr Rx;
         private reindexer_ctx_info _ctxInfo = new reindexer_ctx_info { ctx_id = 0, exec_timeout = -1 }; //TODO: Implement async/await logic.
 
+        /// <summary>
+        /// Creates a new embedded Reindexer database.
+        /// </summary>
         public ReindexerEmbedded()
         {
             Rx = ReindexerBinding.init_reindexer();
@@ -30,6 +45,10 @@ namespace ReindexerNet.Embedded
         private readonly object _logWriterLocker = new object();
         private LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
 
+        /// <summary>
+        /// Enables logger and send internal reindexer logs to <paramref name="logWriterAction"/>.
+        /// </summary>
+        /// <param name="logWriterAction">Action to send logs</param>
         public void EnableLogger(LogWriterAction logWriterAction)
         {
             lock (_logWriterLocker)
@@ -40,6 +59,9 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <summary>
+        /// Disables logger.
+        /// </summary>
         public void DisableLogger()
         {
             lock (_logWriterLocker)
@@ -49,6 +71,7 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public void AddIndex(string nsName, params Index[] indexDefinitions)
         {
             foreach (var index in indexDefinitions)
@@ -61,24 +84,28 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public Task AddIndexAsync(string nsName, params Index[] indexDefinitions)
         {
             AddIndex(nsName, indexDefinitions);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void CloseNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_close_namespace(Rx, nsName, _ctxInfo));
         }
 
+        /// <inheritdoc/>
         public Task CloseNamespaceAsync(string nsName)
         {
             CloseNamespace(nsName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public virtual void Connect(string connectionString, ConnectionOptions options = null)
         {
             if (!Directory.Exists(connectionString))
@@ -93,12 +120,14 @@ namespace ReindexerNet.Embedded
            );
         }
 
+        /// <inheritdoc/>
         public Task ConnectAsync(string connectionString, ConnectionOptions options = null)
         {
             Connect(connectionString, options);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void DropIndex(string nsName, params string[] indexName)
         {
             foreach (var iname in indexName)
@@ -109,12 +138,14 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public Task DropIndexAsync(string nsName, params string[] indexName)
         {
             DropIndex(nsName, indexName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void DropNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
@@ -122,12 +153,14 @@ namespace ReindexerNet.Embedded
             );
         }
 
+        /// <inheritdoc/>
         public Task DropNamespaceAsync(string nsName)
         {
             DropNamespace(nsName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void OpenNamespace(string nsName, NamespaceOptions options = null)
         {
             Assert.ThrowIfError(() =>
@@ -135,36 +168,42 @@ namespace ReindexerNet.Embedded
             );
         }
 
+        /// <inheritdoc/>
         public Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null)
         {
             OpenNamespace(nsName, options);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void Ping()
         {
             Assert.ThrowIfError(() =>
                 ReindexerBinding.reindexer_ping(Rx));
         }
 
+        /// <inheritdoc/>
         public Task PingAsync()
         {
             Ping();
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void RenameNamespace(string oldName, string newName)
         {
             Assert.ThrowIfError(() =>
                 ReindexerBinding.reindexer_rename_namespace(Rx, oldName, newName, _ctxInfo));
         }
 
+        /// <inheritdoc/>
         public Task RenameNamespaceAsync(string oldName, string newName)
         {
             RenameNamespace(oldName, newName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public ReindexerTransaction StartTransaction(string nsName)
         {
             UIntPtr tr = UIntPtr.Zero;
@@ -177,11 +216,13 @@ namespace ReindexerNet.Embedded
             return new ReindexerTransaction(new EmbeddedTransactionInvoker(Rx, tr, _ctxInfo));
         }
 
+        /// <inheritdoc/>
         public Task<ReindexerTransaction> StartTransactionAsync(string nsName)
         {
             return Task.FromResult(StartTransaction(nsName));
         }
 
+        /// <inheritdoc/>
         public void TruncateNamespace(string nsName)
         {
             Assert.ThrowIfError(() =>
@@ -189,12 +230,14 @@ namespace ReindexerNet.Embedded
             );
         }
 
+        /// <inheritdoc/>
         public Task TruncateNamespaceAsync(string nsName)
         {
             TruncateNamespace(nsName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void UpdateIndex(string nsName, params Index[] indexDefinitions)
         {
             foreach (var index in indexDefinitions)
@@ -205,12 +248,14 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public Task UpdateIndexAsync(string nsName, params Index[] indexDefinitions)
         {
             UpdateIndex(nsName, indexDefinitions);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public int ModifyItem(string nsName, ItemModifyMode mode, byte[] itemJson, params string[] precepts)
         {
             var result = 0;
@@ -218,11 +263,11 @@ namespace ReindexerNet.Embedded
             using (var writer = new CJsonWriter())
             {
                 writer.PutVString(nsName);
-                writer.PutVarCUInt((int)DataFormat.FormatJson);//format;
-                writer.PutVarCUInt((int)mode);//mode;
-                writer.PutVarCUInt(0);//stateToken;
+                writer.PutVarCUInt((int)DataFormat.FormatJson);//format
+                writer.PutVarCUInt((int)mode);//mode
+                writer.PutVarCUInt(0);//stateToken
 
-                writer.PutVarCUInt(precepts.Length);//len(precepts);
+                writer.PutVarCUInt(precepts.Length);//len(precepts)
                 foreach (var precept in precepts)
                 {
                     writer.PutVString(precept);
@@ -251,17 +296,20 @@ namespace ReindexerNet.Embedded
             return result;
         }
 
+        /// <inheritdoc/>
         public int ModifyItem(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts)
         {
             return ModifyItem(nsName, mode, Encoding.UTF8.GetBytes(itemJson), precepts);
         }
 
+        /// <inheritdoc/>
         public Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, string itemJson, params string[] precepts)
         {
             return Task.FromResult(ModifyItem(nsName, mode, itemJson, precepts));
         }
 
-        private QueryItemsOf<T> ExecuteSql<T>(string sql, Func<byte[], T> serializeFunc)
+        /// <inheritdoc/>
+        public QueryItemsOf<T> ExecuteSql<T>(string sql, Func<byte[], T> deserializeItem)
         {
             var result = new QueryItemsOf<T>
             {
@@ -286,7 +334,7 @@ namespace ReindexerNet.Embedded
                 {
                     var item = reader.ReadRawItemParams();
                     if (item.data.Length > 0)
-                        result.Items.Add(serializeFunc(item.data.ToArray())); //todo: use span when utf8json supports it.
+                        result.Items.Add(deserializeItem(item.data.ToArray())); //todo: use span when utf8json supports it.
                 }
 
                 if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
@@ -302,64 +350,84 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public QueryItemsOf<T> ExecuteSql<T>(string sql)
         {
             return ExecuteSql(sql, JsonSerializer.Deserialize<T>);
         }
 
+        /// <inheritdoc/>
+        public Task<QueryItemsOf<T>> ExecuteSqlAsync<T>(string sql, Func<byte[], T> deserializeItem)
+        {
+            return Task.FromResult(ExecuteSql(sql, deserializeItem));
+        }
+
+        /// <inheritdoc/>
         public Task<QueryItemsOf<T>> ExecuteSqlAsync<T>(string sql)
         {
             return Task.FromResult(ExecuteSql<T>(sql));
         }
 
+        /// <inheritdoc/>
         public QueryItemsOf<byte[]> ExecuteSql(string sql)
         {
             return ExecuteSql(sql, data => data);
         }
 
+        /// <inheritdoc/>
         public Task<QueryItemsOf<byte[]>> ExecuteSqlAsync(string sql)
         {
             return Task.FromResult(ExecuteSql(sql));
         }
 
+        /// <inheritdoc/>
         public int Insert<T>(string nsName, T item, params string[] precepts)
         {
-            return ModifyItem(nsName, ItemModifyMode.ModeInsert, SerializeJson(item), precepts);
+            return ModifyItem(nsName, ItemModifyMode.Insert, SerializeJson(item), precepts);
         }
 
+        /// <inheritdoc/>
         public int Update<T>(string nsName, T item, params string[] precepts)
         {
-            return ModifyItem(nsName, ItemModifyMode.ModeUpdate, SerializeJson(item), precepts);
+            return ModifyItem(nsName, ItemModifyMode.Update, SerializeJson(item), precepts);
         }
 
+        /// <inheritdoc/>
         public int Upsert<T>(string nsName, T item, params string[] precepts)
         {
-            return ModifyItem(nsName, ItemModifyMode.ModeUpsert, SerializeJson(item), precepts);
+            return ModifyItem(nsName, ItemModifyMode.Upsert, SerializeJson(item), precepts);
         }
 
+        /// <inheritdoc/>
         public int Delete<T>(string nsName, T item, params string[] precepts)
         {
-            return ModifyItem(nsName, ItemModifyMode.ModeDelete, SerializeJson(item), precepts);
+            return ModifyItem(nsName, ItemModifyMode.Delete, SerializeJson(item), precepts);
         }
 
+        /// <inheritdoc/>
         public Task<int> InsertAsync<T>(string nsName, T item, params string[] precepts)
         {
             return Task.FromResult(Insert<T>(nsName, item, precepts));
         }
 
+        /// <inheritdoc/>
         public Task<int> UpdateAsync<T>(string nsName, T item, params string[] precepts)
         {
             return Task.FromResult(Update<T>(nsName, item, precepts));
         }
 
+        /// <inheritdoc/>
         public Task<int> UpsertAsync<T>(string nsName, T item, params string[] precepts)
         {
             return Task.FromResult(Upsert<T>(nsName, item, precepts));
         }
 
+        /// <inheritdoc/>
         public Task<int> DeleteAsync<T>(string nsName, T item, params string[] precepts)
         {
             return Task.FromResult(Delete<T>(nsName, item, precepts));
         }
     }
 }
+#pragma warning restore S4136 // Method overloads should be grouped together
+#pragma warning restore S1135 // Track uses of "TODO" tags

@@ -1,15 +1,14 @@
-﻿#pragma warning disable IDE1006 // Naming Styles
+﻿#pragma warning disable S1135 // Track uses of "TODO" tags
+#pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable RCS1018 // Add accessibility modifiers.
 #pragma warning disable S101 // Types should be named in PascalCase
-using uintptr_t = System.UIntPtr;
-using uint64_t = System.UInt64;
-using int64_t = System.Int64;
-using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
 using System;
-using System.Text;
-using System.Threading;
 using System.Buffers;
+using System.Runtime.InteropServices;
+using System.Text;
+using int64_t = System.Int64;
+using uint64_t = System.UInt64;
+using uintptr_t = System.UIntPtr;
 
 namespace ReindexerNet.Embedded.Internal
 {
@@ -48,7 +47,7 @@ namespace ReindexerNet.Embedded.Internal
         }
     }
 
-    class ReindexerBufferHandle : IDisposable
+    internal sealed class ReindexerBufferHandle : IDisposable
     {
         private readonly GCHandle _gcHandle;
         private readonly MemoryHandle _memoryHandle;
@@ -78,43 +77,11 @@ namespace ReindexerNet.Embedded.Internal
 
         public reindexer_buffer Buffer { get; private set; }
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    _gcHandle.Free();
-                    _memoryHandle.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~ReindexerBufferHandle()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
+            _gcHandle.Free();
+            _memoryHandle.Dispose();
         }
-        #endregion
-
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -136,7 +103,6 @@ namespace ReindexerNet.Embedded.Internal
 
             unsafe
             {
-
                 return new ReadOnlySpan<byte>((byte*)rb.data, rb.len);
             }
         }
@@ -218,3 +184,4 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore RCS1018 // Add accessibility modifiers.
 #pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore S1135 // Track uses of "TODO" tags

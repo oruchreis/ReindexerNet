@@ -9,7 +9,10 @@ using System.Threading;
 
 namespace ReindexerNet.Embedded
 {
-    public class ReindexerEmbeddedServer : ReindexerEmbedded
+    /// <summary>
+    /// Reindexer Embedded Server implementation. Currently only one server can exist in the application. Use <see cref="ReindexerEmbedded.Server"/> singleton property to use server.
+    /// </summary>
+    public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
         static ReindexerEmbeddedServer()
         {
@@ -48,7 +51,21 @@ namespace ReindexerNet.Embedded
     collect_period: 1000
     clientsstats: false
 ";
-
+        /// <summary>
+        /// Starts Reindexer Embedded Server
+        /// </summary>
+        /// <param name="connectionString">Connection string in this format of string <c>key1=value1;key2=value2</c>
+        /// <list type="bullet">
+        /// <listheader>Supported parameters:</listheader>
+        /// <item><term>httpAddr</term><description>(default "0.0.0.0:9088")</description></item>
+        /// <item><term>rpcAddr</term><description>(default "0.0.0.0:6534")</description></item>
+        /// <item><term>dbName</term><description>(*required)</description></item>
+        /// <item><term>storagePath</term><description>(default "%TEMP%\ReindexerEmbeddedServer")</description></item>
+        /// <item><term>user</term><description>(default null)</description></item>
+        /// <item><term>pass</term><description>(default null)</description></item>
+        /// </list>
+        /// </param>
+        /// <param name="options"></param>
         public override void Connect(string connectionString, ConnectionOptions options = null)
         {
             if (IsStarted)
@@ -81,15 +98,27 @@ namespace ReindexerNet.Embedded
                 Directory.CreateDirectory(dbPath); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
 
-            Start(string.Format(_defaultServerYamlConfig, config["storagepath"], config["httpaddr"], config["rpcaddr"]));
-            Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(config["dbname"], config["user"], config["pass"], ref Rx));
+            Start(string.Format(_defaultServerYamlConfig, config["storagepath"], config["httpaddr"], config["rpcaddr"]),
+                config["dbname"], config["user"], config["pass"]);
         }
 
         private long _isServerThreadStarted = 0;
+
+        /// <summary>
+        /// Is server started.
+        /// </summary>
         public bool IsStarted => Interlocked.Read(ref _isServerThreadStarted) == 1;
         private readonly object _serverStartupLocker = new object();
 
-        public void Start(string serverConfigYaml)
+        /// <summary>
+        /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(string, ConnectionOptions)"/> instead.
+        /// </summary>
+        /// <param name="serverConfigYaml">Reindexer server configuration yaml</param>        
+        /// <param name="dbName"></param>
+        /// <param name="user"></param>
+        /// <param name="pass"></param>
+        /// <exception cref="TimeoutException">Throws if the server doesn't start in 5 seconds.</exception>
+        public void Start(string serverConfigYaml, string dbName, string user = null, string pass = null)
         {
             lock (_serverStartupLocker) //for not spinning extra threads and double checking lock.
             {
@@ -128,14 +157,26 @@ namespace ReindexerNet.Embedded
                     throw new TimeoutException($"Reindexer Embedded Server couldn't be started in {waitTimeout.TotalSeconds} seconds. Check configs.");
                 Thread.Sleep(100);
             }
+
+            Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(dbName, user, pass, ref Rx));
         }
 
+        /// <summary>
+        /// Stops the server.
+        /// </summary>
         public void Stop()
         {
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server()
             );
             Rx = default;
+        }
+
+        /// <inheritdoc/>
+        protected override void Dispose(bool disposing)
+        {
+            Stop();
+            base.Dispose(disposing);
         }
     }
 }

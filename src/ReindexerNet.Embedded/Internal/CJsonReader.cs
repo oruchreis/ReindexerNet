@@ -1,8 +1,7 @@
-﻿using System;
-using System.Buffers.Binary;
+﻿#pragma warning disable S1481 // Unused local variables should be removed
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ReindexerNet.Embedded.Internal
@@ -82,12 +81,14 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     var nsid = (int)GetVarUInt();
                     var nsName = GetVString();
+
+#pragma warning disable S125 // Sections of code should not be commented out
                     //if (updatePayloadType == null)
                     //{
                     //    throw new Exception("Internal error: Got payload types from raw query params, but there are no updatePayloadType");
                     //}
                     //updatePayloadType(nsid);
-
+#pragma warning restore S125 // Sections of code should not be commented out
                     ReadPayloadType();
                 }
             }
@@ -124,53 +125,59 @@ namespace ReindexerNet.Embedded.Internal
         {
             var stateToken = GetVarUInt();
             var version = GetVarUInt();
-                    
-         //   skip := state.Version >= version && state.StateToken == stateToken
 
-	        //if !skip {
-		       // state.StateData = &StateData{Version: version, StateToken: stateToken}
-	        //}
+#pragma warning disable S125 // Sections of code should not be commented out                    
+            //   skip := state.Version >= version && state.StateToken == stateToken
 
-
-	        //state.tagsMatcher.Read(s, skip)
-            var tagsCount = (int) GetVarUInt();
-	        //if !skip {
-		       // tm.Tags = make([]string, tagsCount, tagsCount)
-		       // tm.Names = make(map[string]int)
-
-		       // for i := 0; i < tagsCount; i++ {
-			      //  tm.Tags[i] = ser.GetVString()
-			      //  tm.Names[tm.Tags[i]] = i
-		       // }
-	        //} else {
-		        for (var i = 0; i < tagsCount; i++) {
-			        var tag = GetVString();
-		        }
-	        //}
+            //if !skip {
+            // state.StateData = &StateData{Version: version, StateToken: stateToken}
+            //}
 
 
-	        //state.payloadType.Read(s, skip)
-            var pStringHdrOffset = (UIntPtr) GetVarUInt();
-	        var fieldsCount = (int)GetVarUInt();
-	        //fields := make([]payloadFieldType, fieldsCount, fieldsCount)
+            //state.tagsMatcher.Read(s, skip)
+            var tagsCount = (int)GetVarUInt();
+            //if !skip {
+            // tm.Tags = make([]string, tagsCount, tagsCount)
+            // tm.Names = make(map[string]int)
+
+            // for i := 0; i < tagsCount; i++ {
+            //  tm.Tags[i] = ser.GetVString()
+            //  tm.Names[tm.Tags[i]] = i
+            // }
+            //} else {
+            for (var i = 0; i < tagsCount; i++)
+            {
+                var tag = GetVString();
+            }
+            //}
+
+
+            //state.payloadType.Read(s, skip)
+
+            var pStringHdrOffset = (UIntPtr)GetVarUInt();
+            var fieldsCount = (int)GetVarUInt();
+            //fields := make([]payloadFieldType, fieldsCount, fieldsCount)
             var fields = new PayloadFieldType[fieldsCount];
-	        for (var i = 0; i < fieldsCount; i++) {
+            for (var i = 0; i < fieldsCount; i++)
+            {
                 var payloadFieldType = new PayloadFieldType();
-		        payloadFieldType.Type = (int)GetVarUInt();
-		        payloadFieldType.Name = GetVString();
-		        payloadFieldType.Offset = (UIntPtr)GetVarUInt();
-		        payloadFieldType.Size = (UIntPtr)GetVarUInt();
-		        payloadFieldType.IsArray = GetVarUInt() != 0;
+                payloadFieldType.Type = (int)GetVarUInt();
+                payloadFieldType.Name = GetVString();
+                payloadFieldType.Offset = (UIntPtr)GetVarUInt();
+                payloadFieldType.Size = (UIntPtr)GetVarUInt();
+                payloadFieldType.IsArray = GetVarUInt() != 0;
 
                 fields[i] = payloadFieldType;
-		        var jsonPathCnt = GetVarUInt();
-		        for (; jsonPathCnt != 0; jsonPathCnt--) {
-			        GetVString();
-		        }
-	        }
-	        //if !skip {
-		       // pt.Fields = fields
-	        //}
+                var jsonPathCnt = GetVarUInt();
+                for (; jsonPathCnt != 0; jsonPathCnt--)
+                {
+                    GetVString();
+                }
+            }
+            //if !skip {
+            // pt.Fields = fields
+            //}
+#pragma warning restore S125 // Sections of code should not be commented out
         }
 
         private
@@ -244,14 +251,14 @@ namespace ReindexerNet.Embedded.Internal
             }
             else
             {
-                ulong num2 = (ulong)(data[0] & sbyte.MaxValue | (long)(data[1] & sbyte.MaxValue) << 7 | (long)(data[2] & sbyte.MaxValue) << 14 | (long)(data[3] & sbyte.MaxValue) << 21);
+                ulong shifted = (ulong)((long)(data[0] & sbyte.MaxValue) | (long)(data[1] & sbyte.MaxValue) << 7 | (long)(data[2] & sbyte.MaxValue) << 14 | (long)(data[3] & sbyte.MaxValue) << 21);
                 uint shift = 28;
                 for (uint index = 4; index < len; ++index)
                 {
-                    num2 |= (ulong)(data[(int)index] & sbyte.MaxValue) << (int)shift;
+                    shifted |= (ulong)(data[(int)index] & sbyte.MaxValue) << (int)shift;
                     shift += 7U;
                 }
-                rv = num2;
+                rv = shifted;
             }
             return rv;
         }
@@ -292,18 +299,14 @@ namespace ReindexerNet.Embedded.Internal
 
         private uint GetUInt32()
         {
-            uint ret;
             checkbound(_pos, sizeof(uint), _buffer.Length);
-            ret = (uint)ReadIntBits(sizeof(uint));
-            return ret;
+            return (uint)ReadIntBits(sizeof(uint));
         }
 
         private ulong GetUInt64()
         {
-            ulong ret;
             checkbound(_pos, sizeof(ulong), _buffer.Length);
-            ret = ReadUIntBits(sizeof(ulong));
-            return ret;
+            return ReadUIntBits(sizeof(ulong));
         }
 
         private ReadOnlySpan<byte> GetBytes()
@@ -373,3 +376,4 @@ namespace ReindexerNet.Embedded.Internal
         internal bool IsArray;
     }
 }
+#pragma warning restore S1481 // Unused local variables should be removed

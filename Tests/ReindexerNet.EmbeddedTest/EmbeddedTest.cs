@@ -186,7 +186,7 @@ namespace ReindexerNet.EmbeddedTest
 
             using (var tran = await Client.StartTransactionAsync(NsName))
             {
-                tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10500 }));
+                tran.ModifyItem(ItemModifyMode.Insert, JsonSerializer.Serialize(new TestDocument { Id = 10500 }));
                 Assert.AreEqual(0, Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10500").QueryTotalItems);
                 tran.Commit();
             }
@@ -194,7 +194,7 @@ namespace ReindexerNet.EmbeddedTest
 
             using (var tran = Client.StartTransaction(NsName))
             {
-                await tran.ModifyItemAsync(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10501 }));
+                await tran.ModifyItemAsync(ItemModifyMode.Insert, JsonSerializer.Serialize(new TestDocument { Id = 10501 }));
                 await tran.RollbackAsync();
             }
             Assert.AreEqual(0, Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10501").QueryTotalItems);
@@ -203,7 +203,7 @@ namespace ReindexerNet.EmbeddedTest
             {
                 using (var tran = Client.StartTransaction(NsName))
                 {
-                    tran.ModifyItem(ItemModifyMode.ModeInsert, JsonSerializer.Serialize(new TestDocument { Id = 10502 }));
+                    tran.ModifyItem(ItemModifyMode.Insert, JsonSerializer.Serialize(new TestDocument { Id = 10502 }));
                     throw new Exception();
                 }
             }

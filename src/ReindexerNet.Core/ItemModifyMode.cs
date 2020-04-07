@@ -1,14 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ReindexerNet
+﻿namespace ReindexerNet
 {
+    /// <summary>
+    /// Modify modes.
+    /// </summary>
     public enum ItemModifyMode
     {
-        ModeUpdate = 0,
-        ModeInsert = 1, 
-        ModeUpsert = 2, 
-        ModeDelete = 3
+        /// <summary>
+        /// Update
+        /// </summary>
+        Update = 0,
+        /// <summary>
+        /// Insert
+        /// </summary>
+        Insert = 1,
+        /// <summary>
+        /// Update or Insert
+        /// </summary>
+        Upsert = 2,
+        /// <summary>
+        /// Delete
+        /// </summary>
+        Delete = 3
     }
 }

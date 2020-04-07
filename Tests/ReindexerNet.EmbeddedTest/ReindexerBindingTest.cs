@@ -156,7 +156,7 @@ namespace ReindexerNet.EmbeddedTest
             {
                 ser1.PutVString(DataTestNamespace);
                 ser1.PutVarCUInt((int)DataFormat.FormatJson);//format);
-                ser1.PutVarCUInt((int)ItemModifyMode.ModeUpsert);//mode);
+                ser1.PutVarCUInt((int)ItemModifyMode.Upsert);//mode);
                 ser1.PutVarCUInt(0);//stateToken);
                 ser1.PutVarCUInt(0);//len(precepts));
 
@@ -280,7 +280,7 @@ namespace ReindexerNet.EmbeddedTest
             {
                 ser1.PutVString(nsName);
                 ser1.PutVarCUInt((int)DataFormat.FormatJson);
-                ser1.PutVarCUInt((int)ItemModifyMode.ModeUpsert);
+                ser1.PutVarCUInt((int)ItemModifyMode.Upsert);
                 ser1.PutVarCUInt(0);
                 ser1.PutVarCUInt(0);
                 

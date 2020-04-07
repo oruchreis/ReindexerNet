@@ -5,20 +5,38 @@ using System.Text.Json.Serialization;
 
 namespace ReindexerNet
 {
+    /// <summary>
+    /// Index Type
+    /// </summary>
     [JsonConverter(typeof(IndexTypeConverter))]
     [DataContract]
     public enum IndexType
     {
+        /// <summary>
+        /// Hash Index for hash table lookup
+        /// </summary>
         [EnumMember(Value = IndexTypeConverter.HashValueStr)]
         Hash,
+        /// <summary>
+        /// Tree Index for search trees.
+        /// </summary>
         [EnumMember(Value = IndexTypeConverter.TreeValueStr)]
         Tree,
+        /// <summary>
+        /// Fulltext Index
+        /// </summary>
         [EnumMember(Value = IndexTypeConverter.TextValueStr)]
         Text,
+        /// <summary>
+        /// Column index
+        /// </summary>
         [EnumMember(Value = IndexTypeConverter.ColumnIndexValueStr)]
         ColumnIndex
     }
 
+    /// <summary>
+    /// Index type json converter.
+    /// </summary>
     public sealed class IndexTypeConverter : JsonConverter<IndexType>
     {
         internal const string HashValueStr = "hash";
@@ -26,6 +44,7 @@ namespace ReindexerNet
         internal const string TextValueStr = "text";
         internal const string ColumnIndexValueStr = "-";
 
+        /// <inheritdoc/>
         public override IndexType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             switch (reader.GetString())
@@ -40,10 +59,10 @@ namespace ReindexerNet
                     return IndexType.ColumnIndex;
                 default:
                     throw new JsonException("Unknown IndexType value");
-                    
             }
         }
 
+        /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer, IndexType value, JsonSerializerOptions options)
         {
             switch (value)

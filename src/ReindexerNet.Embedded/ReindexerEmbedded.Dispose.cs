@@ -1,15 +1,13 @@
 ﻿using ReindexerNet.Embedded.Internal;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ReindexerNet.Embedded
 {
     public partial class ReindexerEmbedded
     {
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls        
+        private bool disposedValue; // To detect redundant calls        
 
+        /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -19,28 +17,25 @@ namespace ReindexerNet.Embedded
                     ReindexerBinding.destroy_reindexer(Rx);
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
+                Rx = default;
 
                 disposedValue = true;
             }
         }
 
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~ReindexerEmbedded()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
+        /// <inheritdoc/>
+        ~ReindexerEmbedded()
+        {
+            Dispose(false);
+        }
 
-        // This code added to correctly implement the disposable pattern.
+        /// <summary>
+        /// Disposes Reindexer native object.
+        /// </summary>
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
+            GC.SuppressFinalize(this);
         }
-        #endregion
     }
 }

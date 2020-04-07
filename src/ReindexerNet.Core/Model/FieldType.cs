@@ -5,23 +5,47 @@ using System.Text.Json.Serialization;
 
 namespace ReindexerNet
 {
+    /// <summary>
+    /// Reindexer Field types
+    /// </summary>
     [DataContract]
     public enum FieldType
     {
+        /// <summary>
+        /// 32 bit Integer
+        /// </summary>
         [EnumMember(Value = "int")]
-        Int, 
+        Int,
+        /// <summary>
+        /// 64 bit Integer
+        /// </summary>
         [EnumMember(Value = "int64")]
-        Int64, 
+        Int64,
+        /// <summary>
+        /// Double
+        /// </summary>
         [EnumMember(Value = "double")]
-        Double, 
+        Double,
+        /// <summary>
+        /// String
+        /// </summary>
         [EnumMember(Value = "string")]
-        String, 
+        String,
+        /// <summary>
+        /// Boolean
+        /// </summary>
         [EnumMember(Value = "bool")]
-        Bool, 
+        Bool,
+        /// <summary>
+        /// Composite object
+        /// </summary>
         [EnumMember(Value = "composite")]
         Composite
     }
 
+    /// <summary>
+    /// FieldType Json Converter
+    /// </summary>
     public sealed class FieldTypeConverter : JsonConverter<FieldType>
     {
         internal const string IntValueStr = "int";
@@ -31,9 +55,10 @@ namespace ReindexerNet
         internal const string BoolValueStr = "bool";
         internal const string ComposieValueStr = "composite";
 
+        /// <inheritdoc/>
         public override FieldType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            switch ( reader.GetString())
+            switch (reader.GetString())
             {
                 case IntValueStr:
                     return FieldType.Int;
@@ -52,6 +77,7 @@ namespace ReindexerNet
             }
         }
 
+        /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer, FieldType value, JsonSerializerOptions options)
         {
             switch (value)

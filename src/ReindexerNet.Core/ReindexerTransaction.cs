@@ -1,14 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ReindexerNet
 {
-    public class ReindexerTransaction : ITransactionInvoker, IDisposable
+    /// <summary>
+    /// Represents a Reindexer transaction.
+    /// </summary>
+    public sealed class ReindexerTransaction : ITransactionInvoker, IDisposable
     {
         private readonly ITransactionInvoker _invoker;
+        /// <summary>
+        /// Creates a reindexer transacrtion.
+        /// </summary>
+        /// <param name="invoker"></param>
         public ReindexerTransaction(ITransactionInvoker invoker)
         {
             _invoker = invoker;
@@ -21,7 +26,7 @@ namespace ReindexerNet
             try
             {
                 _isTransactionSuccess = true;
-                await actionAsync().ConfigureAwait(false);                
+                await actionAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -36,7 +41,7 @@ namespace ReindexerNet
             try
             {
                 _isTransactionSuccess = true;
-                return await funcAsync().ConfigureAwait(false);                
+                return await funcAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -76,70 +81,51 @@ namespace ReindexerNet
             }
         }
 
+        /// <inheritdoc/>
         public int Commit()
         {
             return CheckOperation(() => _invoker.Commit());
         }
 
+        /// <inheritdoc/>
         public async Task<int> CommitAsync()
         {
             return await CheckOperationAsync(async () => await _invoker.CommitAsync().ConfigureAwait(false)).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public void Rollback()
         {
             CheckOperation(() => _invoker.Rollback());
         }
 
+        /// <inheritdoc/>
         public async Task RollbackAsync()
         {
             await CheckOperationAsync(async () => await _invoker.RollbackAsync().ConfigureAwait(false)).ConfigureAwait(false);
         }
-        
+
+        /// <inheritdoc/>
         public void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
         {
             CheckOperation(() => _invoker.ModifyItem(mode, itemJson, precepts));
         }
 
+        /// <inheritdoc/>
         public async Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
         {
             await CheckOperationAsync(async () => await _invoker.ModifyItemAsync(mode, itemJson, precepts).ConfigureAwait(false)).ConfigureAwait(false);
         }
 
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls        
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing && !_isTransactionSuccess)
-                {
-                    _invoker.Rollback();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~ReindexerTransaction()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
+        /// <summary>
+        /// Ends transaction. If the transaction is not commited, it will be roll back.
+        /// </summary>
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
+            if (!_isTransactionSuccess)
+            {
+                _invoker.Rollback();
+            }
         }
-        #endregion
     }
 }

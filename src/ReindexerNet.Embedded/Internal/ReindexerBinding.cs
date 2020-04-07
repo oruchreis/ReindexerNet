@@ -1,14 +1,14 @@
-﻿using System.Runtime.InteropServices;
-using uintptr_t = System.UIntPtr;
-using int32_t = System.Int32;
-using System.Runtime.CompilerServices;
-using System;
-using System.IO;
-using System.Runtime.Loader;
-using System.Reflection;
-using System.Threading;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+using System.Threading;
+using int32_t = System.Int32;
+using uintptr_t = System.UIntPtr;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
@@ -56,7 +56,7 @@ namespace ReindexerNet.Embedded.Internal
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_delete_query_tx(uintptr_t rx, uintptr_t tr, reindexer_buffer @in);
 
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = (nameof(reindexer_commit_transaction)))]
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(reindexer_commit_transaction))]
         private static extern reindexer_ret reindexer_commit_transaction_native(uintptr_t rx, uintptr_t tr, reindexer_ctx_info ctx_info);
         public static reindexer_ret reindexer_commit_transaction(uintptr_t rx, uintptr_t tr, reindexer_ctx_info ctx_info)
         {
@@ -128,7 +128,7 @@ namespace ReindexerNet.Embedded.Internal
         public static extern reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Auto)]
-        public static extern void reindexer_enable_logger(LogWriterAction logWriter);//(void (* logWriter)(int level, char* msg));
+        public static extern void reindexer_enable_logger(LogWriterAction logWriter);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern void reindexer_disable_logger();
         #endregion
@@ -145,7 +145,7 @@ namespace ReindexerNet.Embedded.Internal
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error get_reindexer_instance(reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern int check_server_ready(); 
+        public static extern int check_server_ready();
         #endregion
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
