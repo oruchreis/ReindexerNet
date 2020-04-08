@@ -111,7 +111,10 @@ namespace ReindexerNet.Embedded.Internal
         {
             unsafe
             {
-                return Marshal.PtrToStringAnsi((IntPtr)(byte*)rb.data);
+                var ptr = (IntPtr)(byte*)rb.data;
+                var result = Marshal.PtrToStringAnsi(ptr);
+                ReindexerBinding.malloc_free(ptr);
+                return result;
             }
         }
     }
@@ -119,7 +122,7 @@ namespace ReindexerNet.Embedded.Internal
     [StructLayout(LayoutKind.Sequential)]
     struct reindexer_error
     {
-        public string what; //const char*
+        public IntPtr what; //const char*
         public int code;
     }
 

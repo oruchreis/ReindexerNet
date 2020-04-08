@@ -131,6 +131,17 @@ namespace ReindexerNet.EmbeddedTest
         }
 
         [TestMethod]
+        public void ErrorTest()
+        {
+            var excp = Assert.ThrowsException<ReindexerException>(() =>
+            {
+                Client.DropNamespace(Guid.NewGuid().ToString());
+            });
+
+            Assert.AreNotEqual(0, excp?.ErrorCode);
+        }
+
+        [TestMethod]
         public async Task ExecuteSql()
         {
             await AddIndexesAsync();

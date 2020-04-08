@@ -1,5 +1,6 @@
 ﻿using ReindexerNet.Embedded.Internal;
 using System;
+using System.Runtime.InteropServices;
 
 namespace ReindexerNet.Embedded.Helpers
 {
@@ -18,7 +19,11 @@ namespace ReindexerNet.Embedded.Helpers
             }
 
             if (error.code != 0)
-                throw new ReindexerException(error.code, error.what);
+            {
+                var errorStr = Marshal.PtrToStringAnsi(error.what);
+                ReindexerBinding.malloc_free(error.what);
+                throw new ReindexerException(error.code, errorStr);
+            }
         }
 
         public static reindexer_ret ThrowIfError(Func<reindexer_ret> action)

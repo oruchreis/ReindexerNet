@@ -2,10 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+#if !NET472
 using System.Runtime.Loader;
+#endif
 using System.Threading;
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
@@ -16,6 +19,11 @@ namespace ReindexerNet.Embedded.Internal
     internal static class ReindexerBinding
     {
         private const string BindingLibrary = "reindexer_embedded_server";
+#if NET472
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern IntPtr LoadLibrary(string lpFileName);
+#endif
+
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
         #region reindexer_c.h
@@ -33,7 +41,7 @@ namespace ReindexerNet.Embedded.Internal
         public static extern reindexer_error reindexer_init_system_namespaces(uintptr_t rx);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_open_namespace(uintptr_t rx, reindexer_string nsName, StorageOpts opts, reindexer_ctx_info ctx_info);
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_drop_namespace(uintptr_t rx, reindexer_string nsName, reindexer_ctx_info ctx_info);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_truncate_namespace(uintptr_t rx, reindexer_string nsName, reindexer_ctx_info ctx_info);
@@ -147,6 +155,9 @@ namespace ReindexerNet.Embedded.Internal
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern int check_server_ready();
         #endregion
+
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern void malloc_free(IntPtr ptr);
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
@@ -154,12 +165,54 @@ namespace ReindexerNet.Embedded.Internal
 
         static ReindexerBinding()
         {
+#if NET472
+            LoadWindowsLibrary(BindingLibrary);
+#else            
             var ctx = new CustomAssemblyLoadContext();
             ctx.LoadUnmanagedLibrary(BindingLibrary);
+#endif
 
             _bufferGc.Start();
         }
+#if NET472
+        static IntPtr LoadWindowsLibrary(string libName)
+        {
+            string libFile = libName + ".dll";
+            string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+            var paths = new[]
+                {
+                    Path.Combine(assemblyDirectory, "bin", "runtimes", "win-x64", "native", libFile),  
+                    Path.Combine(assemblyDirectory, "runtimes", "win-x64", "native", libFile),  
+                    Path.Combine(assemblyDirectory, libFile),
+
+                    Path.Combine(rootDirectory, "bin", "runtimes", "win-x64", "native", libFile),
+                    Path.Combine(rootDirectory, "runtimes", "win-x64", "native", libFile),
+                    Path.Combine(rootDirectory, libFile)
+                };
+
+            foreach (var path in paths)
+            {
+                if (path == null)
+                {
+                    continue;
+                }
+
+                if (File.Exists(path))
+                {
+                    var addr = LoadLibrary(path);
+                    if (addr == IntPtr.Zero)
+                    {
+                        throw new Exception("LoadLibrary failed: " + path);
+                    }
+                    return addr;
+                }
+            }
+
+            throw new Exception("LoadLibrary failed: unable to locate library " + libFile + ". Searched: " + paths.Aggregate((a, b) => a + "; " + b));
+        }
+#else
         private class CustomAssemblyLoadContext : AssemblyLoadContext
         {
             internal void LoadUnmanagedLibrary(string absolutePath)
@@ -192,6 +245,7 @@ namespace ReindexerNet.Embedded.Internal
                 throw new NotImplementedException();
             }
         }
+#endif
 
         private static readonly SemaphoreSlim _responseBufferConcurrenyLimit = new SemaphoreSlim(65534); //kMaxConcurentQueries 
         private static readonly Thread _bufferGc = new Thread(ResponseBufferGarbageWorker) { Name = "ReindexerResponseBufferGarbageWorker", IsBackground = true };
