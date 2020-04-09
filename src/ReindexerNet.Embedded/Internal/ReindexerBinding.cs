@@ -2,12 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #if !NET472
 using System.Runtime.Loader;
+#else
+using System.Linq;
 #endif
 using System.Threading;
 using int32_t = System.Int32;
@@ -175,13 +176,13 @@ namespace ReindexerNet.Embedded.Internal
             _bufferGc.Start();
         }
 #if NET472
-        static IntPtr LoadWindowsLibrary(string libName)
+        static void LoadWindowsLibrary(string libName)
         {
             string libFile = libName + ".dll";
             string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-            var paths = new[]
+            var paths = new HashSet<string>
                 {
                     Path.Combine(assemblyDirectory, "bin", "runtimes", "win-x64", "native", libFile),  
                     Path.Combine(assemblyDirectory, "runtimes", "win-x64", "native", libFile),  
@@ -189,7 +190,10 @@ namespace ReindexerNet.Embedded.Internal
 
                     Path.Combine(rootDirectory, "bin", "runtimes", "win-x64", "native", libFile),
                     Path.Combine(rootDirectory, "runtimes", "win-x64", "native", libFile),
-                    Path.Combine(rootDirectory, libFile)
+                    Path.Combine(rootDirectory, libFile),
+
+                    Path.Combine(assemblyDirectory, "bin", libFile),
+                    Path.Combine(rootDirectory, "bin", libFile)
                 };
 
             foreach (var path in paths)
@@ -204,13 +208,13 @@ namespace ReindexerNet.Embedded.Internal
                     var addr = LoadLibrary(path);
                     if (addr == IntPtr.Zero)
                     {
-                        throw new Exception("LoadLibrary failed: " + path);
+                        throw new FileNotFoundException("LoadLibrary failed: " + path);
                     }
-                    return addr;
+                    return; // addr
                 }
             }
 
-            throw new Exception("LoadLibrary failed: unable to locate library " + libFile + ". Searched: " + paths.Aggregate((a, b) => a + "; " + b));
+            throw new FileNotFoundException("LoadLibrary failed: unable to locate library " + libFile + ". Searched: " + paths.Aggregate((a, b) => a + "; " + b));
         }
 #else
         private class CustomAssemblyLoadContext : AssemblyLoadContext
