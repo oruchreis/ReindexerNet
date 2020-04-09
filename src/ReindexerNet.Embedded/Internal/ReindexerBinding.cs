@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
+using System.Diagnostics;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
@@ -23,6 +24,8 @@ namespace ReindexerNet.Embedded.Internal
 #if NET472
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
         static extern IntPtr LoadLibrary(string lpFileName);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool FreeLibrary(IntPtr hModule);
 #endif
 
 #pragma warning disable IDE1006 // Naming Styles
@@ -163,11 +166,10 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore IDE1006 // Naming Styles
 
         public const string ReindexerVersion = "v2.6.3";
-
         static ReindexerBinding()
         {
 #if NET472
-            LoadWindowsLibrary(BindingLibrary);
+            AppDomain.CurrentDomain.DomainUnload += AppDomain_DomainUnload;
 #else            
             var ctx = new CustomAssemblyLoadContext();
             ctx.LoadUnmanagedLibrary(BindingLibrary);
@@ -175,8 +177,10 @@ namespace ReindexerNet.Embedded.Internal
 
             _bufferGc.Start();
         }
+
 #if NET472
-        static void LoadWindowsLibrary(string libName)
+        private readonly static IntPtr _nativeLibAddr = LoadWindowsLibrary(BindingLibrary);
+        static IntPtr LoadWindowsLibrary(string libName)
         {
             string libFile = libName + ".dll";
             string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -184,8 +188,8 @@ namespace ReindexerNet.Embedded.Internal
 
             var paths = new HashSet<string>
                 {
-                    Path.Combine(assemblyDirectory, "bin", "runtimes", "win-x64", "native", libFile),  
-                    Path.Combine(assemblyDirectory, "runtimes", "win-x64", "native", libFile),  
+                    Path.Combine(assemblyDirectory, "bin", "runtimes", "win-x64", "native", libFile),
+                    Path.Combine(assemblyDirectory, "runtimes", "win-x64", "native", libFile),
                     Path.Combine(assemblyDirectory, libFile),
 
                     Path.Combine(rootDirectory, "bin", "runtimes", "win-x64", "native", libFile),
@@ -210,11 +214,25 @@ namespace ReindexerNet.Embedded.Internal
                     {
                         throw new FileNotFoundException("LoadLibrary failed: " + path);
                     }
-                    return; // addr
+                    return addr;
                 }
             }
 
             throw new FileNotFoundException("LoadLibrary failed: unable to locate library " + libFile + ". Searched: " + paths.Aggregate((a, b) => a + "; " + b));
+        }
+
+        private static void AppDomain_DomainUnload(object sender, EventArgs e)
+        {
+            try
+            {
+                //to unlock file.
+                FreeLibrary(_nativeLibAddr); //one for me
+                FreeLibrary(_nativeLibAddr); //one for dllimport.
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 #else
         private class CustomAssemblyLoadContext : AssemblyLoadContext
