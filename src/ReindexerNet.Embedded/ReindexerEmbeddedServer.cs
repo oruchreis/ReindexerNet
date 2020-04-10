@@ -27,9 +27,9 @@ namespace ReindexerNet.Embedded
         private const string _defaultServerYamlConfig = @"
   storage:
     path: {0}
-    engine: leveldb
+    engine: {3}
     startwitherrors: false
-    autorepair: false
+    autorepair: {4}
   net:
     httpaddr: {1}
     rpcaddr: {2}
@@ -40,21 +40,21 @@ namespace ReindexerNet.Embedded
     corelog: stdout
     httplog: stdout
     #rpclog: stdout
-    loglevel: trace
+    loglevel: {5}
   system:
     user:
   debug:
-    pprof: false
-    allocs: false
+    pprof: {8}
+    allocs: {9}
   metrics:
-    prometheus: false
+    prometheus: {7}
     collect_period: 1000
-    clientsstats: false
+    clientsstats: {6}
 ";
         /// <summary>
         /// Starts Reindexer Embedded Server
         /// </summary>
-        /// <param name="connectionString">Connection string in this format of string <c>key1=value1;key2=value2</c>
+        /// <param name="connectionString">Connection string in this format of string <c>key1=value1;key2=value2</c>.
         /// <list type="bullet">
         /// <listheader>Supported parameters:</listheader>
         /// <item><term>httpAddr</term><description>(default "0.0.0.0:9088")</description></item>
@@ -63,6 +63,13 @@ namespace ReindexerNet.Embedded
         /// <item><term>storagePath</term><description>(default "%TEMP%\ReindexerEmbeddedServer")</description></item>
         /// <item><term>user</term><description>(default null)</description></item>
         /// <item><term>pass</term><description>(default null)</description></item>
+        /// <item><term>engine</term><description>(default leveldb)</description></item>
+        /// <item><term>autorepair</term><description>(default false)</description></item>
+        /// <item><term>loglevel</term><description>(default info)</description></item>
+        /// <item><term>clientsstats</term><description>(default false)</description></item>
+        /// <item><term>prometheus</term><description>(default false)</description></item>
+        /// <item><term>pprof</term><description>(default false)</description></item>
+        /// <item><term>allocs</term><description>(default false)</description></item>
         /// </list>
         /// </param>
         /// <param name="options"></param>
@@ -73,13 +80,21 @@ namespace ReindexerNet.Embedded
 
             var config = new Dictionary<string, string>
             {
-                ["httpaddr"] = "0.0.0.0:9088",
-                ["rpcaddr"] = "0.0.0.0:6534",
                 ["dbname"] = null,
-                ["storagepath"] = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer"),
                 ["user"] = null,
-                ["pass"] = null
-            };
+                ["pass"] = null,
+
+                ["storagepath"] = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer"), // 0
+                ["httpaddr"] = "0.0.0.0:9088",                                                 // 1
+                ["rpcaddr"] = "0.0.0.0:6534",                                                  // 2
+                ["engine"] = "leveldb",                                                        // 3
+                ["autorepair"] = "false",                                                      // 4
+                ["loglevel"] = "info",                                                         // 5
+                ["clientsstats"] = "false",                                                    // 6
+                ["prometheus"] = "false",                                                      // 7
+                ["pprof"] = "false",                                                           // 8
+                ["allocs"] = "false"                                                           // 9
+            };                                                                                
 
             var connStringParts = connectionString.Split(';');
             foreach (var (key, value) in connStringParts.Select(p => p.Split('=')).Select(p => p.Length > 1 ? (p[0].ToLowerInvariant(), p[1]) : (p[0].ToLowerInvariant(), "")))
@@ -98,7 +113,11 @@ namespace ReindexerNet.Embedded
                 Directory.CreateDirectory(dbPath); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
 
-            Start(string.Format(_defaultServerYamlConfig, config["storagepath"], config["httpaddr"], config["rpcaddr"]),
+            Start(string.Format(_defaultServerYamlConfig,
+                config["storagepath"], config["httpaddr"], config["rpcaddr"],
+                config["engine"], config["autorepair"], config["loglevel"],
+                config["clientsstats"], config["prometheus"], config["pprof"], config["allocs"]),
+
                 config["dbname"], config["user"], config["pass"]);
         }
 

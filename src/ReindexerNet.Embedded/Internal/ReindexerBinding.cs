@@ -5,15 +5,16 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-#if !NET472
-using System.Runtime.Loader;
-#else
-using System.Linq;
-#endif
 using System.Threading;
+#if NET472
+using System.Linq;
+using System.Diagnostics;
+#else
+using System.Runtime.Loader;
+#endif
+
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
-using System.Diagnostics;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
