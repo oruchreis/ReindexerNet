@@ -111,7 +111,6 @@ namespace ReindexerNet.Embedded
             if (!Directory.Exists(connectionString))
             {
                 Directory.CreateDirectory(connectionString); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
-                ReindexerBinding.reindexer_init_system_namespaces(Rx);
             }
             Assert.ThrowIfError(() =>
                ReindexerBinding.reindexer_connect(Rx,

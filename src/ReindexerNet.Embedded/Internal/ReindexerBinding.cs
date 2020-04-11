@@ -226,6 +226,8 @@ namespace ReindexerNet.Embedded.Internal
         {
             try
             {
+                _bufferGcCancelToken.Cancel();
+
                 //to unlock file.
                 FreeLibrary(_nativeLibAddr); //one for me
                 FreeLibrary(_nativeLibAddr); //one for dllimport.
@@ -274,6 +276,7 @@ namespace ReindexerNet.Embedded.Internal
         private static readonly Thread _bufferGc = new Thread(ResponseBufferGarbageWorker) { Name = "ReindexerResponseBufferGarbageWorker", IsBackground = true };
         private const int _bufferGcIntervalMs = 5000;
         private static readonly ConcurrentQueue<reindexer_resbuffer> _responseBuffersToFree = new ConcurrentQueue<reindexer_resbuffer>();
+        private static readonly CancellationTokenSource _bufferGcCancelToken = new CancellationTokenSource();
 
         public static void FreeBuffer(reindexer_resbuffer buffer)
         {
@@ -309,7 +312,7 @@ namespace ReindexerNet.Embedded.Internal
 
         private static void ResponseBufferGarbageWorker()
         {
-            while (true)
+            while (!_bufferGcCancelToken.IsCancellationRequested)
             {
                 lock (_responseBuffersToFree)
                 {
