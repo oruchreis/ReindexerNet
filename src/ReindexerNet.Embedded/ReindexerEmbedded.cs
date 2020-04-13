@@ -37,14 +37,14 @@ namespace ReindexerNet.Embedded
             return JsonSerializer.Serialize(obj, StandardResolver.ExcludeNull);
         }
 
-        private readonly object _logWriterLocker = new object();
-        private LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
+        private static readonly object _logWriterLocker = new object();
+        private static LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
 
         /// <summary>
         /// Enables logger and send internal reindexer logs to <paramref name="logWriterAction"/>.
         /// </summary>
         /// <param name="logWriterAction">Action to send logs</param>
-        public void EnableLogger(LogWriterAction logWriterAction)
+        public static void EnableLogger(LogWriterAction logWriterAction)
         {
             lock (_logWriterLocker)
             {
@@ -57,7 +57,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Disables logger.
         /// </summary>
-        public void DisableLogger()
+        public static void DisableLogger()
         {
             lock (_logWriterLocker)
             {

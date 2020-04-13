@@ -26,7 +26,7 @@ namespace ReindexerNet.EmbeddedTest
         public override async Task InitAsync()
         {
             Client.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer");
-            ((ReindexerEmbeddedServer)Client).EnableLogger(Log);
+            ReindexerEmbeddedServer.EnableLogger(Log);
             
             Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName);

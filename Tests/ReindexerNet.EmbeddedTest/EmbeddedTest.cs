@@ -22,7 +22,7 @@ namespace ReindexerNet.EmbeddedTest
         public virtual async Task InitAsync()
         {
             Client = new ReindexerEmbedded();
-            ((ReindexerEmbedded)Client).EnableLogger(Log);
+            ReindexerEmbedded.EnableLogger(Log);
             await Client.ConnectAsync("ReindexerEmbeddedClientTest");
             await Client.OpenNamespaceAsync(NsName);
             await Client.TruncateNamespaceAsync(NsName);

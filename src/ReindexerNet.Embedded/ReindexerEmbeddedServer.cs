@@ -15,7 +15,7 @@ namespace ReindexerNet.Embedded
     public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
         private readonly UIntPtr _pServer;
-        internal ReindexerEmbeddedServer()
+        public ReindexerEmbeddedServer()
         {
             _pServer = ReindexerBinding.init_reindexer_server();
         }
