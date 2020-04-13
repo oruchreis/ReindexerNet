@@ -148,17 +148,17 @@ namespace ReindexerNet.Embedded.Internal
 
         #region server_c.h
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern void init_reindexer_server();
+        public static extern uintptr_t init_reindexer_server();
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern void destroy_reindexer_server();
+        public static extern void destroy_reindexer_server(uintptr_t psvc);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern reindexer_error start_reindexer_server(reindexer_string config);
+        public static extern reindexer_error start_reindexer_server(uintptr_t psvc, reindexer_string config);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern reindexer_error stop_reindexer_server();
+        public static extern reindexer_error stop_reindexer_server(uintptr_t psvc);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern reindexer_error get_reindexer_instance(reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
+        public static extern reindexer_error get_reindexer_instance(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern int check_server_ready();
+        public static extern int check_server_ready(uintptr_t psvc);
         #endregion
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -166,7 +166,7 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
-        public const string ReindexerVersion = "v2.6.3";
+        public const string ReindexerVersion = "v2.7.0";
         static ReindexerBinding()
         {
 #if NET472

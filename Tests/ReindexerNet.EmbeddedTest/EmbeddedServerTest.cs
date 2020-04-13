@@ -11,7 +11,7 @@ namespace ReindexerNet.EmbeddedTest
     [TestClass]
     public class EmbeddedServerTest : EmbeddedTest
     {
-        protected override IReindexerClient Client { get; set; } = ReindexerEmbedded.Server;
+        protected override IReindexerClient Client { get; set; } = new ReindexerEmbeddedServer();
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
         public TestContext TestContext { get; set; }
@@ -25,26 +25,11 @@ namespace ReindexerNet.EmbeddedTest
         [TestInitialize]
         public override async Task InitAsync()
         {
-            ReindexerEmbedded.Server.EnableLogger(Log);
-            ReindexerEmbedded.Server.OpenNamespace(NsName);
+            Client.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer");
+            ((ReindexerEmbeddedServer)Client).EnableLogger(Log);
+            
+            Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName);
-        }
-
-        [TestCleanup]
-        public override void Cleanup()
-        {
-        }
-
-        [ClassInitialize]
-        public static void Start(TestContext context)
-        {
-            ReindexerEmbedded.Server.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer");
-        }
-
-        [ClassCleanup]
-        public static void Stop()
-        {
-            ReindexerEmbedded.Server.Stop();
         }
 
         //[TestMethod]

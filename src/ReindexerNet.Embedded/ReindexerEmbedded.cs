@@ -19,11 +19,6 @@ namespace ReindexerNet.Embedded
     public partial class ReindexerEmbedded : IReindexerClient
     {
         /// <summary>
-        /// Reindexer Server singleton object.
-        /// </summary>
-        public static ReindexerEmbeddedServer Server { get; } = new ReindexerEmbeddedServer();
-
-        /// <summary>
         /// Reindexer native object pointer.
         /// </summary>
         protected UIntPtr Rx;

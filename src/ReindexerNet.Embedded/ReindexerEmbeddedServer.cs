@@ -14,14 +14,10 @@ namespace ReindexerNet.Embedded
     /// </summary>
     public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
-        static ReindexerEmbeddedServer()
-        {
-            ReindexerBinding.init_reindexer_server();
-        }
-
+        private readonly UIntPtr _pServer;
         internal ReindexerEmbeddedServer()
         {
-            //Rx'i connect anında oluşturacaz.            
+            _pServer = ReindexerBinding.init_reindexer_server();
         }
 
         private const string _defaultServerYamlConfig = @"
@@ -94,7 +90,7 @@ namespace ReindexerNet.Embedded
                 ["prometheus"] = "false",                                                      // 7
                 ["pprof"] = "false",                                                           // 8
                 ["allocs"] = "false"                                                           // 9
-            };                                                                                
+            };
 
             var connStringParts = connectionString.Split(';');
             foreach (var (key, value) in connStringParts.Select(p => p.Split('=')).Select(p => p.Length > 1 ? (p[0].ToLowerInvariant(), p[1]) : (p[0].ToLowerInvariant(), "")))
@@ -150,7 +146,7 @@ namespace ReindexerNet.Embedded
                 {
                     try
                     {
-                        ReindexerBinding.start_reindexer_server(serverConfigYaml);
+                        ReindexerBinding.start_reindexer_server(_pServer, serverConfigYaml);
                     }
                     catch (Exception e)
                     {
@@ -170,14 +166,14 @@ namespace ReindexerNet.Embedded
 
             var waitTimeout = TimeSpan.FromSeconds(5);
             var startTime = DateTime.UtcNow;
-            while (ReindexerBinding.check_server_ready() == 0)
+            while (ReindexerBinding.check_server_ready(_pServer) == 0)
             {
                 if (DateTime.UtcNow - startTime > waitTimeout)
                     throw new TimeoutException($"Reindexer Embedded Server couldn't be started in {waitTimeout.TotalSeconds} seconds. Check configs.");
                 Thread.Sleep(100);
             }
 
-            Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(dbName, user, pass, ref Rx));
+            Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(_pServer, dbName, user, pass, ref Rx));
         }
 
         /// <summary>
@@ -186,7 +182,7 @@ namespace ReindexerNet.Embedded
         public void Stop()
         {
             Assert.ThrowIfError(() =>
-               ReindexerBinding.stop_reindexer_server()
+               ReindexerBinding.stop_reindexer_server(_pServer)
             );
             Rx = default;
         }
