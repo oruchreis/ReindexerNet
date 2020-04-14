@@ -1,4 +1,4 @@
-name: .NET Core
+name: Build, Test, Package
 
 on:
   push:
@@ -22,9 +22,9 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test x64
-      run: dotnet test --runtime win-x64 --no-restore --verbosity normal
+      run: dotnet test --runtime win-x64 --no-restore --verbosity normal -f netcoreapp3.1
     - name: Test x86
-      run: dotnet test --runtime win-x86 --no-restore --verbosity normal
+      run: dotnet test --runtime win-x86 --no-restore --verbosity normal -f netcoreapp3.1
   ubuntu-test:
     runs-on: ubuntu-latest
     steps:
@@ -38,7 +38,7 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test --no-restore --verbosity normal -f netcoreapp3.1
   osx-test:
     runs-on: macos-latest
     steps:
@@ -52,23 +52,21 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
-      run: dotnet test --no-restore --verbosity normal
-  upload-package:
+      run: dotnet test --no-restore --verbosity normal -f netcoreapp3.1
+  upload-packages:
     runs-on: windows
     if: success()
+    strategy:
+      matrix:
+        project: [ 'Core', 'Embedded' ]
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.101
-    - name: Publish Core Package
+    - name: Publish Nuget Package
       uses: rohith/publish-nuget@v2.2.1
       with:
-        PROJECT_FILE_PATH: src/ReindexerNet.Core/ReindexerNet.Core.csproj
-        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
-    - name: Publish Embedded Package
-      uses: rohith/publish-nuget@v2.2.1
-      with:
-        PROJECT_FILE_PATH: src/ReindexerNet.Embedded/ReindexerNet.Embedded.csproj
+        PROJECT_FILE_PATH: src/ReindexerNet.${{ matrix.project }}/ReindexerNet.${{ matrix.project }}.csproj
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
