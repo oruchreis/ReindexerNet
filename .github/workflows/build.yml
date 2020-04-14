@@ -32,7 +32,7 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Test
-      run: dotnet test --verbosity normal --runtime linux-x64 -f netcoreapp3.1
+      run: dotnet test --verbosity normal -f netcoreapp3.1
   osx-test:
     runs-on: macos-latest
     steps:
@@ -42,7 +42,7 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Test
-      run: dotnet test --verbosity normal --runtime osx-x64 -f netcoreapp3.1
+      run: dotnet test --verbosity normal -f netcoreapp3.1
   upload-packages:    
     needs: [windows-test, ubuntu-test, osx-test]
     if: success()
