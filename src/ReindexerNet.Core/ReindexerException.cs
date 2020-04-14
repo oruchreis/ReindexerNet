@@ -11,7 +11,13 @@ namespace ReindexerNet
 #pragma warning restore S3925 // "ISerializable" should be implemented correctly
 #pragma warning restore RCS1194 // Implement exception constructors.
     {
+        /// <summary>
+        /// Error code
+        /// </summary>
         public int ErrorCode { get; set; }
+        /// <summary>
+        /// Error message
+        /// </summary>
         public string ErrorMessage { get; set; }
 
         /// <summary>
