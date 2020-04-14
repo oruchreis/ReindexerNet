@@ -1,0 +1,74 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - '**.csproj'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  windows-test:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test x64
+      run: dotnet test --runtime win-x64 --no-restore --verbosity normal
+    - name: Test x86
+      run: dotnet test --runtime win-x86 --no-restore --verbosity normal
+  ubuntu-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
+  osx-test:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
+  upload-package:
+    runs-on: windows
+    if: success()
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Publish Core Package
+      uses: rohith/publish-nuget@v2.2.1
+      with:
+        PROJECT_FILE_PATH: src/ReindexerNet.Core/ReindexerNet.Core.csproj
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+    - name: Publish Embedded Package
+      uses: rohith/publish-nuget@v2.2.1
+      with:
+        PROJECT_FILE_PATH: src/ReindexerNet.Embedded/ReindexerNet.Embedded.csproj
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
