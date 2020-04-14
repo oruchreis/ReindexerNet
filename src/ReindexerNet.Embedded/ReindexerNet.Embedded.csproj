@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net472;netstandard2.1</TargetFrameworks>
-    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>ReindexerNet.Embedded</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -12,9 +12,9 @@
     <Description>Reindexer Embedded library to embed and run in .net projects.</Description>
     <PackageTags>reindexer embedded document-db in-memory</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>0.2.1.270</Version>
-    <AssemblyVersion>0.2.1</AssemblyVersion>
-    <FileVersion>0.2.1</FileVersion>
+    <Version>0.2.2.270</Version>
+    <AssemblyVersion>0.2.2</AssemblyVersion>
+    <FileVersion>0.2.2</FileVersion>
     <Authors>oruchreis</Authors>
     <Copyright>oruchreis</Copyright>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
