@@ -4,7 +4,8 @@ on:
   push:
     branches: [ master ]
     paths:
-    - '**.csproj'
+      - '**.csproj'
+      - '.github/workflows/build.yml'
   pull_request:
     branches: [ master ]
 
@@ -54,7 +55,7 @@ jobs:
     - name: Test
       run: dotnet test --no-restore --verbosity normal -f netcoreapp3.1
   upload-packages:
-    runs-on: windows
+    runs-on: windows-latest
     if: success()
     strategy:
       matrix:
