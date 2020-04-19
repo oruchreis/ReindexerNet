@@ -15,6 +15,7 @@ using System.Runtime.Loader;
 
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
+using System.Linq;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
@@ -240,6 +241,13 @@ namespace ReindexerNet.Embedded.Internal
 #else
         private class CustomAssemblyLoadContext : AssemblyLoadContext
         {
+            private static readonly string[] _searchBinPaths = new[]{
+                Path.GetDirectoryName(Assembly.GetEntryAssembly().Location),
+                Directory.GetCurrentDirectory(),
+                "bin",
+                ""
+                };
+
             internal void LoadUnmanagedLibrary(string absolutePath)
             {
                 LoadUnmanagedDll(absolutePath);
@@ -248,20 +256,35 @@ namespace ReindexerNet.Embedded.Internal
             protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
             {
                 string arch = Environment.Is64BitProcess ? "-x64" : "-x86";
+                var fullPath = "";
+                string platformPath;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "runtimes", "osx" + arch, "native", $"lib{unmanagedDllName}.dylib");
-                    return LoadUnmanagedDllFromPath(fullPath);
+                    platformPath = Path.Combine("runtimes", "osx" + arch, "native", $"lib{unmanagedDllName}.dylib");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "runtimes", "linux" + arch, "native", $"lib{unmanagedDllName}.so");
-                    return LoadUnmanagedDllFromPath(fullPath);
+                    platformPath = Path.Combine("runtimes", "linux" + arch, "native", $"lib{unmanagedDllName}.so");
                 }
                 else // RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 {
-                    var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "runtimes", "win" + arch, "native", $"{unmanagedDllName}.dll");
+                    platformPath = Path.Combine("runtimes", "win" + arch, "native", $"{unmanagedDllName}.dll");
+                }
+
+                foreach (var searchBinPath in _searchBinPaths)
+                {
+                    fullPath = Path.Combine(searchBinPath, platformPath);
+                    if (File.Exists(fullPath))
+                        break;
+                }
+
+                try
+                {
                     return LoadUnmanagedDllFromPath(fullPath);
+                }
+                catch (Exception e)
+                {
+                    throw new DllNotFoundException($"Couldn't load file '{unmanagedDllName}' in these search paths {string.Join(" ,", _searchBinPaths.Select(searchBinPath => Path.Combine(searchBinPath, platformPath)))}", e);
                 }
             }
 

@@ -23,6 +23,7 @@ jobs:
         dotnet-version: 3.1.101
     - name: Test ${{ matrix.runtime }}
       run: dotnet test --runtime ${{ matrix.runtime }} --verbosity normal -f netcoreapp3.1
+      
   ubuntu-test:
     runs-on: ubuntu-latest
     env:
@@ -35,6 +36,7 @@ jobs:
         dotnet-version: 3.1.101
     - name: Test
       run: dotnet test --verbosity normal -f netcoreapp3.1
+      
   osx-test:
     runs-on: macos-latest
     env:
@@ -47,6 +49,7 @@ jobs:
         dotnet-version: 3.1.101
     - name: Test
       run: dotnet test --verbosity normal -f netcoreapp3.1
+      
   upload-packages:    
     needs: [windows-test, ubuntu-test, osx-test]
     if: success()
