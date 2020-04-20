@@ -158,8 +158,18 @@ namespace ReindexerNet.Embedded
         public void OpenNamespace(string nsName, NamespaceOptions options = null)
         {
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_open_namespace(Rx, nsName, options ?? new NamespaceOptions(), _ctxInfo)
-            );
+            {
+                reindexer_error rsp = default;
+                for (int retry = 0; retry < 2; retry++)
+                {
+                    rsp = ReindexerBinding.reindexer_open_namespace(Rx, nsName, options ?? new NamespaceOptions(), _ctxInfo);
+                    if (rsp.code != 0)
+                    {
+                        ReindexerBinding.reindexer_close_namespace(Rx, nsName, _ctxInfo);
+                    }
+                }
+                return rsp;
+            });
         }
 
         /// <inheritdoc/>

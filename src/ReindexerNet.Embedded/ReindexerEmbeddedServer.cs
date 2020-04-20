@@ -22,7 +22,7 @@ namespace ReindexerNet.Embedded
 
         private const string _defaultServerYamlConfig = @"
   storage:
-    path: {0}
+    path: ""{0}""
     engine: {3}
     startwitherrors: false
     autorepair: {4}
@@ -32,20 +32,20 @@ namespace ReindexerNet.Embedded
     #webroot:
     security: false
   logger:
-    serverlog: stdout
-    corelog: stdout
-    httplog: stdout
-    #rpclog: stdout
-    loglevel: {5}
+    serverlog: ""{5}""
+    corelog: ""{5}""
+    httplog: ""{5}""
+    #rpclog: ""{5}""
+    loglevel: {6}
   system:
     user:
   debug:
-    pprof: {8}
-    allocs: {9}
+    pprof: {9}
+    allocs: {10}
   metrics:
-    prometheus: {7}
+    prometheus: {8}
     collect_period: 1000
-    clientsstats: {6}
+    clientsstats: {7}
 ";
         /// <summary>
         /// Starts Reindexer Embedded Server
@@ -61,6 +61,7 @@ namespace ReindexerNet.Embedded
         /// <item><term>pass</term><description>(default null)</description></item>
         /// <item><term>engine</term><description>(default leveldb)</description></item>
         /// <item><term>autorepair</term><description>(default false)</description></item>
+        /// <item><term>logfile</term><description>(default none)</description></item>
         /// <item><term>loglevel</term><description>(default info)</description></item>
         /// <item><term>clientsstats</term><description>(default false)</description></item>
         /// <item><term>prometheus</term><description>(default false)</description></item>
@@ -85,11 +86,12 @@ namespace ReindexerNet.Embedded
                 ["rpcaddr"] = "0.0.0.0:6534",                                                  // 2
                 ["engine"] = "leveldb",                                                        // 3
                 ["autorepair"] = "false",                                                      // 4
-                ["loglevel"] = "info",                                                         // 5
-                ["clientsstats"] = "false",                                                    // 6
-                ["prometheus"] = "false",                                                      // 7
-                ["pprof"] = "false",                                                           // 8
-                ["allocs"] = "false"                                                           // 9
+                ["logfile"] = "",                                                              // 5
+                ["loglevel"] = "info",                                                         // 6
+                ["clientsstats"] = "false",                                                    // 7
+                ["prometheus"] = "false",                                                      // 8
+                ["pprof"] = "false",                                                           // 9
+                ["allocs"] = "false"                                                           // 10
             };
 
             var connStringParts = connectionString.Split(';');
