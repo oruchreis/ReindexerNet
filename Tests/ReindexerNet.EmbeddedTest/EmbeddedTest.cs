@@ -138,7 +138,7 @@ namespace ReindexerNet.EmbeddedTest
                 Client.DropNamespace(Guid.NewGuid().ToString());
             });
 
-            Assert.AreNotEqual(0, excp?.ErrorCode);
+            Assert.AreNotEqual(ReindexerErrorCode.OK, excp?.ErrorCode);
         }
 
         [TestMethod]

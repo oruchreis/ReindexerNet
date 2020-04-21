@@ -14,7 +14,7 @@ namespace ReindexerNet
         /// <summary>
         /// Error code
         /// </summary>
-        public int ErrorCode { get; set; }
+        public ReindexerErrorCode ErrorCode { get; set; }
         /// <summary>
         /// Error message
         /// </summary>
@@ -27,8 +27,33 @@ namespace ReindexerNet
         /// <param name="message">Reindexer error message</param>
         public ReindexerException(int code, string message) : base($"Reindexer returned an error response, ErrCode: {code}, Msg:{message}")
         {
-            ErrorCode = code;
+            ErrorCode = Enum.IsDefined(typeof(ReindexerErrorCode), code) ? (ReindexerErrorCode)code : ReindexerErrorCode.Unknown;
             ErrorMessage = message;
         }
     }
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    public enum ReindexerErrorCode
+    {
+        Unknown          =-1,
+        OK               = 0,
+	    ParseSQL         = 1,
+	    QueryExec        = 2,
+	    Params           = 3,
+	    Logic            = 4,
+	    ParseJson        = 5,
+	    ParseDSL         = 6,
+	    Conflict         = 7,
+	    ParseBin         = 8,
+	    Forbidden        = 9,
+	    WasRelock        = 10,
+	    NotValid         = 11,
+	    Network          = 12,
+	    NotFound         = 13,
+	    StateInvalidated = 14,
+	    Timeout          = 19,
+	    Canceled         = 20,
+	    TagsMissmatch    = 21
+    }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
