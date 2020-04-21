@@ -160,10 +160,22 @@ namespace ReindexerNet.Embedded.Internal
         #endregion
 
         #region server_c.h
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern uintptr_t init_reindexer_server();
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern void destroy_reindexer_server(uintptr_t psvc);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(init_reindexer_server))]
+        public static extern uintptr_t init_reindexer_server_native();
+        private static ConcurrentDictionary<uintptr_t, bool> _serverInstances = new ConcurrentDictionary<uintptr_t, bool>();
+        public static uintptr_t init_reindexer_server()
+        {
+            var newInstance = init_reindexer_server_native();
+            _serverInstances[newInstance] = true;
+            return newInstance;
+        }
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(destroy_reindexer_server))]
+        public static extern void destroy_reindexer_server_native(uintptr_t psvc);
+        public static void destroy_reindexer_server(uintptr_t psvc)
+        {
+            _serverInstances.TryRemove(psvc, out _);
+            destroy_reindexer_server_native(psvc);
+        }
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error start_reindexer_server(uintptr_t psvc, reindexer_string config);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -376,6 +388,15 @@ namespace ReindexerNet.Embedded.Internal
                 try
                 {
                     destroy_reindexer(rx); //to unlock dbs
+                }
+                catch { }
+            }
+
+            foreach (var psvc in _serverInstances.Keys)
+            {
+                try
+                {
+                    destroy_reindexer_server(psvc); //to unlock dbs
                 }
                 catch { }
             }
