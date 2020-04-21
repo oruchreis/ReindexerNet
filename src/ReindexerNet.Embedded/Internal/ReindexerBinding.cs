@@ -33,10 +33,22 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
         #region reindexer_c.h
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern uintptr_t init_reindexer();
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern void destroy_reindexer(uintptr_t rx);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(init_reindexer))]
+        public static extern uintptr_t init_reindexer_native();
+        private static ConcurrentDictionary<uintptr_t, bool> _instances = new ConcurrentDictionary<uintptr_t, bool>();
+        public static uintptr_t init_reindexer()
+        {
+            var newInstance = init_reindexer_native();
+            _instances[newInstance] = true;
+            return newInstance;
+        }
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(destroy_reindexer))]
+        public static extern void destroy_reindexer_native(uintptr_t rx);
+        public static void destroy_reindexer(uintptr_t rx)
+        {
+            _instances.TryRemove(rx, out _);
+            destroy_reindexer_native(rx);
+        }
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_connect(uintptr_t rx, reindexer_string dsn, ConnectOpts opts, reindexer_string client_vers);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -168,21 +180,24 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore IDE1006 // Naming Styles
 
         public const string ReindexerVersion = "v2.7.0";
+#pragma warning disable S3963 // "static" fields should be initialized inline
         static ReindexerBinding()
         {
 #if NET472
             AppDomain.CurrentDomain.DomainUnload += AppDomain_DomainUnload;
-#else            
+            LoadWindowsLibrary(BindingLibrary);
+#else
             var ctx = new CustomAssemblyLoadContext();
             ctx.LoadUnmanagedLibrary(BindingLibrary);
 #endif
 
             _bufferGc.Start();
         }
+#pragma warning restore S3963 // "static" fields should be initialized inline
 
 #if NET472
-        private readonly static IntPtr _nativeLibAddr = LoadWindowsLibrary(BindingLibrary);
-        static IntPtr LoadWindowsLibrary(string libName)
+        private static string _dllPath;
+        static void LoadWindowsLibrary(string libName)
         {
             string libFile = libName + ".dll";
             string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -216,7 +231,8 @@ namespace ReindexerNet.Embedded.Internal
                     {
                         throw new FileNotFoundException("LoadLibrary failed: " + path);
                     }
-                    return addr;
+                    _dllPath = path;
+                    return; //addr;
                 }
             }
 
@@ -227,11 +243,20 @@ namespace ReindexerNet.Embedded.Internal
         {
             try
             {
+                AppDomain.CurrentDomain.DomainUnload -= AppDomain_DomainUnload;
+                ReindexerEmbedded.DisableLogger();
+
                 _bufferGcCancelToken.Cancel();
+                _bufferGc.Join();
 
                 //to unlock file.
-                FreeLibrary(_nativeLibAddr); //one for me
-                FreeLibrary(_nativeLibAddr); //one for dllimport.
+                foreach (ProcessModule mod in Process.GetCurrentProcess().Modules)
+                {
+                    if (mod.FileName == _dllPath)
+                    {
+                        FreeLibrary(mod.BaseAddress);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -341,7 +366,18 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     FreeAllBuffers();
                 }
-                Thread.Sleep(_bufferGcIntervalMs);
+                WaitHandle.WaitAny(new[] { _bufferGcCancelToken.Token.WaitHandle }, _bufferGcIntervalMs);
+            }
+
+            FreeAllBuffers();
+
+            foreach (var rx in _instances.Keys)
+            {
+                try
+                {
+                    destroy_reindexer(rx); //to unlock dbs
+                }
+                catch { }
             }
         }
     }
