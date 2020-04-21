@@ -113,7 +113,7 @@ namespace ReindexerNet.Embedded
 
             Start(string.Format(_defaultServerYamlConfig,
                 config["storagepath"], config["httpaddr"], config["rpcaddr"],
-                config["engine"], config["autorepair"], config["loglevel"],
+                config["engine"], config["autorepair"], config["logfile"], config["loglevel"],
                 config["clientsstats"], config["prometheus"], config["pprof"], config["allocs"]),
 
                 config["dbname"], config["user"], config["pass"]);
