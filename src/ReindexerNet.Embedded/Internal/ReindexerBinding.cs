@@ -288,6 +288,16 @@ namespace ReindexerNet.Embedded.Internal
             internal void LoadUnmanagedLibrary(string absolutePath)
             {
                 LoadUnmanagedDll(absolutePath);
+                Unloading += CustomAssemblyLoadContext_Unloading;
+            }
+
+            private void CustomAssemblyLoadContext_Unloading(AssemblyLoadContext obj)
+            {
+                Unloading -= CustomAssemblyLoadContext_Unloading;
+                ReindexerEmbedded.DisableLogger();
+
+                _bufferGcCancelToken.Cancel();
+                _bufferGc.Join();
             }
 
             protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
