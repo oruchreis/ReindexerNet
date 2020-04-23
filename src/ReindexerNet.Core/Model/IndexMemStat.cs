@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Count of unique keys values stored in index</value>
     [DataMember(Name="unique_keys_count", EmitDefaultValue=false)]
     [JsonPropertyName("unique_keys_count")]
-    public int? UniqueKeysCount { get; set; }
+    public long? UniqueKeysCount { get; set; }
 
     /// <summary>
     /// Total memory consumption of reverse index b-tree structures. For `dense` and `store` indexes always 0
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of reverse index b-tree structures. For `dense` and `store` indexes always 0</value>
     [DataMember(Name="idset_btree_size", EmitDefaultValue=false)]
     [JsonPropertyName("idset_btree_size")]
-    public int? IdsetBtreeSize { get; set; }
+    public long? IdsetBtreeSize { get; set; }
 
     /// <summary>
     /// Total memory consumption of reverse index vectors. For `store` ndexes always 0
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of reverse index vectors. For `store` ndexes always 0</value>
     [DataMember(Name="idset_plain_size", EmitDefaultValue=false)]
     [JsonPropertyName("idset_plain_size")]
-    public int? IdsetPlainSize { get; set; }
+    public long? IdsetPlainSize { get; set; }
 
     /// <summary>
     /// Total memory consumption of SORT statement and `GT`, `LT` conditions optimized structures. Applicabe only to `tree` indexes
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of SORT statement and `GT`, `LT` conditions optimized structures. Applicabe only to `tree` indexes</value>
     [DataMember(Name="sort_orders_size", EmitDefaultValue=false)]
     [JsonPropertyName("sort_orders_size")]
-    public int? SortOrdersSize { get; set; }
+    public long? SortOrdersSize { get; set; }
 
     /// <summary>
     /// Gets or Sets IdsetCache
@@ -65,7 +65,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of fulltext search structures</value>
     [DataMember(Name="fulltext_size", EmitDefaultValue=false)]
     [JsonPropertyName("fulltext_size")]
-    public int? FulltextSize { get; set; }
+    public long? FulltextSize { get; set; }
 
     /// <summary>
     /// Total memory consumption of documents's data, holded by index
@@ -73,7 +73,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of documents's data, holded by index</value>
     [DataMember(Name="data_size", EmitDefaultValue=false)]
     [JsonPropertyName("data_size")]
-    public int? DataSize { get; set; }
+    public long? DataSize { get; set; }
 
 
     /// <summary>

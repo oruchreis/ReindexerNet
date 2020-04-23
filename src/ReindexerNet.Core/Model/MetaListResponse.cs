@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total count of meta info in the namespace</value>
     [DataMember(Name="total_items", EmitDefaultValue=false)]
     [JsonPropertyName("total_items")]
-    public int? TotalItems { get; set; }
+    public long? TotalItems { get; set; }
 
     /// <summary>
     /// Gets or Sets Meta

@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total query execution time</value>
     [DataMember(Name="total_us", EmitDefaultValue=false)]
     [JsonPropertyName("total_us")]
-    public int? TotalUs { get; set; }
+    public long? TotalUs { get; set; }
 
     /// <summary>
     /// Intersection loop time
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Intersection loop time</value>
     [DataMember(Name="loop_us", EmitDefaultValue=false)]
     [JsonPropertyName("loop_us")]
-    public int? LoopUs { get; set; }
+    public long? LoopUs { get; set; }
 
     /// <summary>
     /// Indexes keys selection time
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Indexes keys selection time</value>
     [DataMember(Name="indexes_us", EmitDefaultValue=false)]
     [JsonPropertyName("indexes_us")]
-    public int? IndexesUs { get; set; }
+    public long? IndexesUs { get; set; }
 
     /// <summary>
     /// Query post process time
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Query post process time</value>
     [DataMember(Name="postprocess_us", EmitDefaultValue=false)]
     [JsonPropertyName("postprocess_us")]
-    public int? PostprocessUs { get; set; }
+    public long? PostprocessUs { get; set; }
 
     /// <summary>
     /// Query prepare and optimize time
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Query prepare and optimize time</value>
     [DataMember(Name="prepare_us", EmitDefaultValue=false)]
     [JsonPropertyName("prepare_us")]
-    public int? PrepareUs { get; set; }
+    public long? PrepareUs { get; set; }
 
     /// <summary>
     /// Index, which used for sort results

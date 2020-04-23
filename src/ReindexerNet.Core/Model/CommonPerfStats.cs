@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total count of queries to this object</value>
     [DataMember(Name="total_queries_count", EmitDefaultValue=false)]
     [JsonPropertyName("total_queries_count")]
-    public int? TotalQueriesCount { get; set; }
+    public long? TotalQueriesCount { get; set; }
 
     /// <summary>
     /// Average latency (execution time) for queries to this object
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Average latency (execution time) for queries to this object</value>
     [DataMember(Name="total_avg_latency_us", EmitDefaultValue=false)]
     [JsonPropertyName("total_avg_latency_us")]
-    public int? TotalAvgLatencyUs { get; set; }
+    public long? TotalAvgLatencyUs { get; set; }
 
     /// <summary>
     /// Average waiting time for acquiring lock to this object
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Average waiting time for acquiring lock to this object</value>
     [DataMember(Name="total_avg_lock_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("total_avg_lock_time_us")]
-    public int? TotalAvgLockTimeUs { get; set; }
+    public long? TotalAvgLockTimeUs { get; set; }
 
     /// <summary>
     /// Count of queries to this object, requested at last second
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Count of queries to this object, requested at last second</value>
     [DataMember(Name="last_sec_qps", EmitDefaultValue=false)]
     [JsonPropertyName("last_sec_qps")]
-    public int? LastSecQps { get; set; }
+    public long? LastSecQps { get; set; }
 
     /// <summary>
     /// Average latency (execution time) for queries to this object at last second
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Average latency (execution time) for queries to this object at last second</value>
     [DataMember(Name="last_sec_avg_latency_us", EmitDefaultValue=false)]
     [JsonPropertyName("last_sec_avg_latency_us")]
-    public int? LastSecAvgLatencyUs { get; set; }
+    public long? LastSecAvgLatencyUs { get; set; }
 
     /// <summary>
     /// Average waiting time for acquiring lock to this object at last second
@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Average waiting time for acquiring lock to this object at last second</value>
     [DataMember(Name="last_sec_avg_lock_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("last_sec_avg_lock_time_us")]
-    public int? LastSecAvgLockTimeUs { get; set; }
+    public long? LastSecAvgLockTimeUs { get; set; }
 
     /// <summary>
     /// Standard deviation of latency values
@@ -74,7 +74,7 @@ namespace ReindexerNet {
     /// <value>Minimal latency value</value>
     [DataMember(Name="min_latency_us", EmitDefaultValue=false)]
     [JsonPropertyName("min_latency_us")]
-    public int? MinLatencyUs { get; set; }
+    public long? MinLatencyUs { get; set; }
 
     /// <summary>
     /// Maximum latency value
@@ -82,7 +82,7 @@ namespace ReindexerNet {
     /// <value>Maximum latency value</value>
     [DataMember(Name="max_latency_us", EmitDefaultValue=false)]
     [JsonPropertyName("max_latency_us")]
-    public int? MaxLatencyUs { get; set; }
+    public long? MaxLatencyUs { get; set; }
 
 
     /// <summary>

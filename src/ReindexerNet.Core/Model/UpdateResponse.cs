@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Count of updated items</value>
     [DataMember(Name="updated", EmitDefaultValue=false)]
     [JsonPropertyName("updated")]
-    public int? Updated { get; set; }
+    public long? Updated { get; set; }
 
 
     /// <summary>

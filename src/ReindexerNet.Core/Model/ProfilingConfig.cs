@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Minimum query execution time to be recoreded in #queriesperfstats namespace</value>
     [DataMember(Name="queries_threshold_us", EmitDefaultValue=false)]
     [JsonPropertyName("queries_threshold_us")]
-    public int? QueriesThresholdUs { get; set; }
+    public long? QueriesThresholdUs { get; set; }
 
 
     /// <summary>

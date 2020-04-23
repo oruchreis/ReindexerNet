@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Query identifier</value>
     [DataMember(Name="query_id", EmitDefaultValue=false)]
     [JsonPropertyName("query_id")]
-    public int? QueryId { get; set; }
+    public long? QueryId { get; set; }
 
     /// <summary>
     /// Query start time

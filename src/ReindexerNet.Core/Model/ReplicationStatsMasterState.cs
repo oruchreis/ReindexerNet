@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Hashsum of all records in namespace</value>
     [DataMember(Name="data_hash", EmitDefaultValue=false)]
     [JsonPropertyName("data_hash")]
-    public int? DataHash { get; set; }
+    public long? DataHash { get; set; }
 
     /// <summary>
     /// Last Log Sequence Number (LSN) of applied namespace modification
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Last Log Sequence Number (LSN) of applied namespace modification</value>
     [DataMember(Name="last_lsn", EmitDefaultValue=false)]
     [JsonPropertyName("last_lsn")]
-    public int? LastLsn { get; set; }
+    public long? LastLsn { get; set; }
 
     /// <summary>
     /// Last update time
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Last update time</value>
     [DataMember(Name="updated_unix_nano", EmitDefaultValue=false)]
     [JsonPropertyName("updated_unix_nano")]
-    public int? UpdatedUnixNano { get; set; }
+    public long? UpdatedUnixNano { get; set; }
 
     /// <summary>
     /// Items count in master namespace
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Items count in master namespace</value>
     [DataMember(Name="data_count", EmitDefaultValue=false)]
     [JsonPropertyName("data_count")]
-    public int? DataCount { get; set; }
+    public long? DataCount { get; set; }
 
 
     /// <summary>

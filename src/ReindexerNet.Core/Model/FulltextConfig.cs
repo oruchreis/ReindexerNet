@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Log level of full text search engine</value>
     [DataMember(Name="log_level", EmitDefaultValue=false)]
     [JsonPropertyName("log_level")]
-    public int? LogLevel { get; set; }
+    public long? LogLevel { get; set; }
 
     /// <summary>
     /// Maximum documents count which will be processed in merge query results.  Increasing this value may refine ranking of queries with high frequency words, but will decrease search speed
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Maximum documents count which will be processed in merge query results.  Increasing this value may refine ranking of queries with high frequency words, but will decrease search speed</value>
     [DataMember(Name="merge_limit", EmitDefaultValue=false)]
     [JsonPropertyName("merge_limit")]
-    public int? MergeLimit { get; set; }
+    public long? MergeLimit { get; set; }
 
     /// <summary>
     /// List of symbols, which will be threated as word part, all other symbols will be thrated as wors separators
@@ -154,7 +154,7 @@ namespace ReindexerNet {
     /// <value>Maximum possible typos in word. 0: typos is disabled, words with typos will not match. N: words with N possible typos will match. It is not recommended to set more than 1 possible typo -It will seriously increase RAM usage, and decrease search speed</value>
     [DataMember(Name="max_typos_in_word", EmitDefaultValue=false)]
     [JsonPropertyName("max_typos_in_word")]
-    public int? MaxTyposInWord { get; set; }
+    public long? MaxTyposInWord { get; set; }
 
     /// <summary>
     /// Maximum word length for building and matching variants with typos.
@@ -162,7 +162,7 @@ namespace ReindexerNet {
     /// <value>Maximum word length for building and matching variants with typos.</value>
     [DataMember(Name="max_typo_len", EmitDefaultValue=false)]
     [JsonPropertyName("max_typo_len")]
-    public int? MaxTypoLen { get; set; }
+    public long? MaxTypoLen { get; set; }
 
     /// <summary>
     /// Maximum steps without full rebuild of ft - more steps faster commit slower select - optimal about 15.
@@ -170,7 +170,7 @@ namespace ReindexerNet {
     /// <value>Maximum steps without full rebuild of ft - more steps faster commit slower select - optimal about 15.</value>
     [DataMember(Name="max_rebuild_steps", EmitDefaultValue=false)]
     [JsonPropertyName("max_rebuild_steps")]
-    public int? MaxRebuildSteps { get; set; }
+    public long? MaxRebuildSteps { get; set; }
 
     /// <summary>
     /// Maximum unique words to step
@@ -178,7 +178,7 @@ namespace ReindexerNet {
     /// <value>Maximum unique words to step</value>
     [DataMember(Name="max_step_size", EmitDefaultValue=false)]
     [JsonPropertyName("max_step_size")]
-    public int? MaxStepSize { get; set; }
+    public long? MaxStepSize { get; set; }
 
 
     /// <summary>

@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Network timeout for communication with master, in seconds</value>
     [DataMember(Name="timeout_sec", EmitDefaultValue=false)]
     [JsonPropertyName("timeout_sec")]
-    public int? TimeoutSec { get; set; }
+    public long? TimeoutSec { get; set; }
 
     /// <summary>
     /// Cluser ID - must be same for client and for master
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Cluser ID - must be same for client and for master</value>
     [DataMember(Name="cluster_id", EmitDefaultValue=false)]
     [JsonPropertyName("cluster_id")]
-    public int? ClusterId { get; set; }
+    public long? ClusterId { get; set; }
 
     /// <summary>
     /// force resync on logic error conditions

@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Server uptime in seconds</value>
     [DataMember(Name="uptime", EmitDefaultValue=false)]
     [JsonPropertyName("uptime")]
-    public int? Uptime { get; set; }
+    public long? Uptime { get; set; }
 
     /// <summary>
     /// Server start time in unix timestamp
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Server start time in unix timestamp</value>
     [DataMember(Name="start_time", EmitDefaultValue=false)]
     [JsonPropertyName("start_time")]
-    public int? StartTime { get; set; }
+    public long? StartTime { get; set; }
 
     /// <summary>
     /// Current heap size in bytes
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Current heap size in bytes</value>
     [DataMember(Name="heap_size", EmitDefaultValue=false)]
     [JsonPropertyName("heap_size")]
-    public int? HeapSize { get; set; }
+    public long? HeapSize { get; set; }
 
     /// <summary>
     /// Current inuse allocated memory size in bytes
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Current inuse allocated memory size in bytes</value>
     [DataMember(Name="current_allocated_bytes", EmitDefaultValue=false)]
     [JsonPropertyName("current_allocated_bytes")]
-    public int? CurrentAllocatedBytes { get; set; }
+    public long? CurrentAllocatedBytes { get; set; }
 
     /// <summary>
     /// Heap free size in bytes
@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Heap free size in bytes</value>
     [DataMember(Name="pageheap_free", EmitDefaultValue=false)]
     [JsonPropertyName("pageheap_free")]
-    public int? PageheapFree { get; set; }
+    public long? PageheapFree { get; set; }
 
     /// <summary>
     /// Unmapped free heap size in bytes
@@ -66,7 +66,7 @@ namespace ReindexerNet {
     /// <value>Unmapped free heap size in bytes</value>
     [DataMember(Name="pageheap_unmapped", EmitDefaultValue=false)]
     [JsonPropertyName("pageheap_unmapped")]
-    public int? PageheapUnmapped { get; set; }
+    public long? PageheapUnmapped { get; set; }
 
 
     /// <summary>

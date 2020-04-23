@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Total count of documents in namespace</value>
     [DataMember(Name="items_count", EmitDefaultValue=false)]
     [JsonPropertyName("items_count")]
-    public int? ItemsCount { get; set; }
+    public long? ItemsCount { get; set; }
 
     /// <summary>
     /// Raw size of documents, stored in the namespace, except string fields
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Raw size of documents, stored in the namespace, except string fields</value>
     [DataMember(Name="data_size", EmitDefaultValue=false)]
     [JsonPropertyName("data_size")]
-    public int? DataSize { get; set; }
+    public long? DataSize { get; set; }
 
     /// <summary>
     /// [[deperecated]]. do not use
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>[[deperecated]]. do not use</value>
     [DataMember(Name="updated_unix_nano", EmitDefaultValue=false)]
     [JsonPropertyName("updated_unix_nano")]
-    public int? UpdatedUnixNano { get; set; }
+    public long? UpdatedUnixNano { get; set; }
 
     /// <summary>
     /// Status of disk storage

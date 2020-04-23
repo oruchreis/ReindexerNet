@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Total count of documents, matched query</value>
     [DataMember(Name="query_total_items", EmitDefaultValue=false)]
     [JsonPropertyName("query_total_items")]
-    public int? QueryTotalItems { get; set; }
+    public long? QueryTotalItems { get; set; }
 
     /// <summary>
     /// Aggregation functions results

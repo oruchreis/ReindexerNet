@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Count of scanned documents by this selector</value>
     [DataMember(Name="items", EmitDefaultValue=false)]
     [JsonPropertyName("items")]
-    public int? Items { get; set; }
+    public long? Items { get; set; }
 
     /// <summary>
     /// Count of processed documents, matched this selector
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Count of processed documents, matched this selector</value>
     [DataMember(Name="matched", EmitDefaultValue=false)]
     [JsonPropertyName("matched")]
-    public int? Matched { get; set; }
+    public long? Matched { get; set; }
 
     /// <summary>
     /// Count of comparators used, for this selector
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Count of comparators used, for this selector</value>
     [DataMember(Name="comparators", EmitDefaultValue=false)]
     [JsonPropertyName("comparators")]
-    public int? Comparators { get; set; }
+    public long? Comparators { get; set; }
 
     /// <summary>
     /// Cost expectation of this selector
@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Cost expectation of this selector</value>
     [DataMember(Name="cost", EmitDefaultValue=false)]
     [JsonPropertyName("cost")]
-    public int? Cost { get; set; }
+    public long? Cost { get; set; }
 
     /// <summary>
     /// Number of uniq keys, processed by this selector (may be incorrect, in case of internal query optimization/caching
@@ -66,7 +66,7 @@ namespace ReindexerNet {
     /// <value>Number of uniq keys, processed by this selector (may be incorrect, in case of internal query optimization/caching</value>
     [DataMember(Name="keys", EmitDefaultValue=false)]
     [JsonPropertyName("keys")]
-    public int? Keys { get; set; }
+    public long? Keys { get; set; }
 
 
     /// <summary>

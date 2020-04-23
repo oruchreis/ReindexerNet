@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Unload namespace data from RAM after this idle timeout in seconds. If 0, then data should not be unloaded</value>
     [DataMember(Name="unload_idle_threshold", EmitDefaultValue=false)]
     [JsonPropertyName("unload_idle_threshold")]
-    public int? UnloadIdleThreshold { get; set; }
+    public long? UnloadIdleThreshold { get; set; }
 
     /// <summary>
     /// Enable namespace copying for transaction with steps count greater than this value (if copy_politics_multiplier also allows this)
@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Enable namespace copying for transaction with steps count greater than this value (if copy_politics_multiplier also allows this)</value>
     [DataMember(Name="start_copy_policy_tx_size", EmitDefaultValue=false)]
     [JsonPropertyName("start_copy_policy_tx_size")]
-    public int? StartCopyPolicyTxSize { get; set; }
+    public long? StartCopyPolicyTxSize { get; set; }
 
     /// <summary>
     /// Disables copy policy if namespace size is greater than copy_policy_multiplier * start_copy_policy_tx_size
@@ -66,7 +66,7 @@ namespace ReindexerNet {
     /// <value>Disables copy policy if namespace size is greater than copy_policy_multiplier * start_copy_policy_tx_size</value>
     [DataMember(Name="copy_policy_multiplier", EmitDefaultValue=false)]
     [JsonPropertyName("copy_policy_multiplier")]
-    public int? CopyPolicyMultiplier { get; set; }
+    public long? CopyPolicyMultiplier { get; set; }
 
     /// <summary>
     /// Force namespace copying for transaction with steps count greater than this value
@@ -74,7 +74,7 @@ namespace ReindexerNet {
     /// <value>Force namespace copying for transaction with steps count greater than this value</value>
     [DataMember(Name="tx_size_to_always_copy", EmitDefaultValue=false)]
     [JsonPropertyName("tx_size_to_always_copy")]
-    public int? TxSizeToAlwaysCopy { get; set; }
+    public long? TxSizeToAlwaysCopy { get; set; }
 
     /// <summary>
     /// Timeout before background indexes optimization start after last update. 0 - disable optimizations
@@ -82,7 +82,7 @@ namespace ReindexerNet {
     /// <value>Timeout before background indexes optimization start after last update. 0 - disable optimizations</value>
     [DataMember(Name="optimization_timeout_ms", EmitDefaultValue=false)]
     [JsonPropertyName("optimization_timeout_ms")]
-    public int? OptimizationTimeoutMs { get; set; }
+    public long? OptimizationTimeoutMs { get; set; }
 
     /// <summary>
     /// Maximum number of background threads of sort indexes optimization. 0 - disable sort optimizations
@@ -90,7 +90,7 @@ namespace ReindexerNet {
     /// <value>Maximum number of background threads of sort indexes optimization. 0 - disable sort optimizations</value>
     [DataMember(Name="optimization_sort_workers", EmitDefaultValue=false)]
     [JsonPropertyName("optimization_sort_workers")]
-    public int? OptimizationSortWorkers { get; set; }
+    public long? OptimizationSortWorkers { get; set; }
 
 
     /// <summary>

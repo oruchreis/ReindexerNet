@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Number of rows to get from result set. Allowed only for FACET</value>
     [DataMember(Name="limit", EmitDefaultValue=false)]
     [JsonPropertyName("limit")]
-    public int? Limit { get; set; }
+    public long? Limit { get; set; }
 
     /// <summary>
     /// Index of the first row to get from result set. Allowed only for FACET
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Index of the first row to get from result set. Allowed only for FACET</value>
     [DataMember(Name="offset", EmitDefaultValue=false)]
     [JsonPropertyName("offset")]
-    public int? Offset { get; set; }
+    public long? Offset { get; set; }
 
 
     /// <summary>

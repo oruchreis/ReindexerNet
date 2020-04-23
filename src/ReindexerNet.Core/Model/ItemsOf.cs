@@ -20,7 +20,7 @@ namespace ReindexerNet
         /// <value>Total count of documents, matched specified filters</value>
         [DataMember(Name = "total_items", EmitDefaultValue = false)]
         [JsonPropertyName("total_items")]
-        public int? TotalItems { get; set; }
+        public long? TotalItems { get; set; }
 
         /// <summary>
         /// Documents, matched specified filters

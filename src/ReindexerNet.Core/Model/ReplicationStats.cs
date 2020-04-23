@@ -16,7 +16,7 @@ namespace ReindexerNet
         /// <value>Last Log Sequence Number (LSN) of applied namespace modification</value>
         [DataMember(Name = "last_lsn", EmitDefaultValue = false)]
         [JsonPropertyName("last_lsn")]
-        public int? LastLsn { get; set; }
+        public long? LastLsn { get; set; }
 
         /// <summary>
         /// Cluster ID - must be same for client and for master
@@ -71,7 +71,7 @@ namespace ReindexerNet
         /// <value>Number of storage's master - slave switches</value>
         [DataMember(Name = "incarnation_counter", EmitDefaultValue = false)]
         [JsonPropertyName("incarnation_counter")]
-        public int? IncarnationCounter { get; set; }
+        public long? IncarnationCounter { get; set; }
 
         /// <summary>
         /// Hashsum of all records in namespace
@@ -79,7 +79,7 @@ namespace ReindexerNet
         /// <value>Hashsum of all records in namespace</value>
         [DataMember(Name = "data_hash", EmitDefaultValue = false)]
         [JsonPropertyName("data_hash")]
-        public int? DataHash { get; set; }
+        public long? DataHash { get; set; }
 
         /// <summary>
         /// Write Ahead Log (WAL) records count
@@ -87,7 +87,7 @@ namespace ReindexerNet
         /// <value>Write Ahead Log (WAL) records count</value>
         [DataMember(Name = "wal_count", EmitDefaultValue = false)]
         [JsonPropertyName("wal_count")]
-        public int? WalCount { get; set; }
+        public long? WalCount { get; set; }
 
         /// <summary>
         /// Total memory consumption of Write Ahead Log (WAL)
@@ -95,7 +95,7 @@ namespace ReindexerNet
         /// <value>Total memory consumption of Write Ahead Log (WAL)</value>
         [DataMember(Name = "wal_size", EmitDefaultValue = false)]
         [JsonPropertyName("wal_size")]
-        public int? WalSize { get; set; }
+        public long? WalSize { get; set; }
 
         /// <summary>
         /// Last update time
@@ -103,7 +103,7 @@ namespace ReindexerNet
         /// <value>Last update time</value>
         [DataMember(Name = "updated_unix_nano", EmitDefaultValue = false)]
         [JsonPropertyName("updated_unix_nano")]
-        public int? UpdatedUnixNano { get; set; }
+        public long? UpdatedUnixNano { get; set; }
 
         /// <summary>
         /// Items count in namespace
@@ -111,7 +111,7 @@ namespace ReindexerNet
         /// <value>Items count in namespace</value>
         [DataMember(Name = "data_count", EmitDefaultValue = false)]
         [JsonPropertyName("data_count")]
-        public int? DataCount { get; set; }
+        public long? DataCount { get; set; }
 
         /// <summary>
         /// Get the string presentation of the object

@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption by this cache</value>
     [DataMember(Name="total_size", EmitDefaultValue=false)]
     [JsonPropertyName("total_size")]
-    public int? TotalSize { get; set; }
+    public long? TotalSize { get; set; }
 
     /// <summary>
     /// Count of used elements stored in this cache
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Count of used elements stored in this cache</value>
     [DataMember(Name="items_count", EmitDefaultValue=false)]
     [JsonPropertyName("items_count")]
-    public int? ItemsCount { get; set; }
+    public long? ItemsCount { get; set; }
 
     /// <summary>
     /// Count of empty elements slots in this cache
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Count of empty elements slots in this cache</value>
     [DataMember(Name="empty_count", EmitDefaultValue=false)]
     [JsonPropertyName("empty_count")]
-    public int? EmptyCount { get; set; }
+    public long? EmptyCount { get; set; }
 
     /// <summary>
     /// Number of hits of queries, to store results in cache
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Number of hits of queries, to store results in cache</value>
     [DataMember(Name="hit_count_limit", EmitDefaultValue=false)]
     [JsonPropertyName("hit_count_limit")]
-    public int? HitCountLimit { get; set; }
+    public long? HitCountLimit { get; set; }
 
 
     /// <summary>

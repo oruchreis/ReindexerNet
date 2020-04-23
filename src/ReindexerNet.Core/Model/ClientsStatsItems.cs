@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Connection identifier</value>
     [DataMember(Name="connection_id", EmitDefaultValue=false)]
     [JsonPropertyName("connection_id")]
-    public int? ConnectionId { get; set; }
+    public long? ConnectionId { get; set; }
 
     /// <summary>
     /// Ip
@@ -66,7 +66,7 @@ namespace ReindexerNet {
     /// <value>Server start time in unix timestamp</value>
     [DataMember(Name="start_time", EmitDefaultValue=false)]
     [JsonPropertyName("start_time")]
-    public int? StartTime { get; set; }
+    public long? StartTime { get; set; }
 
     /// <summary>
     /// Receive byte
@@ -74,7 +74,7 @@ namespace ReindexerNet {
     /// <value>Receive byte</value>
     [DataMember(Name="recv_bytes", EmitDefaultValue=false)]
     [JsonPropertyName("recv_bytes")]
-    public int? RecvBytes { get; set; }
+    public long? RecvBytes { get; set; }
 
     /// <summary>
     /// Send byte
@@ -82,7 +82,7 @@ namespace ReindexerNet {
     /// <value>Send byte</value>
     [DataMember(Name="sent_bytes", EmitDefaultValue=false)]
     [JsonPropertyName("sent_bytes")]
-    public int? SentBytes { get; set; }
+    public long? SentBytes { get; set; }
 
     /// <summary>
     /// Client version string

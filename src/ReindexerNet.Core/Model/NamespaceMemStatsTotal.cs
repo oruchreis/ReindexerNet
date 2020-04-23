@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total memory size of stored documents, including system structures</value>
     [DataMember(Name="data_size", EmitDefaultValue=false)]
     [JsonPropertyName("data_size")]
-    public int? DataSize { get; set; }
+    public long? DataSize { get; set; }
 
     /// <summary>
     /// Total memory consumption of namespace's indexes
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of namespace's indexes</value>
     [DataMember(Name="indexes_size", EmitDefaultValue=false)]
     [JsonPropertyName("indexes_size")]
-    public int? IndexesSize { get; set; }
+    public long? IndexesSize { get; set; }
 
     /// <summary>
     /// Total memory consumption of namespace's caches. e.g. idset and join caches
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Total memory consumption of namespace's caches. e.g. idset and join caches</value>
     [DataMember(Name="cache_size", EmitDefaultValue=false)]
     [JsonPropertyName("cache_size")]
-    public int? CacheSize { get; set; }
+    public long? CacheSize { get; set; }
 
 
     /// <summary>

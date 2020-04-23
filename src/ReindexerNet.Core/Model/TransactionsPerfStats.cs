@@ -18,7 +18,7 @@ namespace ReindexerNet {
     /// <value>Total transactions count for this namespace</value>
     [DataMember(Name="total_count", EmitDefaultValue=false)]
     [JsonPropertyName("total_count")]
-    public int? TotalCount { get; set; }
+    public long? TotalCount { get; set; }
 
     /// <summary>
     /// Total namespace copy operations
@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Total namespace copy operations</value>
     [DataMember(Name="total_copy_count", EmitDefaultValue=false)]
     [JsonPropertyName("total_copy_count")]
-    public int? TotalCopyCount { get; set; }
+    public long? TotalCopyCount { get; set; }
 
     /// <summary>
     /// Average steps count in transactions for this namespace
@@ -34,7 +34,7 @@ namespace ReindexerNet {
     /// <value>Average steps count in transactions for this namespace</value>
     [DataMember(Name="avg_steps_count", EmitDefaultValue=false)]
     [JsonPropertyName("avg_steps_count")]
-    public int? AvgStepsCount { get; set; }
+    public long? AvgStepsCount { get; set; }
 
     /// <summary>
     /// Minimum steps count in transactions for this namespace
@@ -42,7 +42,7 @@ namespace ReindexerNet {
     /// <value>Minimum steps count in transactions for this namespace</value>
     [DataMember(Name="min_steps_count", EmitDefaultValue=false)]
     [JsonPropertyName("min_steps_count")]
-    public int? MinStepsCount { get; set; }
+    public long? MinStepsCount { get; set; }
 
     /// <summary>
     /// Maximum steps count in transactions for this namespace
@@ -50,7 +50,7 @@ namespace ReindexerNet {
     /// <value>Maximum steps count in transactions for this namespace</value>
     [DataMember(Name="max_steps_count", EmitDefaultValue=false)]
     [JsonPropertyName("max_steps_count")]
-    public int? MaxStepsCount { get; set; }
+    public long? MaxStepsCount { get; set; }
 
     /// <summary>
     /// Average transaction preparation time usec
@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Average transaction preparation time usec</value>
     [DataMember(Name="avg_prepare_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("avg_prepare_time_us")]
-    public int? AvgPrepareTimeUs { get; set; }
+    public long? AvgPrepareTimeUs { get; set; }
 
     /// <summary>
     /// Minimum transaction preparation time usec
@@ -66,7 +66,7 @@ namespace ReindexerNet {
     /// <value>Minimum transaction preparation time usec</value>
     [DataMember(Name="min_prepare_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("min_prepare_time_us")]
-    public int? MinPrepareTimeUs { get; set; }
+    public long? MinPrepareTimeUs { get; set; }
 
     /// <summary>
     /// Maximum transaction preparation time usec
@@ -74,7 +74,7 @@ namespace ReindexerNet {
     /// <value>Maximum transaction preparation time usec</value>
     [DataMember(Name="max_prepare_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("max_prepare_time_us")]
-    public int? MaxPrepareTimeUs { get; set; }
+    public long? MaxPrepareTimeUs { get; set; }
 
     /// <summary>
     /// Average transaction commit time usec
@@ -82,7 +82,7 @@ namespace ReindexerNet {
     /// <value>Average transaction commit time usec</value>
     [DataMember(Name="avg_commit_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("avg_commit_time_us")]
-    public int? AvgCommitTimeUs { get; set; }
+    public long? AvgCommitTimeUs { get; set; }
 
     /// <summary>
     /// Minimum transaction commit time usec
@@ -90,7 +90,7 @@ namespace ReindexerNet {
     /// <value>Minimum transaction commit time usec</value>
     [DataMember(Name="min_commit_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("min_commit_time_us")]
-    public int? MinCommitTimeUs { get; set; }
+    public long? MinCommitTimeUs { get; set; }
 
     /// <summary>
     /// Maximum transaction commit time usec
@@ -98,7 +98,7 @@ namespace ReindexerNet {
     /// <value>Maximum transaction commit time usec</value>
     [DataMember(Name="max_commit_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("max_commit_time_us")]
-    public int? MaxCommitTimeUs { get; set; }
+    public long? MaxCommitTimeUs { get; set; }
 
     /// <summary>
     /// Average namespace copy time usec
@@ -106,7 +106,7 @@ namespace ReindexerNet {
     /// <value>Average namespace copy time usec</value>
     [DataMember(Name="avg_copy_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("avg_copy_time_us")]
-    public int? AvgCopyTimeUs { get; set; }
+    public long? AvgCopyTimeUs { get; set; }
 
     /// <summary>
     /// Maximum namespace copy time usec
@@ -114,7 +114,7 @@ namespace ReindexerNet {
     /// <value>Maximum namespace copy time usec</value>
     [DataMember(Name="min_copy_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("min_copy_time_us")]
-    public int? MinCopyTimeUs { get; set; }
+    public long? MinCopyTimeUs { get; set; }
 
     /// <summary>
     /// Minimum namespace copy time usec
@@ -122,7 +122,7 @@ namespace ReindexerNet {
     /// <value>Minimum namespace copy time usec</value>
     [DataMember(Name="max_copy_time_us", EmitDefaultValue=false)]
     [JsonPropertyName("max_copy_time_us")]
-    public int? MaxCopyTimeUs { get; set; }
+    public long? MaxCopyTimeUs { get; set; }
 
 
     /// <summary>

@@ -28,7 +28,7 @@ namespace ReindexerNet
         /// <value>Maximum count of returned items</value>
         [DataMember(Name = "limit", EmitDefaultValue = false)]
         [JsonPropertyName("limit")]
-        public int? Limit { get; set; }
+        public long? Limit { get; set; }
 
         /// <summary>
         /// Offset of first returned item
@@ -36,7 +36,7 @@ namespace ReindexerNet
         /// <value>Offset of first returned item</value>
         [DataMember(Name = "offset", EmitDefaultValue = false)]
         [JsonPropertyName("offset")]
-        public int? Offset { get; set; }
+        public long? Offset { get; set; }
 
         /// <summary>
         /// Ask query to calculate total documents, match condition

@@ -26,7 +26,7 @@ namespace ReindexerNet {
     /// <value>Count of elemens these fields values</value>
     [DataMember(Name="count", EmitDefaultValue=false)]
     [JsonPropertyName("count")]
-    public int? Count { get; set; }
+    public long? Count { get; set; }
 
 
     /// <summary>
