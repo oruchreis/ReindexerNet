@@ -223,5 +223,23 @@ namespace ReindexerNet.EmbeddedTest
             }
             Assert.AreEqual(0, Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10502").QueryTotalItems);
         }
+
+        [TestMethod]
+        public async Task Utf8Test()
+        {
+            var utf8Str = "İŞĞÜÇÖışğüöç   بِسْــــــــــــــــــــــمِ اﷲِارَّحْمَنِ ارَّحِيم";
+            await Client.UpsertAsync(NsName,
+                    new TestDocument
+                    {
+                        Id = 10001,
+                        Name = utf8Str
+                    });
+
+            var itemWithPayloadUtf8 = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10001").Items.FirstOrDefault();
+            Assert.AreEqual(utf8Str, itemWithPayloadUtf8?.Name);
+
+            var itemWithQueryUtf8 = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Name=\"{utf8Str}\"").Items.FirstOrDefault();
+            Assert.AreEqual(utf8Str, itemWithQueryUtf8?.Name);
+        }
     }
 }

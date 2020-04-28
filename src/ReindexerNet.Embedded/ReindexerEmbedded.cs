@@ -1,6 +1,6 @@
 ﻿#pragma warning disable S1135 // Track uses of "TODO" tags
 #pragma warning disable S4136 // Method overloads should be grouped together
-using ReindexerNet.Embedded.Helpers;
+using ReindexerNet.Embedded.Internal.Helpers;
 using ReindexerNet.Embedded.Internal;
 using System;
 using System.Collections.Generic;
@@ -69,14 +69,16 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void AddIndex(string nsName, params Index[] indexDefinitions)
         {
-            foreach (var index in indexDefinitions)
-            {
-                if (index.JsonPaths == null || index.JsonPaths.Count == 0)
-                    index.JsonPaths = new List<string> { index.Name };
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_add_index(Rx, nsName, SerializeJson(index), _ctxInfo)
-                );
-            }
+            using (var nsNameRx = nsName.GetHandle())
+                foreach (var index in indexDefinitions)
+                {
+                    if (index.JsonPaths == null || index.JsonPaths.Count == 0)
+                        index.JsonPaths = new List<string> { index.Name };
+                    using (var jsonRx = SerializeJson(index).GetStringHandle())
+                        Assert.ThrowIfError(() =>
+                                ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+                        );
+                }
         }
 
         /// <inheritdoc/>
@@ -89,8 +91,9 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void CloseNamespace(string nsName)
         {
-            Assert.ThrowIfError(() =>
-            ReindexerBinding.reindexer_close_namespace(Rx, nsName, _ctxInfo));
+            using (var nsNameRx = nsName.GetHandle())
+                Assert.ThrowIfError(() =>
+                    ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
         }
 
         /// <inheritdoc/>
@@ -107,11 +110,15 @@ namespace ReindexerNet.Embedded
             {
                 Directory.CreateDirectory(connectionString); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
-            Assert.ThrowIfError(() =>
-               ReindexerBinding.reindexer_connect(Rx,
-                   $"builtin://{connectionString}",
-                   options ?? new ConnectionOptions(), ReindexerBinding.ReindexerVersion)
-           );
+
+            using (var dsn = $"builtin://{connectionString}".GetHandle())
+            using (var version = ReindexerBinding.ReindexerVersion.GetHandle())
+                Assert.ThrowIfError(() =>
+                   ReindexerBinding.reindexer_connect(Rx,
+                       dsn,
+                       options ?? new ConnectionOptions(),
+                       version)
+               );
         }
 
         /// <inheritdoc/>
@@ -124,12 +131,14 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void DropIndex(string nsName, params string[] indexName)
         {
-            foreach (var iname in indexName)
-            {
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_drop_index(Rx, nsName, iname, _ctxInfo)
-                );
-            }
+            using (var nsNameRx = nsName.GetHandle())
+                foreach (var iname in indexName)
+                {
+                    using (var inameRx = iname.GetHandle())
+                        Assert.ThrowIfError(() =>
+                            ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
+                        );
+                }
         }
 
         /// <inheritdoc/>
@@ -142,9 +151,10 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void DropNamespace(string nsName)
         {
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_drop_namespace(Rx, nsName, _ctxInfo)
-            );
+            using (var nsNameRx = nsName.GetHandle())
+                Assert.ThrowIfError(() =>
+                    ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
+                );
         }
 
         /// <inheritdoc/>
@@ -157,19 +167,20 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void OpenNamespace(string nsName, NamespaceOptions options = null)
         {
-            Assert.ThrowIfError(() =>
-            {
-                reindexer_error rsp = default;
-                for (int retry = 0; retry < 2; retry++)
+            using (var nsNameRx = nsName.GetHandle())
+                Assert.ThrowIfError(() =>
                 {
-                    rsp = ReindexerBinding.reindexer_open_namespace(Rx, nsName, options ?? new NamespaceOptions(), _ctxInfo);
-                    if (rsp.code != 0)
+                    reindexer_error rsp = default;
+                    for (int retry = 0; retry < 2; retry++)
                     {
-                        ReindexerBinding.reindexer_close_namespace(Rx, nsName, _ctxInfo);
+                        rsp = ReindexerBinding.reindexer_open_namespace(Rx, nsNameRx, options ?? new NamespaceOptions(), _ctxInfo);
+                        if (rsp.code != 0)
+                        {
+                            ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo);
+                        }
                     }
-                }
-                return rsp;
-            });
+                    return rsp;
+                });
         }
 
         /// <inheritdoc/>
@@ -196,8 +207,10 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void RenameNamespace(string oldName, string newName)
         {
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_rename_namespace(Rx, oldName, newName, _ctxInfo));
+            using (var oldNameRx = oldName.GetHandle())
+            using (var newNameRx = newName.GetHandle())
+                Assert.ThrowIfError(() =>
+                    ReindexerBinding.reindexer_rename_namespace(Rx, oldNameRx, newNameRx, _ctxInfo));
         }
 
         /// <inheritdoc/>
@@ -211,12 +224,13 @@ namespace ReindexerNet.Embedded
         public ReindexerTransaction StartTransaction(string nsName)
         {
             UIntPtr tr = UIntPtr.Zero;
-            Assert.ThrowIfError(() =>
-            {
-                var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsName);
-                tr = rsp.tx_id;
-                return rsp.err;
-            });
+            using (var nsNameRx = nsName.GetHandle())
+                Assert.ThrowIfError(() =>
+                {
+                    var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsNameRx);
+                    tr = rsp.tx_id;
+                    return rsp.err;
+                });
             return new ReindexerTransaction(new EmbeddedTransactionInvoker(Rx, tr, _ctxInfo));
         }
 
@@ -229,9 +243,10 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void TruncateNamespace(string nsName)
         {
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_truncate_namespace(Rx, nsName, _ctxInfo)
-            );
+            using (var nsNameRx = nsName.GetHandle())
+                Assert.ThrowIfError(() =>
+                    ReindexerBinding.reindexer_truncate_namespace(Rx, nsNameRx, _ctxInfo)
+                );
         }
 
         /// <inheritdoc/>
@@ -244,14 +259,16 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void UpdateIndex(string nsName, params Index[] indexDefinitions)
         {
-            foreach (var index in indexDefinitions)
-            {
-                if (index.JsonPaths == null || index.JsonPaths.Count == 0)
-                    index.JsonPaths = new List<string> { index.Name };
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_update_index(Rx, nsName, SerializeJson(index), _ctxInfo)
-                );
-            }
+            using (var nsNameRx = nsName.GetHandle())
+                foreach (var index in indexDefinitions)
+                {
+                    if (index.JsonPaths == null || index.JsonPaths.Count == 0)
+                        index.JsonPaths = new List<string> { index.Name };
+                    using (var jsonRx = SerializeJson(index).GetStringHandle())
+                        Assert.ThrowIfError(() =>
+                            ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+                        );
+                }
         }
 
         /// <inheritdoc/>
@@ -283,7 +300,7 @@ namespace ReindexerNet.Embedded
                 {
                     using (var data = reindexer_buffer.From(itemJson))
                     {
-                        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data.Buffer, _ctxInfo));
+                        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data, _ctxInfo));
                         try
                         {
                             var reader = new CJsonReader(rsp.@out);
@@ -322,37 +339,40 @@ namespace ReindexerNet.Embedded
                 Items = new List<T>()
             };
 
-            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sql, 1, new int[0], 0, _ctxInfo));
-            try
+            using (var sqlRx = sql.GetHandle())
             {
-                var reader = new CJsonReader(rsp.@out);
-                var rawQueryParams = reader.ReadRawQueryParams();
-                var explain = rawQueryParams.explainResults;
-
-                result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
-                if (explain.Length > 0)
+                var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sqlRx, 1, new int[0], 0, _ctxInfo));
+                try
                 {
-                    result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
-                        StandardResolver.ExcludeNull);
-                }
+                    var reader = new CJsonReader(rsp.@out);
+                    var rawQueryParams = reader.ReadRawQueryParams();
+                    var explain = rawQueryParams.explainResults;
 
-                for (var i = 0; i < rawQueryParams.count; i++)
+                    result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
+                    if (explain.Length > 0)
+                    {
+                        result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain.ToArray(), //todo: use span when utf8json supports it.
+                            StandardResolver.ExcludeNull);
+                    }
+
+                    for (var i = 0; i < rawQueryParams.count; i++)
+                    {
+                        var item = reader.ReadRawItemParams();
+                        if (item.data.Length > 0)
+                            result.Items.Add(deserializeItem(item.data.ToArray())); //todo: use span when utf8json supports it.
+                    }
+
+                    if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
+                    {
+                        throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
+                    }
+
+                    return result;
+                }
+                finally
                 {
-                    var item = reader.ReadRawItemParams();
-                    if (item.data.Length > 0)
-                        result.Items.Add(deserializeItem(item.data.ToArray())); //todo: use span when utf8json supports it.
+                    rsp.@out.Free();
                 }
-
-                if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
-                {
-                    throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
-                }
-
-                return result;
-            }
-            finally
-            {
-                rsp.@out.Free();
             }
         }
 

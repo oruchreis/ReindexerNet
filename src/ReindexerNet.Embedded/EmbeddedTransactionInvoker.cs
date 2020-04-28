@@ -1,4 +1,4 @@
-﻿using ReindexerNet.Embedded.Helpers;
+﻿using ReindexerNet.Embedded.Internal.Helpers;
 using ReindexerNet.Embedded.Internal;
 using System;
 using System.Threading.Tasks;
@@ -55,7 +55,7 @@ namespace ReindexerNet.Embedded
 
                 reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
                 {
-                    using (var data = reindexer_buffer.From(itemJson))
+                    using (var data = itemJson.GetHandle())
                     {
                         Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed_tx(_rx, _tr, args, data.Buffer));
                     }

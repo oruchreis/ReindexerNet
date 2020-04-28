@@ -1,8 +1,7 @@
-﻿using ReindexerNet.Embedded.Internal;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
-namespace ReindexerNet.Embedded.Helpers
+namespace ReindexerNet.Embedded.Internal.Helpers
 {
     internal static class Assert
     {

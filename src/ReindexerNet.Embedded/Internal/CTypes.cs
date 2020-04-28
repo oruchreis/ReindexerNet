@@ -58,7 +58,7 @@ namespace ReindexerNet.Embedded.Internal
             Buffer = new reindexer_buffer
             {
                 data = _gcHandle.AddrOfPinnedObject(),
-                len = byteArray.Length
+                len = byteArray?.Length ?? 0
             };
         }
 
@@ -76,6 +76,11 @@ namespace ReindexerNet.Embedded.Internal
         }
 
         public reindexer_buffer Buffer { get; private set; }
+
+        public static implicit operator reindexer_buffer(ReindexerBufferHandle handle)
+        {
+            return handle.Buffer;
+        }
 
         public void Dispose()
         {
@@ -128,23 +133,60 @@ namespace ReindexerNet.Embedded.Internal
 
     [StructLayout(LayoutKind.Sequential)]
     struct reindexer_string
-    {
-        public string p;//void* => reindexer içeride const char*'a cast ediyor.
+    {        
+        public IntPtr p;//void* => reindexer içeride const char*'a cast ediyor.
         public int n; //bunu içeride Span.Slice gibi kullanıyor. Belki p ReadOnlySpan<char> da olabilir.
 
-        public static implicit operator string(reindexer_string rs)
+        public static ReindexerStringHandle From(byte[] byteArray)
         {
-            return rs.p.Substring(0, rs.n);
+            return new ReindexerStringHandle(byteArray);
         }
 
-        public static implicit operator reindexer_string(string str)
+        public static ReindexerStringHandle From(string utf8Str)
         {
-            return new reindexer_string { p = str, n = str?.Length ?? 0 };
+            return new ReindexerStringHandle(utf8Str != null ? Encoding.UTF8.GetBytes(utf8Str) : null);
+        }
+    }
+
+    internal sealed class ReindexerStringHandle : IDisposable
+    {
+        private readonly GCHandle _gcHandle;
+        private readonly MemoryHandle _memoryHandle;
+
+        public ReindexerStringHandle(byte[] byteArray)
+        {
+            _gcHandle = GCHandle.Alloc(byteArray, GCHandleType.Pinned);
+            RxString = new reindexer_string
+            {
+                p = _gcHandle.AddrOfPinnedObject(),
+                n = byteArray?.Length ?? 0
+            };
         }
 
-        public static implicit operator reindexer_string(byte[] byteArray)
+        public ReindexerStringHandle(Memory<byte> byteMem)
         {
-            return Encoding.UTF8.GetString(byteArray); //todo: pinning string is not a good idea, so can't convert "p" to IntPtr. Search for another solution.
+            _memoryHandle = byteMem.Pin();
+            unsafe
+            {
+                RxString = new reindexer_string
+                {
+                    p = (IntPtr)_memoryHandle.Pointer,
+                    n = byteMem.Length
+                };
+            }
+        }
+
+        public reindexer_string RxString { get; private set; }
+
+        public static implicit operator reindexer_string(ReindexerStringHandle handle)
+        {
+            return handle.RxString;
+        }
+
+        public void Dispose()
+        {
+            _gcHandle.Free();
+            _memoryHandle.Dispose();
         }
     }
 

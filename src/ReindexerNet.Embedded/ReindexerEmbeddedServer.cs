@@ -1,5 +1,5 @@
-﻿using ReindexerNet.Embedded.Helpers;
-using ReindexerNet.Embedded.Internal;
+﻿using ReindexerNet.Embedded.Internal;
+using ReindexerNet.Embedded.Internal.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -149,7 +149,8 @@ namespace ReindexerNet.Embedded
                 {
                     try
                     {
-                        ReindexerBinding.start_reindexer_server(_pServer, serverConfigYaml);
+                        using (var configYaml = serverConfigYaml.GetHandle())
+                            ReindexerBinding.start_reindexer_server(_pServer, configYaml);
                     }
                     catch (Exception e)
                     {
@@ -176,7 +177,10 @@ namespace ReindexerNet.Embedded
                 Thread.Sleep(100);
             }
 
-            Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(_pServer, dbName, user, pass, ref Rx));
+            using (var dbNameRx = dbName.GetHandle())
+            using (var userRx = user.GetHandle())
+            using (var passRx = pass.GetHandle())
+                Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(_pServer, dbNameRx, userRx, passRx, ref Rx));
         }
 
         /// <summary>
