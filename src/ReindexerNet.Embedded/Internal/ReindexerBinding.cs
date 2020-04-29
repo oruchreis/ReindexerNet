@@ -184,6 +184,8 @@ namespace ReindexerNet.Embedded.Internal
         public static extern reindexer_error get_reindexer_instance(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern int check_server_ready(uintptr_t psvc);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern reindexer_error reopen_log_files(uintptr_t psvc);
         #endregion
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]

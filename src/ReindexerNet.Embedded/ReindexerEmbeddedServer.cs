@@ -194,6 +194,13 @@ namespace ReindexerNet.Embedded
             Rx = default;
         }
 
+        public void ReopnLogFiles()
+        {
+            Assert.ThrowIfError(() =>
+              ReindexerBinding.reopen_log_files(_pServer)
+           );
+        }
+
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
