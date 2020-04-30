@@ -22,7 +22,7 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Test ${{ matrix.runtime }}
-      run: dotnet test --runtime ${{ matrix.runtime }} --verbosity normal -f netcoreapp3.1
+      run: dotnet test --runtime ${{ matrix.runtime }} --verbosity normal --logger "console;verbosity=detailed"
       
   ubuntu-test:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Test
-      run: dotnet test --verbosity normal -f netcoreapp3.1
+      run: dotnet test --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"
       
   osx-test:
     runs-on: macos-latest
@@ -48,7 +48,7 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Test
-      run: dotnet test --verbosity normal -f netcoreapp3.1
+      run: dotnet test --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"
       
   upload-packages:    
     needs: [windows-test, ubuntu-test, osx-test] 
