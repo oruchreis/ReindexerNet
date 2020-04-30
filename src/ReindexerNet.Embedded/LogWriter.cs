@@ -1,11 +1,14 @@
-﻿namespace ReindexerNet.Embedded
+﻿using System.Runtime.InteropServices;
+
+namespace ReindexerNet.Embedded
 {
     /// <summary>
     /// Log writer delegate to collect internal logs of Reindexer.
     /// </summary>
     /// <param name="level"></param>
     /// <param name="msg"></param>
-    public delegate void LogWriterAction(LogLevel level, string msg);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    public delegate void LogWriterAction(LogLevel level, [In, MarshalAs(UnmanagedType.LPStr)] string msg);
 
     /// <summary>
     /// Reindexer log levels.

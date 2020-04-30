@@ -23,7 +23,7 @@ namespace ReindexerNet.Embedded.Internal
         kStorageTypeOptRocksDB = 1,
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Sequential)]
     struct ConnectOpts
     {
         public StorageTypeOpt storage;

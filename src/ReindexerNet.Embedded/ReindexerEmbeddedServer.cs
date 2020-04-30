@@ -10,11 +10,14 @@ using System.Threading;
 namespace ReindexerNet.Embedded
 {
     /// <summary>
-    /// Reindexer Embedded Server implementation. Currently only one server can exist in the application. Use <see cref="ReindexerEmbedded.Server"/> singleton property to use server.
+    /// Reindexer Embedded Server implementation.
     /// </summary>
     public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
         private readonly UIntPtr _pServer;
+        /// <summary>
+        /// Creates a reindexer server instance
+        /// </summary>
         public ReindexerEmbeddedServer()
         {
             _pServer = ReindexerBinding.init_reindexer_server();
@@ -194,7 +197,10 @@ namespace ReindexerNet.Embedded
             Rx = default;
         }
 
-        public void ReopnLogFiles()
+        /// <summary>
+        /// Reopens server log files.
+        /// </summary>
+        public void ReopenLogFiles()
         {
             Assert.ThrowIfError(() =>
               ReindexerBinding.reopen_log_files(_pServer)

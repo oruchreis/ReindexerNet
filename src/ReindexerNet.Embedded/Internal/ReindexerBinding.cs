@@ -152,9 +152,9 @@ namespace ReindexerNet.Embedded.Internal
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
-
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Auto)]
-        public static extern void reindexer_enable_logger(LogWriterAction logWriter);
+        
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public static extern void reindexer_enable_logger([MarshalAs(UnmanagedType.FunctionPtr)]LogWriterAction logWriter);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern void reindexer_disable_logger();
         #endregion
@@ -193,7 +193,7 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
-        public const string ReindexerVersion = "v2.7.0";
+        public const string ReindexerVersion = "v2.8.0";
 #pragma warning disable S3963 // "static" fields should be initialized inline
         static ReindexerBinding()
         {
@@ -216,15 +216,16 @@ namespace ReindexerNet.Embedded.Internal
             string libFile = libName + ".dll";
             string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
+            string arch = Environment.Is64BitProcess ? "-x64" : "-x86";
+            string platform = $"win{arch}";
             var paths = new HashSet<string>
                 {
-                    Path.Combine(assemblyDirectory, "bin", "runtimes", "win-x64", "native", libFile),
-                    Path.Combine(assemblyDirectory, "runtimes", "win-x64", "native", libFile),
+                    Path.Combine(assemblyDirectory, "bin", "runtimes", platform, "native", libFile),
+                    Path.Combine(assemblyDirectory, "runtimes", platform, "native", libFile),
                     Path.Combine(assemblyDirectory, libFile),
 
-                    Path.Combine(rootDirectory, "bin", "runtimes", "win-x64", "native", libFile),
-                    Path.Combine(rootDirectory, "runtimes", "win-x64", "native", libFile),
+                    Path.Combine(rootDirectory, "bin", "runtimes", platform, "native", libFile),
+                    Path.Combine(rootDirectory, "runtimes", platform, "native", libFile),
                     Path.Combine(rootDirectory, libFile),
 
                     Path.Combine(assemblyDirectory, "bin", libFile),

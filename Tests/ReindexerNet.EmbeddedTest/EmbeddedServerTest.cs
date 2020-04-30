@@ -14,8 +14,6 @@ namespace ReindexerNet.EmbeddedTest
         protected override IReindexerClient Client { get; set; } = new ReindexerEmbeddedServer();
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
-        public TestContext TestContext { get; set; }
-
         void Log(LogLevel level, string msg)
         {
             if (level <= LogLevel.Info)
@@ -25,7 +23,7 @@ namespace ReindexerNet.EmbeddedTest
         [TestInitialize]
         public override async Task InitAsync()
         {
-            Client.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer");
+            Client.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer;httpAddr=127.0.0.1:9088;rpcAddr=127.0.0.1:6354");
             ReindexerEmbeddedServer.EnableLogger(Log);
             
             Client.OpenNamespace(NsName);
