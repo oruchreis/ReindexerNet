@@ -330,6 +330,8 @@ namespace ReindexerNet.Embedded.Internal
 
                 if (string.IsNullOrEmpty(fullPath))
                     throw new FileNotFoundException($"Couldn't find {platformPath} in these search paths: {string.Join(" ,", _searchBinPaths)}", unmanagedDllName);
+                
+                Debug.WriteLine($"Trying to load native library from '{fullPath}'");
 
                 try
                 {

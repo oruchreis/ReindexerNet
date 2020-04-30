@@ -138,7 +138,7 @@ namespace ReindexerNet.Embedded
         /// <param name="user"></param>
         /// <param name="pass"></param>
         /// <param name="waitTimeoutForReady">Wait timeout for the server is ready. Default is 60sec.</param>
-        /// <exception cref="TimeoutException">Throws if the server doesn't start in 5 seconds.</exception>
+        /// <exception cref="TimeoutException">Throws if the server doesn't start in timeout interval.</exception>
         public void Start(string serverConfigYaml, string dbName, string user = null, string pass = null, TimeSpan? waitTimeoutForReady = null)
         {
             lock (_serverStartupLocker) //for not spinning extra threads and double checking lock.
@@ -152,8 +152,10 @@ namespace ReindexerNet.Embedded
                 {
                     try
                     {
+                        Debug.WriteLine("Starting reindexer server...");
                         using (var configYaml = serverConfigYaml.GetHandle())
                             ReindexerBinding.start_reindexer_server(_pServer, configYaml);
+                        Debug.WriteLine("Reindexer server is started.");
                     }
                     catch (Exception e)
                     {
