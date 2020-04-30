@@ -24,7 +24,7 @@ namespace ReindexerNet.EmbeddedTest
 
         private void AssertError(reindexer_error error)
         {
-            //Assert.AreEqual(null, error.what);
+            //Assert.AreEqual(null, error.what)
             Assert.AreEqual(0, error.code);
         }
 
@@ -154,10 +154,10 @@ namespace ReindexerNet.EmbeddedTest
             using (var ser1 = new CJsonWriter())
             {
                 ser1.PutVString(DataTestNamespace);
-                ser1.PutVarCUInt((int)DataFormat.FormatJson);//format);
-                ser1.PutVarCUInt((int)ItemModifyMode.Upsert);//mode);
-                ser1.PutVarCUInt(0);//stateToken);
-                ser1.PutVarCUInt(0);//len(precepts));
+                ser1.PutVarCUInt((int)DataFormat.FormatJson);//format
+                ser1.PutVarCUInt((int)ItemModifyMode.Upsert);//mode
+                ser1.PutVarCUInt(0);//stateToken
+                ser1.PutVarCUInt(0);//len(precepts)
 
                 reindexer_buffer.PinBufferFor(ser1.CurrentBuffer, args =>
                 {
@@ -174,7 +174,7 @@ namespace ReindexerNet.EmbeddedTest
 
                         Assert.AreEqual(1, rawQueryParams.count);
 
-                        var resultp = reader.ReadRawItemParams();
+                        reader.ReadRawItemParams();
 
                         if (rsp.@out.results_ptr != UIntPtr.Zero)
                             AssertError(ReindexerBinding.reindexer_free_buffer(rsp.@out));
@@ -282,7 +282,7 @@ namespace ReindexerNet.EmbeddedTest
                 ser1.PutVarCUInt((int)ItemModifyMode.Upsert);
                 ser1.PutVarCUInt(0);
                 ser1.PutVarCUInt(0);
-                
+
                 reindexer_buffer.PinBufferFor(ser1.CurrentBuffer, args =>
                 {
                     Parallel.For(0, 300000, i =>
@@ -301,7 +301,7 @@ namespace ReindexerNet.EmbeddedTest
 
                             Assert.AreEqual(1, rawQueryParams.count);
 
-                            var resultp = reader.ReadRawItemParams();
+                            reader.ReadRawItemParams();
                         }
                         finally
                         {
@@ -313,8 +313,10 @@ namespace ReindexerNet.EmbeddedTest
             }
 
             Thread.Sleep(6000);
+#pragma warning disable S1215 // "GC.Collect" should not be called
             GC.Collect();
             GC.WaitForPendingFinalizers();
+#pragma warning restore S1215 // "GC.Collect" should not be called
             AssertError(ReindexerBinding.reindexer_truncate_namespace(_rx, nsName.GetHandle(), _ctxInfo));
         }
     }

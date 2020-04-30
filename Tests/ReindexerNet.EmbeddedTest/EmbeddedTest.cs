@@ -1,10 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReindexerNet.Embedded;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Utf8Json;
 
@@ -220,6 +217,7 @@ namespace ReindexerNet.EmbeddedTest
             }
             catch
             {
+                //ignored because testing rollback
             }
             Assert.AreEqual(0, Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10502").QueryTotalItems);
         }

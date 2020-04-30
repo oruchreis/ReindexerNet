@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 #if NET472
-using System.Linq;
 using System.Diagnostics;
 #else
 using System.Runtime.Loader;
@@ -16,6 +15,7 @@ using System.Runtime.Loader;
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
 using System.Linq;
+using System.Diagnostics;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
@@ -152,7 +152,7 @@ namespace ReindexerNet.Embedded.Internal
 
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
-        
+
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern void reindexer_enable_logger([MarshalAs(UnmanagedType.FunctionPtr)]LogWriterAction logWriter);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -247,7 +247,7 @@ namespace ReindexerNet.Embedded.Internal
                         throw new FileNotFoundException("LoadLibrary failed: " + path);
                     }
                     _dllPath = path;
-                    return; //addr;
+                    return; //addr
                 }
             }
 
@@ -320,13 +320,16 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     platformPath = Path.Combine("runtimes", "win" + arch, "native", $"{unmanagedDllName}.dll");
                 }
-
+                
                 foreach (var searchBinPath in _searchBinPaths)
                 {
                     fullPath = Path.Combine(searchBinPath, platformPath);
                     if (File.Exists(fullPath))
                         break;
                 }
+
+                if (string.IsNullOrEmpty(fullPath))
+                    throw new FileNotFoundException($"Couldn't find {platformPath} in these search paths: {string.Join(" ,", _searchBinPaths)}", unmanagedDllName);
 
                 try
                 {
@@ -402,7 +405,10 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     destroy_reindexer(rx); //to unlock dbs
                 }
-                catch { }
+                catch
+                {
+                    //ignored because of runtime is unloading.
+                }
             }
 
             foreach (var psvc in _serverInstances.Keys)
@@ -411,7 +417,10 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     destroy_reindexer_server(psvc); //to unlock dbs
                 }
-                catch { }
+                catch
+                {
+                    //ignored because of runtime is unloading.
+                }
             }
         }
     }
