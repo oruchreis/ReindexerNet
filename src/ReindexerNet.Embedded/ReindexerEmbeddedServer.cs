@@ -14,7 +14,7 @@ namespace ReindexerNet.Embedded
     /// </summary>
     public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
-        private readonly UIntPtr _pServer;
+        private UIntPtr _pServer;
         /// <summary>
         /// Creates a reindexer server instance
         /// </summary>
@@ -63,7 +63,7 @@ namespace ReindexerNet.Embedded
         /// <item><term>user</term><description>(default null)</description></item>
         /// <item><term>pass</term><description>(default null)</description></item>
         /// <item><term>engine</term><description>(default leveldb)</description></item>
-        /// <item><term>autorepair</term><description>(default false)</description></item>
+        /// <item><term>autorepair</term><description>(default true)</description></item>
         /// <item><term>logfile</term><description>(default none)</description></item>
         /// <item><term>loglevel</term><description>(default info)</description></item>
         /// <item><term>clientsstats</term><description>(default false)</description></item>
@@ -88,7 +88,7 @@ namespace ReindexerNet.Embedded
                 ["httpaddr"] = "0.0.0.0:9088",                                                 // 1
                 ["rpcaddr"] = "0.0.0.0:6534",                                                  // 2
                 ["engine"] = "leveldb",                                                        // 3
-                ["autorepair"] = "false",                                                      // 4
+                ["autorepair"] = "true",                                                       // 4
                 ["logfile"] = "",                                                              // 5
                 ["loglevel"] = "info",                                                         // 6
                 ["clientsstats"] = "false",                                                    // 7
@@ -155,7 +155,6 @@ namespace ReindexerNet.Embedded
                         Debug.WriteLine("Starting reindexer server...");
                         using (var configYaml = serverConfigYaml.GetHandle())
                             ReindexerBinding.start_reindexer_server(_pServer, configYaml);
-                        Debug.WriteLine("Reindexer server is started.");
                     }
                     catch (Exception e)
                     {
@@ -181,7 +180,7 @@ namespace ReindexerNet.Embedded
                     throw new TimeoutException($"Reindexer Embedded Server couldn't be started in {waitTimeout.TotalSeconds} seconds. Check configs.");
                 Thread.Sleep(100);
             }
-
+            Debug.WriteLine("Reindexer server is started.");
             using (var dbNameRx = dbName.GetHandle())
             using (var userRx = user.GetHandle())
             using (var passRx = pass.GetHandle())
@@ -193,9 +192,14 @@ namespace ReindexerNet.Embedded
         /// </summary>
         public void Stop()
         {
+            Debug.WriteLine("Stopping reindexer server...");
+            foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
+                CloseNamespace(ns.Name);
+
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server(_pServer)
             );
+
             Rx = default;
         }
 
@@ -213,7 +217,8 @@ namespace ReindexerNet.Embedded
         protected override void Dispose(bool disposing)
         {
             Stop();
-            base.Dispose(disposing);
+            ReindexerBinding.destroy_reindexer_server(_pServer);
+            _pServer = default;
         }
     }
 }

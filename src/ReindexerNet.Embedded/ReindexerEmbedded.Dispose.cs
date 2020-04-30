@@ -6,14 +6,17 @@ namespace ReindexerNet.Embedded
     public partial class ReindexerEmbedded
     {
         private bool disposedValue; // To detect redundant calls        
-
+        protected internal const string GetNamespacesQuery = "select name FROM #namespaces";
         /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
-                if (disposing)
+                if (disposing && Rx != default)
                 {
+                    foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
+                        CloseNamespace(ns.Name);
+
                     ReindexerBinding.destroy_reindexer(Rx);
                 }
 

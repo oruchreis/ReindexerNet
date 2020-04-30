@@ -180,8 +180,14 @@ namespace ReindexerNet.Embedded.Internal
         public static extern reindexer_error start_reindexer_server(uintptr_t psvc, reindexer_string config);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern reindexer_error stop_reindexer_server(uintptr_t psvc);
-        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public static extern reindexer_error get_reindexer_instance(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
+        [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto, EntryPoint = nameof(get_reindexer_instance))]
+        public static extern reindexer_error get_reindexer_instance_native(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx);
+        public static reindexer_error get_reindexer_instance(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx)
+        {
+            var result = get_reindexer_instance_native(psvc, dbname, user, pass, ref rx);
+            _instances[rx] = true;
+            return result;
+        }
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public static extern int check_server_ready(uintptr_t psvc);
         [DllImport(BindingLibrary, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -193,7 +199,7 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
-        public const string ReindexerVersion = "v2.8.0";
+        public const string ReindexerVersion = "v2.9.0";
 #pragma warning disable S3963 // "static" fields should be initialized inline
         static ReindexerBinding()
         {
@@ -417,6 +423,7 @@ namespace ReindexerNet.Embedded.Internal
             {
                 try
                 {
+                    stop_reindexer_server(psvc);
                     destroy_reindexer_server(psvc); //to unlock dbs
                 }
                 catch

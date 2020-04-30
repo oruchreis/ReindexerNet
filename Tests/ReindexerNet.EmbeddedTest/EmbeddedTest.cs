@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReindexerNet.Embedded;
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Utf8Json;
@@ -12,29 +14,35 @@ namespace ReindexerNet.EmbeddedTest
     {
         protected virtual IReindexerClient Client { get; set; }
         protected virtual string NsName { get; set; } = nameof(EmbeddedTest);
+        protected virtual string DbPath { get; set; }
 
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public virtual async Task InitAsync()
         {
+            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbedded", TestContext.TestName);
+            if (Directory.Exists(DbPath))
+                Directory.Delete(DbPath, true);
             Client = new ReindexerEmbedded();
             ReindexerEmbedded.EnableLogger(Log);
-            await Client.ConnectAsync("ReindexerEmbeddedClientTest");
+            await Client.ConnectAsync(DbPath);
             await Client.OpenNamespaceAsync(NsName);
             await Client.TruncateNamespaceAsync(NsName);
         }
 
-        void Log(LogLevel level, string msg)
+        protected void Log(LogLevel level, string msg)
         {
             if (level <= LogLevel.Info)
-                TestContext.WriteLine("{0}: {1}", level, msg);
+                Debug.WriteLine("{0}:\t[{1}] {2}", DateTime.Now, level, msg);
         }
 
         [TestCleanup]
         public virtual void Cleanup()
         {
             Client.Dispose();
+            if (Directory.Exists(DbPath))
+                Directory.Delete(DbPath, true);
         }
 
         private async Task AddIndexesAsync()
@@ -225,6 +233,8 @@ namespace ReindexerNet.EmbeddedTest
         [TestMethod]
         public async Task Utf8Test()
         {
+            await AddIndexesAsync();
+
             var utf8Str = "İŞĞÜÇÖışğüöç   بِسْــــــــــــــــــــــمِ اﷲِارَّحْمَنِ ارَّحِيم";
             await Client.UpsertAsync(NsName,
                     new TestDocument

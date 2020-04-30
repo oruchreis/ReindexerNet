@@ -58,7 +58,7 @@ namespace ReindexerNet.EmbeddedTest
         {
             AssertError(
                 ReindexerBinding.reindexer_connect(_rx,
-                "builtin://TestDb".GetHandle(),
+                $"builtin://{Path.Combine(Path.GetTempPath(), "ReindexerBindingTest")}".GetHandle(),
                 new ConnectOpts
                 {
                     options = ConnectOpt.kConnectOptAllowNamespaceErrors,
@@ -76,10 +76,10 @@ namespace ReindexerNet.EmbeddedTest
         [TestMethod]
         public void EnableStorage()
         {
-            var dbName = "TestDbForEnableStorage";
-            if (Directory.Exists(dbName))
-                Directory.Delete(dbName, true);
-            AssertError(ReindexerBinding.reindexer_enable_storage(ReindexerBinding.init_reindexer(), dbName.GetHandle(), _ctxInfo));
+            var dbPath = Path.Combine(Path.GetTempPath(), "TestDbForEnableStorage");
+            if (Directory.Exists(dbPath))
+                Directory.Delete(dbPath, true);
+            AssertError(ReindexerBinding.reindexer_enable_storage(ReindexerBinding.init_reindexer(), dbPath.GetHandle(), _ctxInfo));
         }
 
         [TestMethod]

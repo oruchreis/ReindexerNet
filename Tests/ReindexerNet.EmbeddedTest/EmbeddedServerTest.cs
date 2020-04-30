@@ -1,5 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReindexerNet.Embedded;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReindexerNet.EmbeddedTest
@@ -12,20 +16,33 @@ namespace ReindexerNet.EmbeddedTest
         protected override IReindexerClient Client { get; set; } = new ReindexerEmbeddedServer();
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
-        private void Log(LogLevel level, string msg)
-        {
-            if (level <= LogLevel.Info)
-                TestContext.WriteLine("{0}: {1}", level, msg);
-        }
+        private string _logFile;
 
         [TestInitialize]
         public override async Task InitAsync()
         {
-            Client.Connect("dbname=ServerTest;storagepath=.\\EmbeddedServer;httpAddr=127.0.0.1:9088;rpcAddr=127.0.0.1:6354;logFile=stdout;loglevel=trace");
-            ReindexerEmbeddedServer.EnableLogger(Log);
+            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer", TestContext.TestName);
+            if (Directory.Exists(DbPath))
+                Directory.Delete(DbPath, true);
+            _logFile = Path.Combine(DbPath,"..", TestContext.TestName+".log");
+            if (File.Exists(_logFile))
+                File.Delete(_logFile);
+            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:9088;rpcAddr=127.0.0.1:6354;logFile={_logFile}");
 
             Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName).ConfigureAwait(false);
+        }
+
+        [TestCleanup]
+        public override void Cleanup()
+        {
+            Client.Dispose();
+            Thread.Sleep(100);
+            var fs = new FileStream(_logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using(var textReader = new StreamReader(fs))
+                TestContext.WriteLine(textReader.ReadToEnd());
+            if (Directory.Exists(DbPath))
+                Directory.Delete(DbPath, true);
         }
 
 #pragma warning disable S125 // Sections of code should not be commented out
