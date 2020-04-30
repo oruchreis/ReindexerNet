@@ -51,7 +51,7 @@ jobs:
       run: dotnet test --verbosity normal -f netcoreapp3.1
       
   upload-packages:    
-    needs: [windows-test, ubuntu-test, osx-test]
+    needs: [windows-test, ubuntu-test, osx-test] 
     if: success()
     runs-on: windows-latest
     strategy:
