@@ -38,10 +38,8 @@ namespace ReindexerNet.Embedded
     serverlog: ""{5}""
     corelog: ""{5}""
     httplog: ""{5}""
-    #rpclog: ""{5}""
+    rpclog: ""{5}""
     loglevel: {6}
-  system:
-    user:
   debug:
     pprof: {9}
     allocs: {10}
@@ -129,6 +127,7 @@ namespace ReindexerNet.Embedded
         /// </summary>
         public bool IsStarted => Interlocked.Read(ref _isServerThreadStarted) == 1;
         private readonly object _serverStartupLocker = new object();
+        private Thread _serverThread;
 
         /// <summary>
         /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(string, ConnectionOptions)"/> instead.
@@ -147,8 +146,7 @@ namespace ReindexerNet.Embedded
                 {
                     return;
                 }
-
-                new Thread(() =>
+                _serverThread = new Thread(() =>
                 {
                     try
                     {
@@ -166,9 +164,9 @@ namespace ReindexerNet.Embedded
                     }
                 })
                 {
-                    Name = nameof(ReindexerEmbeddedServer),
                     IsBackground = true
-                }.Start();
+                };
+                _serverThread.Start();
                 Interlocked.Exchange(ref _isServerThreadStarted, 1);
             }
 
@@ -199,8 +197,12 @@ namespace ReindexerNet.Embedded
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server(_pServer)
             );
+            
+            lock (_serverStartupLocker)
+                _serverThread.Join();
 
             Rx = default;
+            Debug.WriteLine("Reindexer server is stopped.");
         }
 
         /// <summary>

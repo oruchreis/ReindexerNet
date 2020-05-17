@@ -13,6 +13,8 @@ namespace ReindexerNet.EmbeddedTest
     public class EmbeddedServerTest : EmbeddedTest
 #pragma warning restore S2187 // TestCases should contain tests
     {
+        private static long _testIndex = -1;
+
         protected override IReindexerClient Client { get; set; } = new ReindexerEmbeddedServer();
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
@@ -21,13 +23,14 @@ namespace ReindexerNet.EmbeddedTest
         [TestInitialize]
         public override async Task InitAsync()
         {
+            var index = Interlocked.Increment(ref _testIndex)*2;
             DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer", TestContext.TestName);
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
-            _logFile = Path.Combine(DbPath,"..", TestContext.TestName+".log");
+            _logFile = Path.Combine(DbPath, "..", TestContext.TestName + ".log");
             if (File.Exists(_logFile))
                 File.Delete(_logFile);
-            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:9088;rpcAddr=127.0.0.1:6354;logFile={_logFile}");
+            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile}");
 
             Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName).ConfigureAwait(false);
@@ -39,7 +42,7 @@ namespace ReindexerNet.EmbeddedTest
             Client.Dispose();
             Thread.Sleep(100);
             var fs = new FileStream(_logFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using(var textReader = new StreamReader(fs))
+            using (var textReader = new StreamReader(fs))
                 TestContext.WriteLine(textReader.ReadToEnd());
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
