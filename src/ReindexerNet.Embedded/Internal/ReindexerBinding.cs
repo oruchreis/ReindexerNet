@@ -285,6 +285,12 @@ namespace ReindexerNet.Embedded.Internal
             }
         }
 #else
+        
+		private const int RTLD_LAZY = 0x00001; //Only resolve symbols as needed
+		private const int RTLD_GLOBAL = 0x00100; //Make symbols available to libraries loaded later
+		[DllImport("dl")]
+		private static extern IntPtr dlopen (string file, int mode);
+
         private class CustomAssemblyLoadContext : AssemblyLoadContext
         {
             private static readonly string[] _searchBinPaths = new[]{
@@ -326,7 +332,7 @@ namespace ReindexerNet.Embedded.Internal
                 {
                     platformPath = Path.Combine("runtimes", "win" + arch, "native", $"{unmanagedDllName}.dll");
                 }
-                
+
                 foreach (var searchBinPath in _searchBinPaths)
                 {
                     fullPath = Path.Combine(searchBinPath, platformPath);
@@ -336,11 +342,20 @@ namespace ReindexerNet.Embedded.Internal
 
                 if (string.IsNullOrEmpty(fullPath))
                     throw new FileNotFoundException($"Couldn't find {platformPath} in these search paths: {string.Join(" ,", _searchBinPaths)}", unmanagedDllName);
-                
+
                 Debug.WriteLine($"Trying to load native library from '{fullPath}'");
 
                 try
                 {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        const string varName = "DYLD_LIBRARY_PATH";
+                        string curVar = Environment.GetEnvironmentVariable(varName) ?? string.Empty;
+                        var parts = curVar.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        Environment.SetEnvironmentVariable(varName, string.Join(";", parts.Union(new []{ Directory.GetParent(fullPath).FullName })), EnvironmentVariableTarget.Process);
+                        return dlopen(fullPath, RTLD_LAZY | RTLD_GLOBAL);
+                    }
+
                     return LoadUnmanagedDllFromPath(fullPath);
                 }
                 catch (Exception e)

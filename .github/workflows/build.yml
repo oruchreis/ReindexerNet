@@ -39,8 +39,6 @@ jobs:
     runs-on: macos-latest
     env:
       DYLD_PRINT_LIBRARIES: 1
-      DYLD_PRINT_LIBRARIES_POST_LAUNCH: 1
-      DYLD_PRINT_STATISTICS: 1
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
