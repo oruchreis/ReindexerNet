@@ -327,7 +327,7 @@ namespace ReindexerNet.Embedded.Internal
         static ReindexerBinding()
         {
 #if NET472
-            AppDomain.CurrentDomain.DomainUnload += (_,_)=> ReindexerBindingUnloading();
+            AppDomain.CurrentDomain.DomainUnload += (_, _) => ReindexerBindingUnloading();
 #else
             (AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default).Unloading += (_)=> ReindexerBindingUnloading();
 #endif
@@ -481,6 +481,12 @@ namespace ReindexerNet.Embedded.Internal
                 }
                 else
                 {
+                    IntPtr candidate = Windows.GetProcAddress(handle, symbolName);
+                    if (candidate != IntPtr.Zero)
+                    {
+                        return candidate;
+                    }
+
                     // Yes, we could potentially predict the size... but it's a lot simpler to just try
                     // all the candidates. Most functions have a suffix of @0, @4 or @8 so we won't be trying
                     // many options - and if it takes a little bit longer to fail if we've really got the wrong
@@ -488,7 +494,7 @@ namespace ReindexerNet.Embedded.Internal
                     symbolName = "_" + symbolName + "@";
                     for (int stackSize = 0; stackSize < 128; stackSize += 4)
                     {
-                        IntPtr candidate = Windows.GetProcAddress(handle, symbolName + stackSize);
+                        candidate = Windows.GetProcAddress(handle, symbolName + stackSize);
                         if (candidate != IntPtr.Zero)
                         {
                             return candidate;
