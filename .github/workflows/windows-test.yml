@@ -1,0 +1,26 @@
+name: win-x64, win-x86 Test
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  windows-test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        runtime: [ 'win-x64', 'win-x86' ]
+        dotnet-sdk: ['2.2.103', '3.1.101']
+        include: 
+          - dotnet-sdk: '2.2.103'
+            framework: netcoreapp2.2
+          - dotnet-sdk: '3.1.101'
+            framework: netcoreapp3.1
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet-sdk }}
+    - name: Test ${{ matrix.runtime }}
+      run: dotnet test --runtime ${{ matrix.runtime }} --verbosity normal -f ${{ matrix.framework }} --logger "console;verbosity=detailed"
