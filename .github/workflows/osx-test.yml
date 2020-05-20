@@ -1,0 +1,19 @@
+name: osx-x64 Test
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  osx-test:
+    runs-on: macos-latest
+    env:
+      DYLD_PRINT_LIBRARIES: 1
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Test
+      run: dotnet test --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"

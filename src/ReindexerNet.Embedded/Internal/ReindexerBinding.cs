@@ -545,6 +545,8 @@ namespace ReindexerNet.Embedded.Internal
                     Debug.WriteLine($"The native library is unloaded successfully.");
                 else
                     Debug.WriteLine($"The native library couldn't unload.");
+
+                NativeLibraryAddr = default;
             }
             catch (Exception ex)
             {

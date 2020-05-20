@@ -11,11 +11,14 @@ jobs:
       matrix:
         runtime: [ 'win-x64', 'win-x86' ]
         dotnet-sdk: ['2.2.103', '3.1.101']
-        include: 
+        include:
           - dotnet-sdk: '2.2.103'
             framework: netcoreapp2.2
           - dotnet-sdk: '3.1.101'
             framework: netcoreapp3.1
+        exclude:
+          - runtime: 'win-x86'
+            dotnet-sdk: '2.2.103'
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
