@@ -338,7 +338,7 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S3963 // "static" fields should be initialized inline
 
         private static readonly HashSet<string> _searchBinPaths = new HashSet<string>{
-                AppDomain.CurrentDomain?.BaseDirectory ?? "",
+                $"{AppDomain.CurrentDomain?.BaseDirectory ?? ""}\\bin",
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly()?.Location ?? "."),
                 Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? "."),
                 Directory.GetCurrentDirectory(),
@@ -366,30 +366,38 @@ namespace ReindexerNet.Embedded.Internal
         private static IntPtr LoadNativeLibrary()
         {
             string arch = Environment.Is64BitProcess ? "-x64" : "-x86";
-            var fullPath = "";
+            var fullPath = string.Empty;
             string platformPath;
+            string libraryFile;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                platformPath = Path.Combine("runtimes", "osx" + arch, "native", $"lib{BindingLibrary}.dylib");
+                libraryFile = $"lib{BindingLibrary}.dylib";
+                platformPath = Path.Combine("runtimes", "osx" + arch, "native");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                platformPath = Path.Combine("runtimes", "linux" + arch, "native", $"lib{BindingLibrary}.so");
+                libraryFile = $"lib{BindingLibrary}.so";
+                platformPath = Path.Combine("runtimes", "linux" + arch, "native");
             }
             else // RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             {
-                platformPath = Path.Combine("runtimes", "win" + arch, "native", $"{BindingLibrary}.dll");
+                libraryFile = $"{BindingLibrary}.dll";
+                platformPath = Path.Combine("runtimes", "win" + arch, "native");
             }
 
             foreach (var searchBinPath in _searchBinPaths)
             {
-                fullPath = Path.Combine(searchBinPath, platformPath);
+                fullPath = Path.Combine(searchBinPath, platformPath, libraryFile);
                 if (File.Exists(fullPath))
                     break;
+                fullPath = Path.Combine(searchBinPath, libraryFile);
+                if (File.Exists(fullPath))
+                    break;
+                fullPath = null;
             }
 
             if (string.IsNullOrEmpty(fullPath))
-                throw new FileNotFoundException($"Couldn't find {platformPath} in these search paths: {string.Join(" ,", _searchBinPaths)}", BindingLibrary);
+                throw new FileNotFoundException($"Couldn't find {platformPath}/{libraryFile} in these search paths: {string.Join(" ,", _searchBinPaths)}", BindingLibrary);
 
             Debug.WriteLine($"Trying to load native library from '{fullPath}'");
 
