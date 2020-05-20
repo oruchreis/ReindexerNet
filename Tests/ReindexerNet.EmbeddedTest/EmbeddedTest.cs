@@ -40,7 +40,7 @@ namespace ReindexerNet.EmbeddedTest
         [TestCleanup]
         public virtual void Cleanup()
         {
-            Client.Dispose();
+            Client?.Dispose();
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
         }
