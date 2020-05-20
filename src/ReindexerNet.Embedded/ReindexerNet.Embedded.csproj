@@ -22,6 +22,7 @@
     <PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
