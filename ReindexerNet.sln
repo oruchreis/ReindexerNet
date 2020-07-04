@@ -14,8 +14,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F69AC575-84FF-44F7-9BD7-0FCAD8A6D722}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yml = .github\workflows\build.yml
+		CHANGELOG.md = CHANGELOG.md
 		.github\workflows\linux-test.yml = .github\workflows\linux-test.yml
 		.github\workflows\osx-test.yml = .github\workflows\osx-test.yml
+		README.md = README.md
 		.github\workflows\windows-test.yml = .github\workflows\windows-test.yml
 	EndProjectSection
 EndProject

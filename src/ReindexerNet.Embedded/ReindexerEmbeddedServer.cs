@@ -164,7 +164,7 @@ namespace ReindexerNet.Embedded
                     }
                 })
                 {
-                    IsBackground = true
+                    IsBackground = false
                 };
                 _serverThread.Start();
                 Interlocked.Exchange(ref _isServerThreadStarted, 1);
@@ -197,9 +197,24 @@ namespace ReindexerNet.Embedded
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server(_pServer)
             );
-            
+
+            var waitTimeout = TimeSpan.FromSeconds(10);
+            var startTime = DateTime.UtcNow;
+            while (ReindexerBinding.check_server_ready(_pServer) != 0)
+            {
+                if (DateTime.UtcNow - startTime > waitTimeout)
+                {
+                    Debug.WriteLine($"Reindexer Embedded Server couldn't be stopped in {waitTimeout.TotalSeconds} seconds.");
+                    break;
+                }
+                Thread.Sleep(100);
+            }
+
             lock (_serverStartupLocker)
-                _serverThread.Join();
+            {
+                if (_serverThread.IsAlive)
+                    _serverThread.Join();
+            }
 
             Rx = default;
             Debug.WriteLine("Reindexer server is stopped.");
