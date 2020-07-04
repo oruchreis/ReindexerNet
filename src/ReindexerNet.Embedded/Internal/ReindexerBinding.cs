@@ -319,7 +319,7 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
 
-        public const string ReindexerVersion = "v2.9.0";
+        public const string ReindexerVersion = "v2.9.2";
 
         private static IntPtr NativeLibraryAddr;
 

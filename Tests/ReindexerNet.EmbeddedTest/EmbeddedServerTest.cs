@@ -24,13 +24,14 @@ namespace ReindexerNet.EmbeddedTest
         public override async Task InitAsync()
         {
             var index = Interlocked.Increment(ref _testIndex)*2;
-            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer", TestContext.TestName);
+            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer", TestContext.TestName, Storage.ToString());
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
             _logFile = Path.Combine(DbPath, "..", TestContext.TestName + ".log");
             if (File.Exists(_logFile))
                 File.Delete(_logFile);
-            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile}");
+            var storage = Storage == StorageOption.RocksDb ? "rocksdb": "leveldb";
+            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile};engine={storage}");
 
             Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName).ConfigureAwait(false);

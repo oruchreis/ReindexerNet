@@ -15,18 +15,19 @@ namespace ReindexerNet.EmbeddedTest
         protected virtual IReindexerClient Client { get; set; }
         protected virtual string NsName { get; set; } = nameof(EmbeddedTest);
         protected virtual string DbPath { get; set; }
+        protected virtual StorageOption Storage => StorageOption.LevelDb;
 
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public virtual async Task InitAsync()
         {
-            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbedded", TestContext.TestName);
+            DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbedded", TestContext.TestName, Storage.ToString());
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
             Client = new ReindexerEmbedded();
             ReindexerEmbedded.EnableLogger(Log);
-            await Client.ConnectAsync(DbPath);
+            await Client.ConnectAsync(DbPath, new ConnectionOptions{ Storage = Storage });
             await Client.OpenNamespaceAsync(NsName);
             await Client.TruncateNamespaceAsync(NsName);
         }
