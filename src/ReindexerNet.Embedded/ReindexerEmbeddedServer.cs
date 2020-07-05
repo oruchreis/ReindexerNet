@@ -148,15 +148,16 @@ namespace ReindexerNet.Embedded
                 }
                 _serverThread = new Thread(() =>
                 {
+                    Interlocked.Exchange(ref _isServerThreadStarted, 1);
                     try
                     {
-                        Debug.WriteLine("Starting reindexer server...");
+                        DebugHelper.Log("Starting reindexer server...");
                         using (var configYaml = serverConfigYaml.GetHandle())
                             ReindexerBinding.start_reindexer_server(_pServer, configYaml);
                     }
                     catch (Exception e)
                     {
-                        Debug.WriteLine(e.Message);
+                        DebugHelper.Log(e.Message);
                     }
                     finally
                     {
@@ -167,7 +168,6 @@ namespace ReindexerNet.Embedded
                     IsBackground = false
                 };
                 _serverThread.Start();
-                Interlocked.Exchange(ref _isServerThreadStarted, 1);
             }
 
             var waitTimeout = waitTimeoutForReady ?? TimeSpan.FromSeconds(60);
@@ -178,7 +178,7 @@ namespace ReindexerNet.Embedded
                     throw new TimeoutException($"Reindexer Embedded Server couldn't be started in {waitTimeout.TotalSeconds} seconds. Check configs.");
                 Thread.Sleep(100);
             }
-            Debug.WriteLine("Reindexer server is started.");
+            DebugHelper.Log("Reindexer server is started.");
             using (var dbNameRx = dbName.GetHandle())
             using (var userRx = user.GetHandle())
             using (var passRx = pass.GetHandle())
@@ -190,7 +190,7 @@ namespace ReindexerNet.Embedded
         /// </summary>
         public void Stop()
         {
-            Debug.WriteLine("Stopping reindexer server...");
+            DebugHelper.Log("Stopping reindexer server...");
             foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
                 CloseNamespace(ns.Name);
 
@@ -200,11 +200,11 @@ namespace ReindexerNet.Embedded
 
             var waitTimeout = TimeSpan.FromSeconds(10);
             var startTime = DateTime.UtcNow;
-            while (ReindexerBinding.check_server_ready(_pServer) != 0)
+            while (IsStarted)
             {
                 if (DateTime.UtcNow - startTime > waitTimeout)
                 {
-                    Debug.WriteLine($"Reindexer Embedded Server couldn't be stopped in {waitTimeout.TotalSeconds} seconds.");
+                    DebugHelper.Log($"Reindexer Embedded Server couldn't be stopped in {waitTimeout.TotalSeconds} seconds.");
                     break;
                 }
                 Thread.Sleep(100);
@@ -217,7 +217,7 @@ namespace ReindexerNet.Embedded
             }
 
             Rx = default;
-            Debug.WriteLine("Reindexer server is stopped.");
+            DebugHelper.Log("Reindexer server is stopped.");
         }
 
         /// <summary>

@@ -285,14 +285,16 @@ namespace ReindexerNet.EmbeddedTest
 
                 reindexer_buffer.PinBufferFor(ser1.CurrentBuffer, args =>
                 {
-                    Parallel.For(0, 300000, i =>
+                    Parallel.For(0, 30000, i =>
                     {
                         var dataHandle = reindexer_buffer.From(Encoding.UTF8.GetBytes($"{{\"Id\":{i}, \"Guid\":\"{Guid.NewGuid()}\"}}"));
                         var rsp = ReindexerBinding.reindexer_modify_item_packed(_rx, args, dataHandle.Buffer, _ctxInfo);
                         try
                         {
                             if (rsp.err_code != 0)
+                            {
                                 Assert.AreEqual(null, (string)rsp.@out);
+                            }
 
                             Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
 

@@ -15,14 +15,16 @@ using System.Runtime.Loader;
 using int32_t = System.Int32;
 using uintptr_t = System.UIntPtr;
 using System.Linq;
-using System.Diagnostics;
 using System.Security;
+using ReindexerNet.Embedded.Internal.Helpers;
 
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal
 {
     internal static class ReindexerBinding
     {
+        public const string ReindexerVersion = "v2.10.0";
+
         private const string BindingLibrary = "reindexer_embedded_server";
         private static class Windows
         {
@@ -36,6 +38,7 @@ namespace ReindexerNet.Embedded.Internal
             internal static extern bool FreeLibrary(IntPtr hModule);
         }
 
+#pragma warning disable IDE1006 // Naming Styles
         private static class Linux
         {
             [DllImport("libdl.so")]
@@ -51,7 +54,7 @@ namespace ReindexerNet.Embedded.Internal
             internal static extern int dlclose(IntPtr handle);
         }
 
-        private static class MacOSX
+        private static class MacOsx
         {
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlopen(string filename, int flags);
@@ -81,7 +84,7 @@ namespace ReindexerNet.Embedded.Internal
             internal static extern int dlclose(IntPtr handle);
         }
 
-        private static class CoreCLR
+        private static class CoreClr
         {
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlopen(string filename, int flags);
@@ -95,23 +98,27 @@ namespace ReindexerNet.Embedded.Internal
             [DllImport("libcoreclr.so")]
             internal static extern int dlclose(IntPtr handle);
         }
+#pragma warning restore IDE1006 // Naming Styles
 
         // flags for dlopen
-        const int RTLD_LAZY = 1;
-        const int RTLD_GLOBAL = 8;
+        private const int RTLD_LAZY = 1;
+        private const int RTLD_GLOBAL = 8;
 
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
+#pragma warning disable 0649 // is never assigned to, and will always have its default value null
+#pragma warning disable S3459 // Unassigned members should be removed
 
         #region reindexer_c.h
         public static readonly Delegate.init_reindexer init_reindexer_native;
-        private static ConcurrentDictionary<uintptr_t, bool> _instances = new ConcurrentDictionary<uintptr_t, bool>();
+        private static readonly ConcurrentDictionary<uintptr_t, bool> _instances = new ConcurrentDictionary<uintptr_t, bool>();
         public static uintptr_t init_reindexer()
         {
             var newInstance = init_reindexer_native();
             _instances[newInstance] = true;
             return newInstance;
         }
+
         private static readonly Delegate.destroy_reindexer destroy_reindexer_native;
         public static void destroy_reindexer(uintptr_t rx)
         {
@@ -131,10 +138,12 @@ namespace ReindexerNet.Embedded.Internal
         public static readonly Delegate.reindexer_add_index reindexer_add_index;
         public static readonly Delegate.reindexer_update_index reindexer_update_index;
         public static readonly Delegate.reindexer_drop_index reindexer_drop_index;
+        public static readonly Delegate.reindexer_set_schema reindexer_set_schema;
         public static readonly Delegate.reindexer_start_transaction reindexer_start_transaction;
         public static readonly Delegate.reindexer_modify_item_packed_tx reindexer_modify_item_packed_tx;
         public static readonly Delegate.reindexer_update_query_tx reindexer_update_query_tx;
         public static readonly Delegate.reindexer_delete_query_tx reindexer_delete_query_tx;
+
         private static readonly Delegate.reindexer_commit_transaction reindexer_commit_transaction_native;
         public static reindexer_ret reindexer_commit_transaction(uintptr_t rx, uintptr_t tr, reindexer_ctx_info ctx_info)
         {
@@ -143,30 +152,35 @@ namespace ReindexerNet.Embedded.Internal
         }
 
         public static readonly Delegate.reindexer_rollback_transaction reindexer_rollback_transaction;
+
         private static readonly Delegate.reindexer_modify_item_packed reindexer_modify_item_packed_native;
         public static reindexer_ret reindexer_modify_item_packed(uintptr_t rx, reindexer_buffer args, reindexer_buffer data, reindexer_ctx_info ctx_info)
         {
             _responseBufferConcurrenyLimit.Wait();
             return reindexer_modify_item_packed_native(rx, args, data, ctx_info);
         }
+
         private static readonly Delegate.reindexer_select reindexer_select_native;
         public static reindexer_ret reindexer_select(uintptr_t rx, reindexer_string query, int as_json, int32_t[] pt_versions /* int32_t* */, int pt_versions_count, reindexer_ctx_info ctx_info)
         {
             _responseBufferConcurrenyLimit.Wait();
             return reindexer_select_native(rx, query, as_json, pt_versions, pt_versions_count, ctx_info);
         }
+
         private static readonly Delegate.reindexer_select_query reindexer_select_query_native;
         public static reindexer_ret reindexer_select_query(uintptr_t rx, reindexer_buffer @in, int as_json, int32_t[] pt_versions /* int32_t* */, int pt_versions_count, reindexer_ctx_info ctx_info)
         {
             _responseBufferConcurrenyLimit.Wait();
             return reindexer_select_query_native(rx, @in, as_json, pt_versions, pt_versions_count, ctx_info);
         }
+
         private static readonly Delegate.reindexer_delete_query reindexer_delete_query_native;
         public static reindexer_ret reindexer_delete_query(uintptr_t rx, reindexer_buffer @in, reindexer_ctx_info ctx_info)
         {
             _responseBufferConcurrenyLimit.Wait();
             return reindexer_delete_query_native(rx, @in, ctx_info);
         }
+
         private static readonly Delegate.reindexer_update_query reindexer_update_query_native;
         public static reindexer_ret reindexer_update_query(uintptr_t rx, reindexer_buffer @in, reindexer_ctx_info ctx_info)
         {
@@ -177,7 +191,9 @@ namespace ReindexerNet.Embedded.Internal
         public static readonly Delegate.reindexer_free_buffers reindexer_free_buffers;
         public static readonly Delegate.reindexer_commit reindexer_commit;
         public static readonly Delegate.reindexer_put_meta reindexer_put_meta;
+
         private static readonly Delegate.reindexer_get_meta reindexer_get_meta_native;
+
         public static reindexer_ret reindexer_get_meta(uintptr_t rx, reindexer_string ns, reindexer_string key, reindexer_ctx_info ctx_info)
         {
             _responseBufferConcurrenyLimit.Wait();
@@ -189,6 +205,7 @@ namespace ReindexerNet.Embedded.Internal
         #endregion
 
         #region server_c.h
+
         private static readonly Delegate.init_reindexer_server init_reindexer_server_native;
         private static ConcurrentDictionary<uintptr_t, bool> _serverInstances = new ConcurrentDictionary<uintptr_t, bool>();
         public static uintptr_t init_reindexer_server()
@@ -197,6 +214,7 @@ namespace ReindexerNet.Embedded.Internal
             _serverInstances[newInstance] = true;
             return newInstance;
         }
+
         private static readonly Delegate.destroy_reindexer_server destroy_reindexer_server_native;
         public static void destroy_reindexer_server(uintptr_t psvc)
         {
@@ -205,6 +223,7 @@ namespace ReindexerNet.Embedded.Internal
         }
         public static readonly Delegate.start_reindexer_server start_reindexer_server;
         public static readonly Delegate.stop_reindexer_server stop_reindexer_server;
+
         private static readonly Delegate.get_reindexer_instance get_reindexer_instance_native;
         public static reindexer_error get_reindexer_instance(uintptr_t psvc, reindexer_string dbname, reindexer_string user, reindexer_string pass, ref uintptr_t rx)
         {
@@ -243,12 +262,16 @@ namespace ReindexerNet.Embedded.Internal
             public delegate reindexer_error reindexer_rename_namespace(uintptr_t rx, reindexer_string srcNsName, reindexer_string dstNsName, reindexer_ctx_info ctx_info);
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate reindexer_error reindexer_close_namespace(uintptr_t rx, reindexer_string nsName, reindexer_ctx_info ctx_info);
+
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate reindexer_error reindexer_add_index(uintptr_t rx, reindexer_string nsName, reindexer_string indexDefJson, reindexer_ctx_info ctx_info);
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate reindexer_error reindexer_update_index(uintptr_t rx, reindexer_string nsName, reindexer_string indexDefJson, reindexer_ctx_info ctx_info);
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate reindexer_error reindexer_drop_index(uintptr_t rx, reindexer_string nsName, reindexer_string index, reindexer_ctx_info ctx_info);
+            [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+            public delegate reindexer_error reindexer_set_schema(uintptr_t rx, reindexer_string nsName, reindexer_string index, reindexer_ctx_info ctx_info);
+
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate reindexer_tx_ret reindexer_start_transaction(uintptr_t rx, reindexer_string nsName);
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -290,7 +313,7 @@ namespace ReindexerNet.Embedded.Internal
             public delegate reindexer_error reindexer_cancel_context(reindexer_ctx_info ctx_info, ctx_cancel_type how);
 
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-            public delegate void reindexer_enable_logger([MarshalAs(UnmanagedType.FunctionPtr)]LogWriterAction logWriter);
+            public delegate void reindexer_enable_logger([MarshalAs(UnmanagedType.FunctionPtr)] LogWriterAction logWriter);
             [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
             public delegate void reindexer_disable_logger();
             #endregion
@@ -316,10 +339,10 @@ namespace ReindexerNet.Embedded.Internal
             public delegate void malloc_free(IntPtr ptr);
         }
 
+#pragma warning restore S3459 // Unassigned members should be removed
+#pragma warning restore 0649 // is never assigned to, and will always have its default value null
 #pragma warning restore S101 // Types should be named in PascalCase
 #pragma warning restore IDE1006 // Naming Styles
-
-        public const string ReindexerVersion = "v2.9.2";
 
         private static IntPtr NativeLibraryAddr;
 
@@ -329,7 +352,7 @@ namespace ReindexerNet.Embedded.Internal
 #if NET472
             AppDomain.CurrentDomain.DomainUnload += (_, _) => ReindexerBindingUnloading();
 #else
-            (AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default).Unloading += (_)=> ReindexerBindingUnloading();
+            (AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly()) ?? AssemblyLoadContext.Default).Unloading += (_) => ReindexerBindingUnloading();
 #endif
             LoadAndBindNativeLibrary();
 
@@ -399,7 +422,7 @@ namespace ReindexerNet.Embedded.Internal
             if (string.IsNullOrEmpty(fullPath))
                 throw new FileNotFoundException($"Couldn't find {platformPath}/{libraryFile} in these search paths: {string.Join(" ,", _searchBinPaths)}", BindingLibrary);
 
-            Debug.WriteLine($"Trying to load native library from '{fullPath}'");
+            DebugHelper.Log($"Trying to load native library from '{fullPath}'");
 
             try
             {
@@ -407,7 +430,7 @@ namespace ReindexerNet.Embedded.Internal
                 if (errorMsg != null)
                     throw new InvalidOperationException(errorMsg);
 
-                Debug.WriteLine($"The native library loaded from '{fullPath}'");
+                DebugHelper.Log($"The native library loaded from '{fullPath}'");
                 return addr;
             }
             catch (Exception e)
@@ -431,13 +454,13 @@ namespace ReindexerNet.Embedded.Internal
                 }
                 if (Platform.IsNetCore)
                 {
-                    return LoadLibraryPosix(CoreCLR.dlopen, CoreCLR.dlerror, libraryPath, out errorMsg);
+                    return LoadLibraryPosix(CoreClr.dlopen, CoreClr.dlerror, libraryPath, out errorMsg);
                 }
                 return LoadLibraryPosix(Linux.dlopen, Linux.dlerror, libraryPath, out errorMsg);
             }
             if (Platform.IsMacOSX)
             {
-                return LoadLibraryPosix(MacOSX.dlopen, MacOSX.dlerror, libraryPath, out errorMsg);
+                return LoadLibraryPosix(MacOsx.dlopen, MacOsx.dlerror, libraryPath, out errorMsg);
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
@@ -456,13 +479,13 @@ namespace ReindexerNet.Embedded.Internal
                 }
                 if (Platform.IsNetCore)
                 {
-                    return CoreCLR.dlclose(libraryAddr) != 0;
+                    return CoreClr.dlclose(libraryAddr) != 0;
                 }
                 return Linux.dlclose(libraryAddr) != 0;
             }
             if (Platform.IsMacOSX)
             {
-                return MacOSX.dlclose(libraryAddr) != 0;
+                return MacOsx.dlclose(libraryAddr) != 0;
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
@@ -520,13 +543,13 @@ namespace ReindexerNet.Embedded.Internal
                 }
                 if (Platform.IsNetCore)
                 {
-                    return CoreCLR.dlsym(handle, symbolName);
+                    return CoreClr.dlsym(handle, symbolName);
                 }
                 return Linux.dlsym(handle, symbolName);
             }
             if (Platform.IsMacOSX)
             {
-                return MacOSX.dlsym(handle, symbolName);
+                return MacOsx.dlsym(handle, symbolName);
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
@@ -542,15 +565,15 @@ namespace ReindexerNet.Embedded.Internal
 
                 //to unlock file.
                 if (PlatformSpecificFreeLibrary(NativeLibraryAddr))
-                    Debug.WriteLine($"The native library is unloaded successfully.");
+                    DebugHelper.Log($"The native library is unloaded successfully.");
                 else
-                    Debug.WriteLine($"The native library couldn't unload.");
+                    DebugHelper.Log($"The native library couldn't unload.");
 
                 NativeLibraryAddr = default;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                DebugHelper.Log(ex.Message);
             }
         }
 

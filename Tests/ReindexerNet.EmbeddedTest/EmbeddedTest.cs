@@ -1,14 +1,17 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ReindexerNet.Embedded;
+using ReindexerNet.Embedded.Internal.Helpers;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Utf8Json;
+using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace ReindexerNet.EmbeddedTest
 {
+    [TestCategory("LevelDb")]
     [TestClass]
     public class EmbeddedTest
     {
@@ -35,7 +38,7 @@ namespace ReindexerNet.EmbeddedTest
         protected void Log(LogLevel level, string msg)
         {
             if (level <= LogLevel.Info)
-                Debug.WriteLine("{0}:\t[{1}] {2}", DateTime.Now, level, msg);
+                DebugHelper.Log($"[{level}] {msg}");
         }
 
         [TestCleanup]

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ReindexerNet.EmbeddedTest
 {
+    [TestCategory("LevelDb")]
     [TestClass]
 #pragma warning disable S2187 // TestCases should contain tests
     public class EmbeddedServerTest : EmbeddedTest

@@ -2,6 +2,7 @@
 
 namespace ReindexerNet.EmbeddedTest
 {
+    [TestCategory("RocksDb")]
     [TestClass]
 #pragma warning disable S2187 // TestCases should contain tests
     public class RocksDbEmbeddedServerTest: EmbeddedServerTest

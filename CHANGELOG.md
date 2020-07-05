@@ -6,9 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.14-Embedded] - 2020-06-26
 ### Added
-- RocksDb with Jemalloc for Windows
-- Updated Reindexer to 2.9.2
+- Jemalloc as default allocator.
+- RocksDb
 - RocksDb tests
+- Updated Reindexer to 2.10.0
+### Changed
+- Removed Tcmalloc because of dlopen crash.
+- Staticly linked all dependencies except glibc.
 
 ## [0.2.13-Embedded] - 2020-05-21
 ### Added

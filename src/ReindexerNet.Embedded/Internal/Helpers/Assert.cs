@@ -20,7 +20,7 @@ namespace ReindexerNet.Embedded.Internal.Helpers
             if (error.code != 0)
             {
                 var errorStr = Marshal.PtrToStringAnsi(error.what);
-                ReindexerBinding.malloc_free(error.what);
+                //ReindexerBinding.malloc_free(error.what); //got double free error with jemalloc and tcmalloc.
                 throw new ReindexerException(error.code, errorStr);
             }
         }
