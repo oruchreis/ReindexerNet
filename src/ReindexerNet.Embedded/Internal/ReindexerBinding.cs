@@ -101,8 +101,19 @@ namespace ReindexerNet.Embedded.Internal
 #pragma warning restore IDE1006 // Naming Styles
 
         // flags for dlopen
-        private const int RTLD_LAZY = 1;
-        private const int RTLD_GLOBAL = 8;
+        
+        private const int RTLD_LAZY = 0x00001;        /* Lazy function call binding.  */
+        private const int RTLD_NOW = 0x00002;      /* Immediate function call binding.  */
+        private const int RTLD_DEEPBIND = 0x00008;        /* Use deep binding.  */
+        /* If the following bit is set in the MODE argument to `dlopen',
+           the symbols of the loaded object and its dependencies are made
+           visible as if the object were linked directly into the program.  */
+        private const int RTLD_GLOBAL = 0x00100;
+        /* Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
+           The implementation does this by default and so we can define the
+           value to zero.  */
+        private const int RTLD_LOCAL = 0;
+
 
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
@@ -493,7 +504,7 @@ namespace ReindexerNet.Embedded.Internal
         private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
         {
             errorMsg = null;
-            IntPtr ret = dlopenFunc(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+            IntPtr ret = dlopenFunc(libraryPath, RTLD_LOCAL + RTLD_NOW);
             if (ret == IntPtr.Zero)
             {
                 errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());

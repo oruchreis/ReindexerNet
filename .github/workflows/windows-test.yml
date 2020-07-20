@@ -9,6 +9,7 @@ jobs:
     runs-on: windows-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
     strategy:
       matrix:
         runtime: [ 'win-x64', 'win-x86' ]

@@ -12,6 +12,9 @@ on:
 jobs:
   windows-test:
     runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
     strategy:
       matrix:
         runtime: [ 'win-x64', 'win-x86' ]
@@ -26,6 +29,9 @@ jobs:
       
   ubuntu-test:
     runs-on: ubuntu-latest  
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
@@ -39,6 +45,8 @@ jobs:
     runs-on: macos-latest
     env:
       DYLD_PRINT_LIBRARIES: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core

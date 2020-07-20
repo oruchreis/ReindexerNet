@@ -9,6 +9,7 @@ jobs:
     runs-on: macos-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
 #      DYLD_PRINT_LIBRARIES: 1
     steps:
     - uses: actions/checkout@v2
