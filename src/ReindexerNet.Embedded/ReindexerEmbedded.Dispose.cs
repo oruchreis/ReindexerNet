@@ -19,8 +19,9 @@ namespace ReindexerNet.Embedded
                 {
                     foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
                         CloseNamespace(ns.Name);
-
-                    ReindexerBinding.destroy_reindexer(Rx);
+                    
+                    if (Rx != default)
+                        ReindexerBinding.destroy_reindexer(Rx);
                 }
 
                 Rx = default;

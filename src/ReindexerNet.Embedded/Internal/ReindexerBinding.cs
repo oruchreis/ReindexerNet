@@ -114,7 +114,6 @@ namespace ReindexerNet.Embedded.Internal
            value to zero.  */
         private const int RTLD_LOCAL = 0;
 
-
 #pragma warning disable IDE1006 // Naming Styles
 #pragma warning disable S101 // Types should be named in PascalCase
 #pragma warning disable 0649 // is never assigned to, and will always have its default value null
@@ -389,9 +388,9 @@ namespace ReindexerNet.Embedded.Internal
                 .ToDictionary(f => f.FieldType, f => f);
             foreach (var delegateType in delegateTypes)
             {
-                var nativeSymbol = LoadSymbol(NativeLibraryAddr, delegateType.Name);
+                var nativeSymbol = LoadSymbol(NativeLibraryAddr, delegateType.Name, out var errorMsg);
                 if (nativeSymbol == default)
-                    throw new MissingMethodException($"The native method '{delegateType.Name}' does not exist");
+                    throw new MissingMethodException($"The native method '{delegateType.Name}' does not exist. Last system error was : '{errorMsg}'");
 
                 functionMembers[delegateType].SetValue(null, Marshal.GetDelegateForFunctionPointer(nativeSymbol, delegateType));
             }
@@ -504,7 +503,7 @@ namespace ReindexerNet.Embedded.Internal
         private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
         {
             errorMsg = null;
-            IntPtr ret = dlopenFunc(libraryPath, RTLD_LOCAL + RTLD_NOW);
+            IntPtr ret = dlopenFunc(libraryPath, RTLD_LOCAL | RTLD_NOW);
             if (ret == IntPtr.Zero)
             {
                 errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());
@@ -512,8 +511,9 @@ namespace ReindexerNet.Embedded.Internal
             return ret;
         }
 
-        private static IntPtr LoadSymbol(IntPtr handle, string symbolName)
+        private static IntPtr LoadSymbol(IntPtr handle, string symbolName, out string errorMsg)
         {
+            errorMsg = null;
             if (Platform.IsWindows)
             {
                 // See http://stackoverflow.com/questions/10473310 for background on this.
@@ -550,17 +550,25 @@ namespace ReindexerNet.Embedded.Internal
             {
                 if (Platform.IsMono)
                 {
-                    return Mono.dlsym(handle, symbolName);
+                    var monoAddr = Mono.dlsym(handle, symbolName);
+                    errorMsg = Marshal.PtrToStringAnsi(Mono.dlerror());
+                    return monoAddr;
                 }
                 if (Platform.IsNetCore)
                 {
-                    return CoreClr.dlsym(handle, symbolName);
+                    var coreAddr = CoreClr.dlsym(handle, symbolName);
+                    errorMsg = Marshal.PtrToStringAnsi(CoreClr.dlerror());
+                    return coreAddr;
                 }
-                return Linux.dlsym(handle, symbolName);
+                var addr = Linux.dlsym(handle, symbolName);
+                errorMsg = Marshal.PtrToStringAnsi(Linux.dlerror());
+                return addr;
             }
             if (Platform.IsMacOSX)
             {
-                return MacOsx.dlsym(handle, symbolName);
+                var addr = MacOsx.dlsym(handle, symbolName);
+                errorMsg = Marshal.PtrToStringAnsi(MacOsx.dlerror());
+                return addr;
             }
             throw new InvalidOperationException("Unsupported platform.");
         }

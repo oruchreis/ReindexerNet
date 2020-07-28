@@ -191,8 +191,14 @@ namespace ReindexerNet.Embedded
         public void Stop()
         {
             DebugHelper.Log("Stopping reindexer server...");
-            foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
-                CloseNamespace(ns.Name);
+            try
+            {
+                foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
+                    CloseNamespace(ns.Name);
+            }
+            catch
+            { //sometimes server had been stopped before this stop method because of ctrl+c on console or any sigterm signal.
+            }
 
             Assert.ThrowIfError(() =>
                ReindexerBinding.stop_reindexer_server(_pServer)
