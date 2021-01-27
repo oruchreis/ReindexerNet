@@ -23,7 +23,7 @@ namespace ReindexerNet.Embedded.Internal
 {
     internal static class ReindexerBinding
     {
-        public const string ReindexerVersion = "v2.11.0";
+        public const string ReindexerVersion = "v3.0.1";
 
         private const string BindingLibrary = "reindexer_embedded_server";
         private static class Windows

@@ -20,4 +20,4 @@ jobs:
       with:
         dotnet-version: 3.1.x
     - name: Test
-      run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed" --nologo
+      run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed"

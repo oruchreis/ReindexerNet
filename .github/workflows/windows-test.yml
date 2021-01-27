@@ -28,5 +28,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet-sdk }}
+    - name: Clean #https://github.com/actions/virtual-environments/issues/1090
+      run: dotnet clean && dotnet nuget locals all --clear
     - name: Test ${{ matrix.runtime }}
-      run: dotnet test -v quiet -f ${{ matrix.framework }} --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }} --nologo /nologo
+      run: dotnet test -v quiet -f ${{ matrix.framework }} --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
