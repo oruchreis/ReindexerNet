@@ -13,20 +13,19 @@ jobs:
     strategy:
       matrix:
         runtime: [ 'win-x64', 'win-x86' ]
-        dotnet-sdk: ['2.2.x', '3.1.x']
-        include:
-          - dotnet-sdk: '2.2.x'
-            framework: netcoreapp2.2
-          - dotnet-sdk: '3.1.x'
-            framework: netcoreapp3.1
-        exclude:
-          - runtime: 'win-x86'
-            dotnet-sdk: '2.2.x'
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
+    - name: Setup .NET Core 3.0
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ matrix.dotnet-sdk }}
-    - name: Test ${{ matrix.runtime }}
-      run: dotnet test -v quiet -f ${{ matrix.framework }} --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }} --nologo /nologo
+        dotnet-version: '3.0'
+    - name: Setup .NET Core 3.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Clean 3.1 #https://github.com/actions/virtual-environments/issues/1090
+      run: dotnet clean -f netcoreapp3.1 --runtime ${{ matrix.runtime }} && dotnet nuget locals all --clear
+    - name: Test 3.1 ${{ matrix.runtime }}
+      run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
+    - name: Test 2.2 ${{ matrix.runtime }}
+      run: dotnet test -v quiet -f netcoreapp2.2 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
