@@ -15,10 +15,10 @@ jobs:
         runtime: [ 'win-x64', 'win-x86' ]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core 3.0
+    - name: Setup .NET Core 2.2
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.0'
+        dotnet-version: '2.2.x'
     - name: Setup .NET Core 3.1
       uses: actions/setup-dotnet@v1
       with:
@@ -28,4 +28,5 @@ jobs:
     - name: Test 3.1 ${{ matrix.runtime }}
       run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
     - name: Test 2.2 ${{ matrix.runtime }}
+      if: ${{ matrix.runtime == 'win-x64' }} 
       run: dotnet test -v quiet -f netcoreapp2.2 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
