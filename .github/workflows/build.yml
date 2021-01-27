@@ -20,12 +20,20 @@ jobs:
         runtime: [ 'win-x64', 'win-x86' ]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
+    - name: Setup .NET Core 3.0
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.101
-    - name: Test ${{ matrix.runtime }}
-      run: dotnet test --runtime ${{ matrix.runtime }} --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"
+        dotnet-version: '3.0'
+    - name: Setup .NET Core 3.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - name: Clean #https://github.com/actions/virtual-environments/issues/1090
+      run: dotnet clean -f netcoreapp3.1 --runtime ${{ matrix.runtime }} && dotnet nuget locals all --clear
+    - name: Test 3.1 ${{ matrix.runtime }}
+      run: dotnet test -v normal -f netcoreapp3.1 --runtime ${{ matrix.runtime }} --logger "console;verbosity=detailed"
+    - name: Test 2.2 ${{ matrix.runtime }}
+      run: dotnet test -v normal -f netcoreapp2.2 --runtime ${{ matrix.runtime }} --logger "console;verbosity=detailed"
       
   ubuntu-test:
     runs-on: ubuntu-latest  
@@ -37,7 +45,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.101
+        dotnet-version: '3.1.x'
     - name: Test
       run: dotnet test --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"
       
@@ -52,7 +60,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.101
+        dotnet-version: '3.1.x'
     - name: Test
       run: dotnet test --verbosity normal -f netcoreapp3.1 --logger "console;verbosity=detailed"
       
@@ -68,7 +76,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.101
+        dotnet-version: '3.1.x'
     - name: Publish Nuget Package
       uses: rohith/publish-nuget@v2.2.1
       with:
