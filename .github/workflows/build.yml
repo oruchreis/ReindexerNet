@@ -33,7 +33,7 @@ jobs:
     - name: Test 3.1 ${{ matrix.runtime }}
       run: dotnet test -v normal -f netcoreapp3.1 --runtime ${{ matrix.runtime }} --logger "console;verbosity=detailed"
     - name: Test 2.2 ${{ matrix.runtime }}
-      if: ${{ matrix.runtime == 'win-x64' }} 
+      if: ${{ matrix.runtime == 'win-x64' }} #https://github.com/actions/setup-dotnet/pull/152
       run: dotnet test -v normal -f netcoreapp2.2 --runtime ${{ matrix.runtime }} --logger "console;verbosity=detailed"
       
   ubuntu-test:
