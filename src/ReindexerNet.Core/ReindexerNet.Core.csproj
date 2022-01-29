@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">netstandard2.0;net472;netstandard2.1</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net6.0;net5.0;netstandard2.0;net472;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net6.0;net5.0;netstandard2.0;netstandard2.1</TargetFrameworks>
     <RootNamespace>ReindexerNet</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -29,6 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="images\icon.png" Pack="true" PackagePath="\" />
+    <None Include="../../doc/images/icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

@@ -13,9 +13,21 @@ jobs:
 #      DYLD_PRINT_LIBRARIES: 1
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
+    - name: Setup .NET 6
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.x
+    - name: Setup .NET 5
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.x
+    - name: Setup .NET Core 3
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.x
-    - name: Test
+    - name: Test .NET 6
+      run: dotnet test -v quiet -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
+    - name: Test .NET 5
+      run: dotnet test -v quiet -f net5.0 --logger "console;verbosity=detailed" --nologo /nologo
+    - name: Test .NET Core 3.1
       run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed" --nologo /nologo

@@ -34,6 +34,13 @@ namespace ReindexerNet.Embedded
     rpcaddr: {2}
     #webroot:
     security: false
+    grpc: {11}
+    grpcAddr: {12}
+    rpc_threading: {13}
+    http_threading: {14}
+    maxupdatessize: {15}
+    tx_idle_timeout: {16}
+    max_http_body_size: {17}
   logger:
     serverlog: ""{5}""
     corelog: ""{5}""
@@ -56,6 +63,8 @@ namespace ReindexerNet.Embedded
         /// <listheader>Supported parameters:</listheader>
         /// <item><term>httpAddr</term><description>(default "0.0.0.0:9088")</description></item>
         /// <item><term>rpcAddr</term><description>(default "0.0.0.0:6534")</description></item>
+        /// <item><term>grpc</term><description>(default false)</description></item>
+        /// <item><term>grpcAddr</term><description>(default "0.0.0.0:16534")</description></item>
         /// <item><term>dbName</term><description>(*required)</description></item>
         /// <item><term>storagePath</term><description>(default "%TEMP%\ReindexerEmbeddedServer")</description></item>
         /// <item><term>user</term><description>(default null)</description></item>
@@ -68,6 +77,11 @@ namespace ReindexerNet.Embedded
         /// <item><term>prometheus</term><description>(default false)</description></item>
         /// <item><term>pprof</term><description>(default false)</description></item>
         /// <item><term>allocs</term><description>(default false)</description></item>
+        /// <item><term>rpc_threading</term><description>shared,dedicated,pool (default shared)</description></item>
+        /// <item><term>http_threading</term><description>shared,dedicated,pool (default shared)</description></item>
+        /// <item><term>maxupdatessize</term><description>(default 1024 * 1024 * 1024)</description></item>
+        /// <item><term>tx_idle_timeout</term><description>as seconds (default 600)</description></item>
+        /// <item><term>max_http_body_size</term><description>(default 2 * 1024 * 1024)</description></item>
         /// </list>
         /// </param>
         /// <param name="options"></param>
@@ -92,7 +106,14 @@ namespace ReindexerNet.Embedded
                 ["clientsstats"] = "false",                                                    // 7
                 ["prometheus"] = "false",                                                      // 8
                 ["pprof"] = "false",                                                           // 9
-                ["allocs"] = "false"                                                           // 10
+                ["allocs"] = "false",                                                          // 10
+                ["grpc"] = "false",                                                            // 11
+                ["grpcAddr"] = "0.0.0.0:16534",                                                // 12
+                ["rpc_threading"] = "shared",                                                  // 13
+                ["http_threading"] = "shared",                                                 // 14
+                ["maxupdatessize"] = (1024 * 1024 * 1024).ToString(),                          // 15
+                ["tx_idle_timeout"] = "600",                                                   // 16
+                ["max_http_body_size"] = (2 * 1024 * 1024).ToString(),                         // 17
             };
 
             var connStringParts = connectionString.Split(';');
@@ -115,7 +136,9 @@ namespace ReindexerNet.Embedded
             Start(string.Format(_defaultServerYamlConfig,
                 config["storagepath"], config["httpaddr"], config["rpcaddr"],
                 config["engine"], config["autorepair"], config["logfile"], config["loglevel"],
-                config["clientsstats"], config["prometheus"], config["pprof"], config["allocs"]),
+                config["clientsstats"], config["prometheus"], config["pprof"], config["allocs"],
+                config["grpc"], config["grpcAddr"], config["rpc_threading"], config["http_threading"], 
+                config["maxupdatessize"], config["tx_idle_timeout"], config["max_http_body_size"]),
 
                 config["dbname"], config["user"], config["pass"]);
         }

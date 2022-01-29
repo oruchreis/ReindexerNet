@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29905.134
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReindexerNet.Embedded", "src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj", "{5FCCC8F0-C781-4930-AB9A-E61CAD042BF8}"
 EndProject
@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		.github\workflows\windows-test.yml = .github\workflows\windows-test.yml
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReindexerNet.Remote", "src\ReindexerNet.Remote\ReindexerNet.Remote.csproj", "{4BE27AD7-17F8-469E-9D91-E24F17117B95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +69,18 @@ Global
 		{BB7610B2-F3F0-45F0-9FE2-A0CAD7DB3E2C}.Release|x64.Build.0 = Release|Any CPU
 		{BB7610B2-F3F0-45F0-9FE2-A0CAD7DB3E2C}.Release|x86.ActiveCfg = Release|Any CPU
 		{BB7610B2-F3F0-45F0-9FE2-A0CAD7DB3E2C}.Release|x86.Build.0 = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|x64.Build.0 = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Debug|x86.Build.0 = Debug|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|x64.ActiveCfg = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|x64.Build.0 = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|x86.ActiveCfg = Release|Any CPU
+		{4BE27AD7-17F8-469E-9D91-E24F17117B95}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

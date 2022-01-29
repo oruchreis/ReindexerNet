@@ -95,7 +95,7 @@ namespace ReindexerNet.EmbeddedTest
                 }
                 );
 
-            var nsInfo = (await Client.ExecuteSqlAsync<Namespace>($"SELECT * FROM #namespaces WHERE name=\"{NsName}\" LIMIT 1")).Items.FirstOrDefault();
+            var nsInfo = (await Client.ExecuteSqlAsync<Namespace>($"SELECT * FROM #namespaces WHERE name='{NsName}' LIMIT 1")).Items.FirstOrDefault();
             Assert.IsNotNull(nsInfo);
             Assert.AreEqual(NsName, nsInfo.Name);
             var indexNames = nsInfo.Indexes.Select(i => i.Name).ToList();
@@ -165,7 +165,7 @@ namespace ReindexerNet.EmbeddedTest
             Assert.AreEqual(2 * 0.125, item.RangeIndex);
             CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
 
-            var arrayContainsDocs = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE ArrayIndex IN (\"..997..\",\"..998..\")");
+            var arrayContainsDocs = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE ArrayIndex IN ('..997..','..998..')");
             Assert.AreEqual(2, arrayContainsDocs.QueryTotalItems);
 
             var rangeQueryDocs = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE RangeIndex > 5.1 AND RangeIndex < 6");
@@ -250,7 +250,7 @@ namespace ReindexerNet.EmbeddedTest
             var itemWithPayloadUtf8 = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10001").Items.FirstOrDefault();
             Assert.AreEqual(utf8Str, itemWithPayloadUtf8?.Name);
 
-            var itemWithQueryUtf8 = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Name=\"{utf8Str}\"").Items.FirstOrDefault();
+            var itemWithQueryUtf8 = Client.ExecuteSql<TestDocument>($"SELECT * FROM {NsName} WHERE Name='{utf8Str}'").Items.FirstOrDefault();
             Assert.AreEqual(utf8Str, itemWithQueryUtf8?.Name);
         }
     }

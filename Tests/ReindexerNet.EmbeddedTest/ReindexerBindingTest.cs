@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,8 +25,12 @@ namespace ReindexerNet.EmbeddedTest
 
         private void AssertError(reindexer_error error)
         {
-            //Assert.AreEqual(null, error.what)
-            Assert.AreEqual(0, error.code);
+            if (error.code != 0)
+            {
+                var errorStr = Marshal.PtrToStringAnsi(error.what);
+
+                Assert.Fail($"{errorStr}, Error Code: {error.code}");
+            }
         }
 
         void Log(LogLevel level, string msg)
@@ -108,7 +113,19 @@ namespace ReindexerNet.EmbeddedTest
             AssertError(ReindexerBinding.reindexer_drop_namespace(_rx, "DropNamespaceTest".GetHandle(), _ctxInfo));
         }
 
-        private const string DataTestNamespace = nameof(DataTestNamespace);
+#if NET472
+        private const string FrameworkName="NET472";
+#elif NET5_0
+        private const string FrameworkName="NET5";
+#elif NET6_0
+        private const string FrameworkName = "NET6";
+#elif NETCOREAPP2_2
+        private const string FrameworkName="NETCOREAPP2_2";
+#elif NETCOREAPP3_1
+        private const string FrameworkName="NETCOREAPP3_1";
+#endif
+
+        private const string DataTestNamespace = nameof(DataTestNamespace) + "_" + FrameworkName;
 
         public void ModifyItemPacked(string itemJson = null)
         {
@@ -138,7 +155,7 @@ namespace ReindexerNet.EmbeddedTest
             AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
 
             var rsp = ReindexerBinding.reindexer_select(_rx,
-                $"SELECT \"indexes.name\" FROM #namespaces WHERE name = \"{DataTestNamespace}\"".GetHandle(),
+                $"SELECT 'indexes.name' FROM #namespaces WHERE name = '{DataTestNamespace}'".GetHandle(),
                 1, new int[0], 0, _ctxInfo);
 
             if (rsp.err_code != 0)
@@ -186,41 +203,55 @@ namespace ReindexerNet.EmbeddedTest
         [TestMethod]
         public void SelectSql()
         {
-            ModifyItemPacked();
+            try
+            {
+                ModifyItemPacked();
 
-            var rsp = ReindexerBinding.reindexer_select(_rx,
-                $"SELECT * FROM {DataTestNamespace}".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
-            if (rsp.err_code != 0)
-                Assert.AreEqual(null, (string)rsp.@out);
-            Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
+                var rsp = ReindexerBinding.reindexer_select(_rx,
+                    $"SELECT * FROM {DataTestNamespace}".GetHandle(),
+                    1, new int[0], 0, _ctxInfo);
+                if (rsp.err_code != 0)
+                    Assert.AreEqual(null, (string)rsp.@out);
+                Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
 
-            var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
+                var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
 
-            Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
+                Assert.AreNotEqual(0, json.Length);
+                Assert.AreNotEqual(0, offsets.Count);
+            }
+            finally
+            {
+                AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            }
         }
 
         [TestMethod]
         public void ExplainSelectSql()
         {
-            ModifyItemPacked();
+            try
+            {
+                ModifyItemPacked();
 
-            var rsp = ReindexerBinding.reindexer_select(_rx,
-                $"EXPLAIN SELECT * FROM {DataTestNamespace}".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
-            if (rsp.err_code != 0)
-                Assert.AreEqual(null, (string)rsp.@out);
-            Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
+                var rsp = ReindexerBinding.reindexer_select(_rx,
+                    $"EXPLAIN SELECT * FROM {DataTestNamespace}".GetHandle(),
+                    1, new int[0], 0, _ctxInfo);
+                if (rsp.err_code != 0)
+                    Assert.AreEqual(null, (string)rsp.@out);
+                Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
 
-            var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
+                var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
 
-            Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
-            Assert.AreNotEqual(0, explain.Length);
+                Assert.AreNotEqual(0, json.Length);
+                Assert.AreNotEqual(0, offsets.Count);
+                Assert.AreNotEqual(0, explain.Length);
 
-            var explainDef = JsonSerializer.Deserialize<ExplainDef>(explain);
-            Assert.IsNotNull(explainDef);
+                var explainDef = JsonSerializer.Deserialize<ExplainDef>(explain);
+                Assert.IsNotNull(explainDef);
+            }
+            finally
+            {
+                AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            }
         }
 
         [TestMethod]
@@ -230,29 +261,36 @@ namespace ReindexerNet.EmbeddedTest
                new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
                _ctxInfo));
 
-            ModifyItemPacked($"{{\"Id\":2, \"Guid\":\"{Guid.NewGuid()}\"}}");
+            try
+            {
+                ModifyItemPacked($"{{\"Id\":2, \"Guid\":\"{Guid.NewGuid()}\"}}");
 
-            var delRsp = ReindexerBinding.reindexer_select(_rx,
-                $"DELETE FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
-            if (delRsp.err_code != 0)
-                Assert.AreEqual(null, (string)delRsp.@out);
-            Assert.AreNotEqual(UIntPtr.Zero, delRsp.@out.results_ptr);
+                var delRsp = ReindexerBinding.reindexer_select(_rx,
+                    $"DELETE FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
+                    1, new int[0], 0, _ctxInfo);
+                if (delRsp.err_code != 0)
+                    Assert.AreEqual(null, (string)delRsp.@out);
+                Assert.AreNotEqual(UIntPtr.Zero, delRsp.@out.results_ptr);
 
-            var (json, offsets, explain) = BindingHelpers.RawResultToJson(delRsp.@out, "items", "total_count");
-            Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
+                var (json, offsets, explain) = BindingHelpers.RawResultToJson(delRsp.@out, "items", "total_count");
+                Assert.AreNotEqual(0, json.Length);
+                Assert.AreNotEqual(0, offsets.Count);
 
-            var selRsp = ReindexerBinding.reindexer_select(_rx,
-                $"SELECT * FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
-                1, new int[] { 0 }, 1, _ctxInfo);
-            if (selRsp.err_code != 0)
-                Assert.AreEqual(null, (string)selRsp.@out);
-            Assert.AreNotEqual(UIntPtr.Zero, selRsp.@out.results_ptr);
+                var selRsp = ReindexerBinding.reindexer_select(_rx,
+                    $"SELECT * FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
+                    1, new int[] { 0 }, 1, _ctxInfo);
+                if (selRsp.err_code != 0)
+                    Assert.AreEqual(null, (string)selRsp.@out);
+                Assert.AreNotEqual(UIntPtr.Zero, selRsp.@out.results_ptr);
 
-            (json, offsets, explain) = BindingHelpers.RawResultToJson(selRsp.@out, "items", "total_count");
-            Assert.AreNotEqual(0, json.Length);
-            Assert.AreEqual(0, offsets.Count);
+                (json, offsets, explain) = BindingHelpers.RawResultToJson(selRsp.@out, "items", "total_count");
+                Assert.AreNotEqual(0, json.Length);
+                Assert.AreEqual(0, offsets.Count);
+            }
+            finally
+            {
+                AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            }
         }
 
 

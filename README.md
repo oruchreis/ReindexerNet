@@ -19,5 +19,7 @@ If you have any questions about Reindexer, please use [main page](https://github
  - [ ] Query Interface
  - [ ] CJson Serializer
  - [ ] Dsl Query Builder
+ - [ ] Json connector for remote servers
+ - [ ] GRPC connector for remote servers
  - [ ] CProto connector for remote servers
 
