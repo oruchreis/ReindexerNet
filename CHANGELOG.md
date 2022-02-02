@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2022-02-01
+### Added
+- Implemented Grpc Client for remote servers
+- Implemented Grpc Server Binding for embedded servers
+- Implemented CreateDb, EnumDb, EnumNs Meta and Schema methods
+- Updated Reindexer to 3.3.2
+- Added Grpc Client Tests
+### Changed
+- Breaking Change: Moved connection string to constructors to be able to make clients lock-free. Connect methods use connection strings set at constructor.
+- Breaking Change: ModifyItem(s), Insert, Update, Delete methods take now multiple item parameter.
+- Breaking Change: Removed netcoreapp2.2 tests, still supports netstandard2.0
+- Seperated async operations to IAsyncReindexerClient
+- The connection strings has now a base class, still supports key/value string conversation.
+- Using System.Text.Json in internal serializations, still supports custom serialization functions for some methods.
+- Removed Utf8Json dependency from Embedded package
+
 ## [0.2.22-Embedded] - 2021-01-27
 ### Changed
 - Disabled backtrace init

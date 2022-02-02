@@ -8,6 +8,6 @@ namespace ReindexerNet.EmbeddedTest
     public class RocksDbEmbeddedServerTest: EmbeddedServerTest
 #pragma warning restore S2187 // TestCases should contain tests
     {
-        protected override StorageOption Storage => StorageOption.RocksDb;
+        protected override StorageEngine Storage => StorageEngine.RocksDb;
     }
 }

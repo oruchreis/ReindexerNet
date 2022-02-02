@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ReindexerNet
 {
@@ -16,7 +18,7 @@ namespace ReindexerNet
         /// Commits the transaction.
         /// </summary>
         /// <returns>Number of items to be affected.</returns>
-        Task<int> CommitAsync();
+        Task<int> CommitAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Cancels and rolls back the transaction.
         /// </summary>
@@ -25,21 +27,21 @@ namespace ReindexerNet
         /// Cancels and rolls back the transaction.
         /// </summary>
         /// <returns></returns>
-        Task RollbackAsync();
+        Task RollbackAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item.
         /// </summary>
         /// <param name="mode">Action to perform on item</param>
-        /// <param name="itemJson">Item's json</param>
+        /// <param name="items">Items</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
-        void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts);
+        int ModifyItems<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null);
         /// <summary>
         /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item.
         /// </summary>
         /// <param name="mode">Action to perform on item</param>
-        /// <param name="itemJson">Item's json</param>
+        /// <param name="items">Items</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts);
+        Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
     }
 }

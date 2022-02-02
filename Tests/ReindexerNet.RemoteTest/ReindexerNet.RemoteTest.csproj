@@ -21,11 +21,12 @@
     <PackageReference Include="coverlet.collector" Version="3.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    </PackageReference>    
   </ItemGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
+    <ProjectReference Include="..\..\src\ReindexerNet.Remote.Grpc\ReindexerNet.Remote.Grpc.csproj" />
     <ProjectReference Include="..\ReindexerNet.CoreTest\ReindexerNet.CoreTest.csproj" />
   </ItemGroup>
 

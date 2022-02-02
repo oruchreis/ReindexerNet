@@ -11,7 +11,7 @@ on:
 
 jobs:
   windows-test:
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
@@ -20,22 +20,20 @@ jobs:
         runtime: [ 'win-x64', 'win-x86' ]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core 2.2
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: Setup .NET Sdk
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '2.2.x'
-    - name: Setup .NET Core 3.1
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '3.1.x'
-    - name: Setup .NET 5
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.x'
-    - name: Setup .NET 6
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '6.x'
+        dotnet-version: |
+            3.1.x
+            5.x
+            6.x
     #- name: Clean #https://github.com/actions/virtual-environments/issues/1090
     #  run: dotnet clean -f netcoreapp3.1 --runtime ${{ matrix.runtime }} && dotnet nuget locals all --clear
     - name: Test .NET 6 ${{ matrix.runtime }}
@@ -44,9 +42,6 @@ jobs:
       run: dotnet test -v normal -f net5.0 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
     - name: Test .NET Core 3.1 ${{ matrix.runtime }}
       run: dotnet test -v normal -f netcoreapp3.1 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
-    - name: Test .NET Core 2.2 ${{ matrix.runtime }}
-      if: ${{ matrix.runtime == 'win-x64' }} 
-      run: dotnet test -v normal -f netcoreapp2.2 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
       
   ubuntu-test:
     runs-on: ubuntu-latest  
@@ -55,18 +50,20 @@ jobs:
       DOTNET_NOLOGO: 1
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET 6
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: Setup .NET Sdk
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.x
-    - name: Setup .NET 5
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.x
-    - name: Setup .NET Core 3
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.x
+        dotnet-version: |
+            3.1.x
+            5.x
+            6.x
     - name: Test .NET 6
       run: dotnet test -v normal -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
     - name: Test .NET 5
@@ -82,18 +79,20 @@ jobs:
       DOTNET_NOLOGO: 1
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET 6
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: Setup .NET Sdk
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.x
-    - name: Setup .NET 5
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.x
-    - name: Setup .NET Core 3
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.x
+        dotnet-version: |
+            3.1.x
+            5.x
+            6.x
     - name: Test .NET 6
       run: dotnet test -v normal -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
     - name: Test .NET 5
@@ -104,12 +103,19 @@ jobs:
   upload-packages:
     needs: [windows-test, ubuntu-test, osx-test] 
     if: success()
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       matrix:
-        project: [ 'Core', 'Embedded' ]
+        project: [ 'Core', 'Embedded','Remote.Grpc' ]
     steps:
     - uses: actions/checkout@v2
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ runner.os }}-
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:

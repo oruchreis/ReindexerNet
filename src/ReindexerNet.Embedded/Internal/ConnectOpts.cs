@@ -35,7 +35,7 @@ namespace ReindexerNet.Embedded.Internal
             return new ConnectOpts
             {
                 expectedClusterID = options.ExpectedClusterId,
-                storage = (StorageTypeOpt)(int)options.Storage,
+                storage = (StorageTypeOpt)(int)options.Engine,
                 options = 
                     (options.AllowNamespaceErrors ? ConnectOpt.kConnectOptAllowNamespaceErrors : 0) |
                     (options.AutoRepair ? ConnectOpt.kConnectOptAutorepair : 0) |

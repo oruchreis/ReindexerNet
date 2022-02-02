@@ -12,21 +12,23 @@ jobs:
       DOTNET_NOLOGO: 1
     strategy:
       matrix:
-        os: [ 'ubuntu-16.04', 'ubuntu-18.04', 'ubuntu-20.04' ]
+        os: [ 'ubuntu-18.04', 'ubuntu-20.04' ]
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET 6
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ runner.os }}-
+    - name: Setup .NET Sdk
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.x
-    - name: Setup .NET 5
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 5.x
-    - name: Setup .NET Core 3
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.x
+        dotnet-version: |
+            3.1.x
+            5.x
+            6.x
     - name: Test .NET 6
       run: dotnet test -v quiet -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
     - name: Test .NET 5
