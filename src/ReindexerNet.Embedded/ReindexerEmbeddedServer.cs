@@ -14,133 +14,52 @@ namespace ReindexerNet.Embedded
     /// </summary>
     public sealed class ReindexerEmbeddedServer : ReindexerEmbedded
     {
+        private readonly ServerOptions _serverOptions;
         private UIntPtr _pServer;
         /// <summary>
         /// Creates a reindexer server instance
         /// </summary>
-        public ReindexerEmbeddedServer()
+        /// <param name="serverOptions">Connection string for the server.</param>
+        /// <param name="options">Reindexer connection options.</param>
+        public ReindexerEmbeddedServer(ServerOptions serverOptions)
+            : base(serverOptions.DatabaseName)
         {
+            _serverOptions = serverOptions;
             _pServer = ReindexerBinding.init_reindexer_server();
         }
 
-        private const string _defaultServerYamlConfig = @"
-  storage:
-    path: ""{0}""
-    engine: {3}
-    startwitherrors: false
-    autorepair: {4}
-  net:
-    httpaddr: {1}
-    rpcaddr: {2}
-    #webroot:
-    security: false
-    grpc: {11}
-    grpcAddr: {12}
-    rpc_threading: {13}
-    http_threading: {14}
-    maxupdatessize: {15}
-    tx_idle_timeout: {16}
-    max_http_body_size: {17}
-  logger:
-    serverlog: ""{5}""
-    corelog: ""{5}""
-    httplog: ""{5}""
-    rpclog: ""{5}""
-    loglevel: {6}
-  debug:
-    pprof: {9}
-    allocs: {10}
-  metrics:
-    prometheus: {8}
-    collect_period: 1000
-    clientsstats: {7}
-";
+        
         /// <summary>
         /// Starts Reindexer Embedded Server
         /// </summary>
-        /// <param name="connectionString">Connection string in this format of string <c>key1=value1;key2=value2</c>.
-        /// <list type="bullet">
-        /// <listheader>Supported parameters:</listheader>
-        /// <item><term>httpAddr</term><description>(default "0.0.0.0:9088")</description></item>
-        /// <item><term>rpcAddr</term><description>(default "0.0.0.0:6534")</description></item>
-        /// <item><term>grpc</term><description>(default false)</description></item>
-        /// <item><term>grpcAddr</term><description>(default "0.0.0.0:16534")</description></item>
-        /// <item><term>dbName</term><description>(*required)</description></item>
-        /// <item><term>storagePath</term><description>(default "%TEMP%\ReindexerEmbeddedServer")</description></item>
-        /// <item><term>user</term><description>(default null)</description></item>
-        /// <item><term>pass</term><description>(default null)</description></item>
-        /// <item><term>engine</term><description>(default leveldb)</description></item>
-        /// <item><term>autorepair</term><description>(default true)</description></item>
-        /// <item><term>logfile</term><description>(default none)</description></item>
-        /// <item><term>loglevel</term><description>(default info)</description></item>
-        /// <item><term>clientsstats</term><description>(default false)</description></item>
-        /// <item><term>prometheus</term><description>(default false)</description></item>
-        /// <item><term>pprof</term><description>(default false)</description></item>
-        /// <item><term>allocs</term><description>(default false)</description></item>
-        /// <item><term>rpc_threading</term><description>shared,dedicated,pool (default shared)</description></item>
-        /// <item><term>http_threading</term><description>shared,dedicated,pool (default shared)</description></item>
-        /// <item><term>maxupdatessize</term><description>(default 1024 * 1024 * 1024)</description></item>
-        /// <item><term>tx_idle_timeout</term><description>as seconds (default 600)</description></item>
-        /// <item><term>max_http_body_size</term><description>(default 2 * 1024 * 1024)</description></item>
-        /// </list>
-        /// </param>
-        /// <param name="options"></param>
-        public override void Connect(string connectionString, ConnectionOptions options = null)
+        /// <param name="options">Reindexer connection options.</param>
+        public override void Connect(ConnectionOptions options = null)
         {
             if (IsStarted)
                 throw new ReindexerNetException("Server has been already started. Stop first.");
 
-            var config = new Dictionary<string, string>
-            {
-                ["dbname"] = null,
-                ["user"] = null,
-                ["pass"] = null,
-
-                ["storagepath"] = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer"), // 0
-                ["httpaddr"] = "0.0.0.0:9088",                                                 // 1
-                ["rpcaddr"] = "0.0.0.0:6534",                                                  // 2
-                ["engine"] = "leveldb",                                                        // 3
-                ["autorepair"] = "true",                                                       // 4
-                ["logfile"] = "",                                                              // 5
-                ["loglevel"] = "info",                                                         // 6
-                ["clientsstats"] = "false",                                                    // 7
-                ["prometheus"] = "false",                                                      // 8
-                ["pprof"] = "false",                                                           // 9
-                ["allocs"] = "false",                                                          // 10
-                ["grpc"] = "false",                                                            // 11
-                ["grpcAddr"] = "0.0.0.0:16534",                                                // 12
-                ["rpc_threading"] = "shared",                                                  // 13
-                ["http_threading"] = "shared",                                                 // 14
-                ["maxupdatessize"] = (1024 * 1024 * 1024).ToString(),                          // 15
-                ["tx_idle_timeout"] = "600",                                                   // 16
-                ["max_http_body_size"] = (2 * 1024 * 1024).ToString(),                         // 17
-            };
-
-            var connStringParts = connectionString.Split(';');
-            foreach (var (key, value) in connStringParts.Select(p => p.Split('=')).Select(p => p.Length > 1 ? (p[0].ToLowerInvariant(), p[1]) : (p[0].ToLowerInvariant(), "")))
-            {
-                config[key] = value;
-            }
-
-            if (config["dbname"] == null)
+            if (_serverOptions.DatabaseName == null)
             {
                 throw new ArgumentException("You must provide a db name with 'dbname' config key.");
             }
 
-            var dbPath = Path.Combine(config["storagepath"], config["dbname"]);
+            if (_serverOptions.HttpAddress == null)
+                _serverOptions.HttpAddress = "0.0.0.0:9088";
+            if (_serverOptions.RpcAddress == null)
+                _serverOptions.RpcAddress = "0.0.0.0:6534";
+            if (_serverOptions.GrpcAddress == null)
+                _serverOptions.GrpcAddress = "0.0.0.0:16534";
+            if (_serverOptions.Storage.Path == null)
+                _serverOptions.Storage.Path = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer");            
+
+            var dbPath = Path.Combine(_serverOptions.Storage.Path, _serverOptions.DatabaseName);
             if (!Directory.Exists(dbPath))
             {
                 Directory.CreateDirectory(dbPath); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
 
-            Start(string.Format(_defaultServerYamlConfig,
-                config["storagepath"], config["httpaddr"], config["rpcaddr"],
-                config["engine"], config["autorepair"], config["logfile"], config["loglevel"],
-                config["clientsstats"], config["prometheus"], config["pprof"], config["allocs"],
-                config["grpc"], config["grpcAddr"], config["rpc_threading"], config["http_threading"], 
-                config["maxupdatessize"], config["tx_idle_timeout"], config["max_http_body_size"]),
-
-                config["dbname"], config["user"], config["pass"]);
+            Start(_serverOptions.ToYaml(),
+                _serverOptions.DatabaseName, _serverOptions.Username, _serverOptions.Password);
         }
 
         private long _isServerThreadStarted = 0;
@@ -153,7 +72,7 @@ namespace ReindexerNet.Embedded
         private Thread _serverThread;
 
         /// <summary>
-        /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(string, ConnectionOptions)"/> instead.
+        /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(ServerOptions, ConnectionOptions)"/> instead.
         /// </summary>
         /// <param name="serverConfigYaml">Reindexer server configuration yaml</param>        
         /// <param name="dbName"></param>

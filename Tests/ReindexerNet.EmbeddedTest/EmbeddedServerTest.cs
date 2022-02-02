@@ -16,7 +16,7 @@ namespace ReindexerNet.EmbeddedTest
     {
         private static long _testIndex = -1;
 
-        protected override IReindexerClient Client { get; set; } = new ReindexerEmbeddedServer();
+        protected override IReindexerClient Client { get; set; }
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
         private string _logFile;
@@ -31,8 +31,9 @@ namespace ReindexerNet.EmbeddedTest
             _logFile = Path.Combine(DbPath, "..", TestContext.TestName + ".log");
             if (File.Exists(_logFile))
                 File.Delete(_logFile);
-            var storage = Storage == StorageOption.RocksDb ? "rocksdb": "leveldb";
-            Client.Connect($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile};engine={storage}");
+            var storage = Storage == StorageEngine.RocksDb ? "rocksdb": "leveldb";
+            Client = new ReindexerEmbeddedServer($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile};engine={storage}");
+            Client.Connect();
 
             Client.OpenNamespace(NsName);
             await Client.TruncateNamespaceAsync(NsName).ConfigureAwait(false);

@@ -9,37 +9,38 @@ namespace ReindexerNet
     /// Reindexer Field types
     /// </summary>
     [DataContract]
+    [JsonConverter(typeof(FieldTypeConverter))]
     public enum FieldType
     {
         /// <summary>
         /// 32 bit Integer
         /// </summary>
-        [EnumMember(Value = "int")]
+        [EnumMember(Value = FieldTypeConverter.IntValueStr)]
         Int,
         /// <summary>
         /// 64 bit Integer
         /// </summary>
-        [EnumMember(Value = "int64")]
+        [EnumMember(Value = FieldTypeConverter.Int64ValueStr)]
         Int64,
         /// <summary>
         /// Double
         /// </summary>
-        [EnumMember(Value = "double")]
+        [EnumMember(Value = FieldTypeConverter.DoubleValueStr)]
         Double,
         /// <summary>
         /// String
         /// </summary>
-        [EnumMember(Value = "string")]
+        [EnumMember(Value = FieldTypeConverter.StringValueStr)]
         String,
         /// <summary>
         /// Boolean
         /// </summary>
-        [EnumMember(Value = "bool")]
+        [EnumMember(Value = FieldTypeConverter.BoolValueStr)]
         Bool,
         /// <summary>
         /// Composite object
         /// </summary>
-        [EnumMember(Value = "composite")]
+        [EnumMember(Value = FieldTypeConverter.ComposieValueStr)]
         Composite
     }
 

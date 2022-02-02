@@ -31,15 +31,16 @@
         public bool WarnVersion { get; set; }
 
         /// <summary>
-        /// Storage options.
+        /// Storage engines.
         /// </summary>
-        public StorageOption Storage { get; set; } = StorageOption.LevelDb;
+        public StorageEngine Engine { get; set; } = StorageEngine.LevelDb;
+        public bool DisableReplication { get; set; }
     }
 
     /// <summary>
     /// Storage options.
     /// </summary>
-    public enum StorageOption
+    public enum StorageEngine
     {
         /// <summary>
         /// LevelDb from Google.

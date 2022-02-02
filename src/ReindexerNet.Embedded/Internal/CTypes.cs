@@ -45,6 +45,30 @@ namespace ReindexerNet.Embedded.Internal
                 }
             }
         }
+
+        public static void PinBufferFor(ReadOnlySpan<byte> byteSpan1, ReadOnlySpan<byte> byteSpan2,
+            Action<reindexer_buffer, reindexer_buffer> pinnedAction)
+        {
+            unsafe
+            {
+                fixed (byte* pData1 = &MemoryMarshal.GetReference(byteSpan1))
+                fixed (byte* pData2 = &MemoryMarshal.GetReference(byteSpan2))
+                {
+                    pinnedAction(
+                        new reindexer_buffer
+                        {
+                            data = (IntPtr)pData1,
+                            len = byteSpan1.Length
+                        },
+                        new reindexer_buffer
+                        {
+                            data = (IntPtr)pData2,
+                            len = byteSpan2.Length
+                        }
+                        );
+                }
+            }
+        }
     }
 
     internal sealed class ReindexerBufferHandle : IDisposable
@@ -133,7 +157,7 @@ namespace ReindexerNet.Embedded.Internal
 
     [StructLayout(LayoutKind.Sequential)]
     struct reindexer_string
-    {        
+    {
         public IntPtr p;//void* => reindexer içeride const char*'a cast ediyor.
         public int n; //bunu içeride Span.Slice gibi kullanıyor. Belki p ReadOnlySpan<char> da olabilir.
 
@@ -216,8 +240,6 @@ namespace ReindexerNet.Embedded.Internal
         cancel_expilicitly,
         cancel_on_timeout
     }
-
-    enum DataFormat { FormatJson, FormatCJson }
 
     enum QueryResultTag
     {

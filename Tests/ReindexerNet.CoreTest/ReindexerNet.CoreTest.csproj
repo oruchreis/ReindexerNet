@@ -1,6 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+<PropertyGroup>
     <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net6.0;net5.0;netcoreapp3.1;net472</TargetFrameworks>
     <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
     <IsPackable>false</IsPackable>
@@ -23,10 +23,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-
+  
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
-    <ProjectReference Include="..\ReindexerNet.CoreTest\ReindexerNet.CoreTest.csproj" />
+    <ProjectReference Include="..\..\src\ReindexerNet.Core\ReindexerNet.Core.csproj" />
   </ItemGroup>
 
 </Project>

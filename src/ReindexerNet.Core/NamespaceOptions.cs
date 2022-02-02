@@ -33,5 +33,9 @@
         /// Auto repair namespace
         /// </summary>
         public bool AutoRepair { get; set; }
+
+        public bool FillCache { get; set; }
+        public bool SlaveMode { get; set; }
+        public bool Sync { get; set; }
     }
 }

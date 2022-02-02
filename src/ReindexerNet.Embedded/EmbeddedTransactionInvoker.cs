@@ -2,6 +2,8 @@
 using ReindexerNet.Embedded.Internal;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace ReindexerNet.Embedded
 {
@@ -10,12 +12,14 @@ namespace ReindexerNet.Embedded
         private readonly UIntPtr _rx;
         private readonly UIntPtr _tr;
         private readonly reindexer_ctx_info _ctxInfo;
+        private readonly IReindexerSerializer _serializer;
 
-        public EmbeddedTransactionInvoker(UIntPtr rx, UIntPtr tr, reindexer_ctx_info ctxInfo)
+        public EmbeddedTransactionInvoker(UIntPtr rx, UIntPtr tr, reindexer_ctx_info ctxInfo, IReindexerSerializer serializer)
         {
             _rx = rx;
             _tr = tr;
             _ctxInfo = ctxInfo;
+            _serializer = serializer;
         }
 
         public int Commit()
@@ -34,16 +38,17 @@ namespace ReindexerNet.Embedded
             }
         }
 
-        public Task<int> CommitAsync()
+        public Task<int> CommitAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Commit());
         }
 
-        public void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+        public void ModifyItem(ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, string[] precepts = null)
         {
+            precepts = precepts ?? new string[0];
             using (var writer = new CJsonWriter())
             {
-                writer.PutVarCUInt((int)DataFormat.FormatJson); // format
+                writer.PutVarCUInt((int)_serializer.Type); // format
                 writer.PutVarCUInt((int)mode);// mode
                 writer.PutVarCUInt(0);// stateToken
 
@@ -53,20 +58,28 @@ namespace ReindexerNet.Embedded
                     writer.PutVString(precept);
                 }
 
-                reindexer_buffer.PinBufferFor(writer.CurrentBuffer, args =>
+                reindexer_buffer.PinBufferFor(writer.CurrentBuffer, itemBytes, (args, data) =>
                 {
-                    using (var data = itemJson.GetHandle())
-                    {
-                        Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed_tx(_rx, _tr, args, data.Buffer));
-                    }
+                    Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed_tx(_rx, _tr, args, data));
                 });
             }
         }
 
-        public Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+
+        public int ModifyItems<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null)
         {
-            ModifyItem(mode, itemJson, precepts);
-            return Task.CompletedTask;
+            var result = 0;
+            foreach (var item in items)
+            {
+                ModifyItem(mode, _serializer.Serialize(item), precepts);
+                result++;
+            }
+            return result;
+        }
+
+        public Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(ModifyItems(mode, items, precepts));
         }
 
         public void Rollback()
@@ -74,7 +87,7 @@ namespace ReindexerNet.Embedded
             Assert.ThrowIfError(() => ReindexerBinding.reindexer_rollback_transaction(_rx, _tr));
         }
 
-        public Task RollbackAsync()
+        public Task RollbackAsync(CancellationToken cancellationToken = default)
         {
             Rollback();
             return Task.CompletedTask;

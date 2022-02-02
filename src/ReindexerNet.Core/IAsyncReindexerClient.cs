@@ -1,77 +1,80 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReindexerNet
 {
     /// <summary>
-    /// Common interface for Reindexer async/sync operations.
+    /// Common interface for Reindexer async operations.
     /// </summary>
-    public interface IReindexerClient : IAsyncReindexerClient, IDisposable
+    public interface IAsyncReindexerClient : IAsyncDisposable
     {
         /// <summary>
         /// Connects to a reindexer implementation. This is first method to call before starting to use Reindexer.
         /// </summary>
         /// <param name="options">Reindexer connection options.</param>
-        void Connect(ConnectionOptions options = null);
+        Task ConnectAsync(ConnectionOptions options = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Pings the server. Does nothing on embedded mode.
         /// </summary>
-        void Ping();
-        void CreateDatabase(string dbName);
-        IEnumerable<Database> EnumDatabases();
+        Task PingAsync(CancellationToken cancellationToken = default);
+        Task CreateDatabaseAsync(string dbName, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Database>> EnumDatabasesAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Opens a namespace. If it is missing, it wll be created.
         /// </summary>
         /// <param name="nsName">Namespace name</param>
         /// <param name="options">Reindexer namespace options.</param>
-        void OpenNamespace(string nsName, NamespaceOptions options = null);
+        Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Drops namaspace
         /// </summary>
         /// <param name="nsName">Namespace to dtop</param>
-        void DropNamespace(string nsName);
+        Task DropNamespaceAsync(string nsName, CancellationToken cancellationToken = default);
         /// <summary>
         /// Closes namespace and unallocate the memory that it used by.
         /// </summary>
         /// <param name="nsName"></param>
-        void CloseNamespace(string nsName);
+        Task CloseNamespaceAsync(string nsName, CancellationToken cancellationToken = default);
         /// <summary>
         /// Deletes all items in the namespace.
         /// </summary>
         /// <param name="nsName"></param>
-        void TruncateNamespace(string nsName);
+        Task TruncateNamespaceAsync(string nsName, CancellationToken cancellationToken = default);
         /// <summary>
         /// Renames namespace.
         /// </summary>
         /// <param name="oldName"></param>
         /// <param name="newName"></param>
-        void RenameNamespace(string oldName, string newName);
-        IEnumerable<Namespace> EnumNamespaces();
+        Task RenameNamespaceAsync(string oldName, string newName, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Creates new index definitions.
         /// </summary>
         /// <param name="nsName">Namespace to add indexes</param>
         /// <param name="indexDefinitions">Index definitions to create</param>
-        void AddIndex(string nsName, Index[] indexDefinitions);
+        Task AddIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default);
         /// <summary>
         /// Updates current index definitions in the namespace.
         /// </summary>
         /// <param name="nsName">Namespace that have the indexes.</param>
         /// <param name="indexDefinitions">Index definitions to update</param>
-        void UpdateIndex(string nsName, Index[] indexDefinitions);
+        Task UpdateIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default);
         /// <summary>
         /// Drops index definitions by name of index.
         /// </summary>
         /// <param name="nsName">Namespace that have the indexes.</param>
         /// <param name="indexName">Index names to drop.</param>
-        void DropIndex(string nsName, string[] indexName);
+        Task DropIndexAsync(string nsName, string[] indexName, CancellationToken cancellationToken = default);
         /// <summary>
         /// Starts a Reindexer transaction. Use it with <c>using</c> or don't forget to dispose.
         /// </summary>
         /// <param name="nsName"></param>
         /// <returns></returns>
-        ReindexerTransaction StartTransaction(string nsName);
+        Task<ReindexerTransaction> StartTransactionAsync(string nsName, CancellationToken cancellationToken = default);
         /// <summary>
         /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) on multiple items.
         /// </summary>
@@ -80,7 +83,7 @@ namespace ReindexerNet
         /// <param name="items">Items</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        int ModifyItems<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null);
+        Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Serialze and Insert an item to the namespace.
         /// </summary>
@@ -89,7 +92,7 @@ namespace ReindexerNet
         /// <param name="items">Items to be inserted</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        int Insert<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null);
+        Task<int> InsertAsync<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Serialize and Update an item to the namespace.PK indexed field will be used from <typeparamref name="TItem"/> when searching the item
         /// </summary>
@@ -98,7 +101,7 @@ namespace ReindexerNet
         /// <param name="items">Items to be updated</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        int Update<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null);
+        Task<int> UpdateAsync<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Serialize and Upsert an item to the namespace. PK indexed field will be used from <typeparamref name="TItem"/> when searching the item.
         /// </summary>
@@ -107,7 +110,7 @@ namespace ReindexerNet
         /// <param name="items">Items to be upserted</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        int Upsert<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null);
+        Task<int> UpsertAsync<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Deletes an item from namespace. Only PK indexed field will be used from <typeparamref name="TItem"/> when deleting.
         /// </summary>
@@ -116,24 +119,23 @@ namespace ReindexerNet
         /// <param name="items">Items to be deleted</param>
         /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
         /// <returns></returns>
-        int Delete<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null);
+        Task<int> DeleteAsync<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
         /// Executes an sql query.
         /// </summary>
         /// <typeparam name="TItem">Item type to return</typeparam>
         /// <param name="sql">Sql query to perform.</param>
         /// <returns></returns>
-        QueryItemsOf<TItem> ExecuteSql<TItem>(string sql);
+        Task<QueryItemsOf<TItem>> ExecuteSqlAsync<TItem>(string sql, CancellationToken cancellationToken = default);
         /// <summary>
         /// Executes an sql query.
         /// </summary>
         /// <param name="sql">Sql query to perform.</param>
         /// <returns></returns>
-        QueryItemsOf<object> ExecuteSql(string sql);
-
-        void SetSchema(string nsName, string jsonSchema);
-        string GetMeta(string nsName, MetaInfo metadata);
-        void PutMeta(string nsName, MetaInfo metadata);
-        IEnumerable<string> EnumMeta(string nsName);
+        Task<QueryItemsOf<object>> ExecuteSqlAsync(string sql, CancellationToken cancellationToken = default);
+        Task SetSchemaAsync(string nsName, string jsonSchema, CancellationToken cancellationToken = default);
+        Task<string> GetMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default);
+        Task PutMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> EnumMetaAsync(string nsName, CancellationToken cancellationToken = default);
     }
 }

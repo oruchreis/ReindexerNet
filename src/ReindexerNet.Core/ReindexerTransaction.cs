@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReindexerNet
@@ -88,9 +90,9 @@ namespace ReindexerNet
         }
 
         /// <inheritdoc/>
-        public async Task<int> CommitAsync()
+        public async Task<int> CommitAsync(CancellationToken cancellationToken = default)
         {
-            return await CheckOperationAsync(async () => await _invoker.CommitAsync().ConfigureAwait(false)).ConfigureAwait(false);
+            return await CheckOperationAsync(async () => await _invoker.CommitAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -100,21 +102,21 @@ namespace ReindexerNet
         }
 
         /// <inheritdoc/>
-        public async Task RollbackAsync()
+        public async Task RollbackAsync(CancellationToken cancellationToken = default)
         {
-            await CheckOperationAsync(async () => await _invoker.RollbackAsync().ConfigureAwait(false)).ConfigureAwait(false);
+            await CheckOperationAsync(async () => await _invoker.RollbackAsync(cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public void ModifyItem(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+        public int ModifyItems<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null)
         {
-            CheckOperation(() => _invoker.ModifyItem(mode, itemJson, precepts));
+            return CheckOperation(() => _invoker.ModifyItems(mode, items, precepts));
         }
 
         /// <inheritdoc/>
-        public async Task ModifyItemAsync(ItemModifyMode mode, byte[] itemJson, params string[] precepts)
+        public async Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            await CheckOperationAsync(async () => await _invoker.ModifyItemAsync(mode, itemJson, precepts).ConfigureAwait(false)).ConfigureAwait(false);
+            return await CheckOperationAsync(async () => await _invoker.ModifyItemsAsync(mode, items, precepts, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
         }
 
         /// <summary>

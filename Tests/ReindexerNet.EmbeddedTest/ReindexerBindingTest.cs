@@ -9,9 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Utf8Json;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace ReindexerNet.EmbeddedTest
@@ -32,6 +32,15 @@ namespace ReindexerNet.EmbeddedTest
                 Assert.Fail($"{errorStr}, Error Code: {error.code}");
             }
         }
+
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+        {
+#if NET5_0_OR_GREATER
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+#else
+            IgnoreNullValues = true,
+#endif
+        };
 
         void Log(LogLevel level, string msg)
         {
@@ -133,7 +142,7 @@ namespace ReindexerNet.EmbeddedTest
                 new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
                 _ctxInfo));
 
-            var indexDefJson = JsonSerializer.ToJsonString(
+            var indexDefJson = JsonSerializer.Serialize(
             new Index
             {
                 Name = "Id",
@@ -141,9 +150,9 @@ namespace ReindexerNet.EmbeddedTest
                 FieldType = FieldType.Int64,
                 IndexType = IndexType.Hash,
                 JsonPaths = new List<string> { "Id" }
-            }, Utf8Json.Resolvers.StandardResolver.ExcludeNull);
+            }, _jsonSerializerOptions);
             AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
-            indexDefJson = JsonSerializer.ToJsonString(
+            indexDefJson = JsonSerializer.Serialize(
             new Index
             {
                 Name = "Guid",
@@ -151,7 +160,7 @@ namespace ReindexerNet.EmbeddedTest
                 FieldType = FieldType.String,
                 IndexType = IndexType.Hash,
                 JsonPaths = new List<string> { "Guid" }
-            }, Utf8Json.Resolvers.StandardResolver.ExcludeNull);
+            }, _jsonSerializerOptions);
             AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
 
             var rsp = ReindexerBinding.reindexer_select(_rx,
@@ -171,7 +180,7 @@ namespace ReindexerNet.EmbeddedTest
             using (var ser1 = new CJsonWriter())
             {
                 ser1.PutVString(DataTestNamespace);
-                ser1.PutVarCUInt((int)DataFormat.FormatJson);//format
+                ser1.PutVarCUInt((int)SerializerType.Json);//format
                 ser1.PutVarCUInt((int)ItemModifyMode.Upsert);//mode
                 ser1.PutVarCUInt(0);//stateToken
                 ser1.PutVarCUInt(0);//len(precepts)
@@ -302,7 +311,7 @@ namespace ReindexerNet.EmbeddedTest
                 new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
                 _ctxInfo));
 
-            var indexDefJson = JsonSerializer.ToJsonString(
+            var indexDefJson = JsonSerializer.Serialize(
             new Index
             {
                 Name = "Id",
@@ -310,13 +319,13 @@ namespace ReindexerNet.EmbeddedTest
                 FieldType = FieldType.Int64,
                 IndexType = IndexType.Hash,
                 JsonPaths = new List<string> { "Id" }
-            }, Utf8Json.Resolvers.StandardResolver.ExcludeNull);
+            }, _jsonSerializerOptions);
             AssertError(ReindexerBinding.reindexer_add_index(_rx, nsName.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
 
             using (var ser1 = new CJsonWriter())
             {
                 ser1.PutVString(nsName);
-                ser1.PutVarCUInt((int)DataFormat.FormatJson);
+                ser1.PutVarCUInt((int)SerializerType.Json);
                 ser1.PutVarCUInt((int)ItemModifyMode.Upsert);
                 ser1.PutVarCUInt(0);
                 ser1.PutVarCUInt(0);
