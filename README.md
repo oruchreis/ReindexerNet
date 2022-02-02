@@ -12,11 +12,11 @@
 ReindexerNet is a .NET binding(builtin & builtinserver) and connector(Grpc, ~~OpenApi~~) for embeddable in-memory document db [Reindexer](https://github.com/Restream/reindexer). 
 It is still in alpha state and there are a lot of works to do and .net apis are changing constantly. Even though we are using in production for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment. So please test in your environment before using.
 
-If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check [change logs here](CG.md).
+If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check [change logs here](CHANGELOG.md).
 
 ## ReindexerNet.Embedded
 This package contains embedded Reindexer implementation(**builtin**) and embedded server implementation(**builtinserver**). You can use this for memory caching in .net without using .net heap. 
-If you use .net heap for memory caching, you will eventually end up GC pauses because of enlarged .net heap. And if you can't use remote caching because of performance considerations, you have to use native memory for caching. 
+If you use .net heap for memory caching, you will eventually encounter long GC pauses because of enlarged .net heap and LOH. And if you can't use remote caching because of performance considerations, you have to use native memory for caching. 
 
 There are a few native memory cache solutions, and we choose Reindexer over them because of its performance. You can check Reindexer's benchmark results in their [main page](https://github.com/Restream/reindexer). Also you can use server implementation to run Reindexer server in your .net application.
 
