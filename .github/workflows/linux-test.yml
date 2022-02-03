@@ -3,6 +3,11 @@ name: linux-x64 Test
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'src/**.csproj'
+      - 'src/**.cs'
+      - 'src/**.so'
+      - '.github/workflows/linux-test.yml'
 
 jobs:
   ubuntu-test:

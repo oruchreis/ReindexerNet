@@ -3,6 +3,11 @@ name: osx-x64 Test
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'src/**.csproj'
+      - 'src/**.cs'
+      - 'src/**.dylib'
+      - '.github/workflows/osx-test.yml'
 
 jobs:
   osx-test:

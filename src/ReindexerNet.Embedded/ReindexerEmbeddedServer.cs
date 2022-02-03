@@ -20,7 +20,6 @@ namespace ReindexerNet.Embedded
         /// Creates a reindexer server instance
         /// </summary>
         /// <param name="serverOptions">Connection string for the server.</param>
-        /// <param name="options">Reindexer connection options.</param>
         public ReindexerEmbeddedServer(ServerOptions serverOptions)
             : base(serverOptions.DatabaseName)
         {
@@ -72,7 +71,7 @@ namespace ReindexerNet.Embedded
         private Thread _serverThread;
 
         /// <summary>
-        /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(ServerOptions, ConnectionOptions)"/> instead.
+        /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(ConnectionOptions)"/> instead.
         /// </summary>
         /// <param name="serverConfigYaml">Reindexer server configuration yaml</param>        
         /// <param name="dbName"></param>

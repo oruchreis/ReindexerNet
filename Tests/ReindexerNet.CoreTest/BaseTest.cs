@@ -44,7 +44,7 @@ namespace ReindexerNet.CoreTest
 
         private async Task AddIndexesAsync()
         {
-            await Client.AddIndexAsync(NsName, new[]{
+            foreach (var index in new[]{
                 new Index
                 {
                     Name = "Id",
@@ -86,7 +86,10 @@ namespace ReindexerNet.CoreTest
                     FieldType = FieldType.Int64,
                     IndexType = IndexType.Tree
                 }
-                });
+                })
+            {
+                await Client.AddIndexAsync(NsName, index);
+            }            
 
             var nsInfo = (await Client.ExecuteSqlAsync<Namespace>($"SELECT * FROM #namespaces WHERE name='{NsName}' LIMIT 1")).Items.FirstOrDefault();
             Assert.IsNotNull(nsInfo);

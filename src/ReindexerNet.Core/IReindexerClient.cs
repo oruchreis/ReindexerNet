@@ -18,6 +18,10 @@ namespace ReindexerNet
         /// Pings the server. Does nothing on embedded mode.
         /// </summary>
         void Ping();
+        /// <summary>
+        /// Creates a database
+        /// </summary>
+        /// <param name="dbName"></param>
         void CreateDatabase(string dbName);
         IEnumerable<Database> EnumDatabases();
         /// <summary>
@@ -47,25 +51,29 @@ namespace ReindexerNet
         /// <param name="oldName"></param>
         /// <param name="newName"></param>
         void RenameNamespace(string oldName, string newName);
+        /// <summary>
+        /// Enumerates all active namespaces
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<Namespace> EnumNamespaces();
         /// <summary>
         /// Creates new index definitions.
         /// </summary>
         /// <param name="nsName">Namespace to add indexes</param>
-        /// <param name="indexDefinitions">Index definitions to create</param>
-        void AddIndex(string nsName, Index[] indexDefinitions);
+        /// <param name="indexDefinition">Index definition to create</param>
+        void AddIndex(string nsName, Index indexDefinition);
         /// <summary>
         /// Updates current index definitions in the namespace.
         /// </summary>
         /// <param name="nsName">Namespace that have the indexes.</param>
-        /// <param name="indexDefinitions">Index definitions to update</param>
-        void UpdateIndex(string nsName, Index[] indexDefinitions);
+        /// <param name="indexDefinition">Index definition to update</param>
+        void UpdateIndex(string nsName, Index indexDefinition);
         /// <summary>
         /// Drops index definitions by name of index.
         /// </summary>
         /// <param name="nsName">Namespace that have the indexes.</param>
-        /// <param name="indexName">Index names to drop.</param>
-        void DropIndex(string nsName, string[] indexName);
+        /// <param name="indexName">Index name to drop.</param>
+        void DropIndex(string nsName, string indexName);
         /// <summary>
         /// Starts a Reindexer transaction. Use it with <c>using</c> or don't forget to dispose.
         /// </summary>
@@ -130,10 +138,30 @@ namespace ReindexerNet
         /// <param name="sql">Sql query to perform.</param>
         /// <returns></returns>
         QueryItemsOf<object> ExecuteSql(string sql);
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <param name="jsonSchema"></param>
         void SetSchema(string nsName, string jsonSchema);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <param name="metadata"></param>
+        /// <returns></returns>
         string GetMeta(string nsName, MetaInfo metadata);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <param name="metadata"></param>
         void PutMeta(string nsName, MetaInfo metadata);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <returns></returns>
         IEnumerable<string> EnumMeta(string nsName);
     }
 }

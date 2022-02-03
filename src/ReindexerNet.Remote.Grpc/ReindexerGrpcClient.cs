@@ -18,6 +18,9 @@ using Grpc.Net.Client.Configuration;
 
 namespace ReindexerNet.Remote.Grpc
 {
+    /// <summary>
+    /// Reindexer grpc client for remote Reindexer servers. Reindexer server must be started with grpc=true argument.
+    /// </summary>
     public sealed class ReindexerGrpcClient : IAsyncReindexerClient
     {
         private ReindexerConnectionString _connectionString;
@@ -26,13 +29,17 @@ namespace ReindexerNet.Remote.Grpc
         private ReindexerGrpc.ReindexerClient _grpcClient;
         private readonly OutputFlags _outputFlags;
 
+#if LEGACY_GRPC_CORE
         /// <param name="connectionString">Connection string for the implementation.</param>
         /// <param name="serializer"></param>
         /// <param name="maxSendMessageSize"></param>
         /// <param name="maxReceiveMessageSize"></param>        
-#if LEGACY_GRPC_CORE
         /// <param name="grpcChannelOptions"></param>
 #else
+        /// <param name="connectionString">Connection string for the implementation.</param>
+        /// <param name="serializer"></param>
+        /// <param name="maxSendMessageSize"></param>
+        /// <param name="maxReceiveMessageSize"></param>
         /// <param name="grpcMethodConfigs"></param>
 #endif
         public ReindexerGrpcClient(ReindexerConnectionString connectionString, IReindexerSerializer serializer = null,
@@ -40,7 +47,7 @@ namespace ReindexerNet.Remote.Grpc
 #if LEGACY_GRPC_CORE
             , IList<ChannelOption> grpcChannelOptions = null
 #else
-            ,IList<MethodConfig> grpcMethodConfigs = null
+            , IList<MethodConfig> grpcMethodConfigs = null
 #endif
             )
         {
@@ -107,6 +114,7 @@ namespace ReindexerNet.Remote.Grpc
             _grpcClient = new ReindexerGrpc.ReindexerClient(_channel);
         }
 
+        /// <inheritdoc/>
         public async Task ConnectAsync(ConnectionOptions options = null, CancellationToken cancellationToken = default)
         {
             if (options == null)
@@ -129,7 +137,7 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
-
+        /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
             await _channel.ShutdownAsync();
@@ -138,6 +146,7 @@ namespace ReindexerNet.Remote.Grpc
 #endif
         }
 
+        /// <inheritdoc/>
         public async Task CloseNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.CloseNamespaceAsync(new CloseNamespaceRequest
@@ -147,11 +156,13 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public Task PingAsync(CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public async Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.OpenNamespaceAsync(new OpenNamespaceRequest
@@ -172,6 +183,7 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public async Task DropNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.DropNamespaceAsync(new DropNamespaceRequest
@@ -181,6 +193,7 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public async Task TruncateNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.TruncateNamespaceAsync(new TruncateNamespaceRequest
@@ -190,93 +203,96 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <summary>
+        /// Not supported by Reindexer grpc server.
+        /// </summary>
+        /// <param name="oldName"></param>
+        /// <param name="newName"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
         public Task RenameNamespaceAsync(string oldName, string newName, CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException("Not supported by Reindexer grpc server");
         }
 
-        public async Task AddIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public async Task AddIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
         {
-            foreach (var indexDef in indexDefinitions)
+            var req = new AddIndexRequest
             {
-                var req = new AddIndexRequest
+                DbName = _connectionString.DatabaseName,
+                NsName = nsName,
+                Definition = new Reindexer.Grpc.Index
                 {
-                    DbName = _connectionString.DatabaseName,
-                    NsName = nsName,
-                    Definition = new Reindexer.Grpc.Index
+                    Name = indexDefinition.Name,
+                    FieldType = indexDefinition.FieldType.ToEnumString(),
+                    IndexType = indexDefinition.IndexType.ToEnumString(),
+                    JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name } },
+                    Options = new IndexOptions
                     {
-                        Name = indexDef.Name,
-                        FieldType = indexDef.FieldType.ToEnumString(),
-                        IndexType = indexDef.IndexType.ToEnumString(),
-                        JsonPaths = { indexDef.JsonPaths ?? new List<string>() { indexDef.Name } },
-                        Options = new IndexOptions
-                        {
-                            CollateMode = Enum.TryParse(indexDef.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ? collateMode : IndexOptions.Types.CollateMode.CollateNoneMode,
-                            IsArray = indexDef.IsArray ?? false,
-                            IsDense = indexDef.IsDense ?? false,
-                            IsPk = indexDef.IsPk ?? false,
-                            IsSparse = indexDef.IsSparse ?? false,
-                            SortOrdersTable = indexDef.SortOrderLetters ?? "",
-                            //Config = indexDef.Config,
-                            //RtreeType
-                        }
+                        CollateMode = Enum.TryParse(indexDefinition.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ? collateMode : IndexOptions.Types.CollateMode.CollateNoneMode,
+                        IsArray = indexDefinition.IsArray ?? false,
+                        IsDense = indexDefinition.IsDense ?? false,
+                        IsPk = indexDefinition.IsPk ?? false,
+                        IsSparse = indexDefinition.IsSparse ?? false,
+                        SortOrdersTable = indexDefinition.SortOrderLetters ?? "",
+                        //Config = indexDef.Config,
+                        //RtreeType
                     }
-                };
+                }
+            };
 
-                (await _grpcClient.AddIndexAsync(req, cancellationToken: cancellationToken)).HandleErrorResponse();
-            }
-        }
-        public async Task UpdateIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default)
-        {
-            foreach (var indexDef in indexDefinitions)
-            {
-                var req = new UpdateIndexRequest
-                {
-                    DbName = _connectionString.DatabaseName,
-                    NsName = nsName,
-                    Definition = new Reindexer.Grpc.Index
-                    {
-                        Name = indexDef.Name,
-                        FieldType = indexDef.FieldType.ToEnumString(),
-                        IndexType = indexDef.IndexType.ToEnumString(),
-                        JsonPaths = { indexDef.JsonPaths ?? new List<string>() { indexDef.Name } },
-                        Options = new IndexOptions
-                        {
-                            CollateMode = Enum.TryParse(indexDef.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ?
-                                collateMode :
-                                IndexOptions.Types.CollateMode.CollateNoneMode,
-                            IsArray = indexDef.IsArray ?? false,
-                            IsDense = indexDef.IsDense ?? false,
-                            IsPk = indexDef.IsPk ?? false,
-                            IsSparse = indexDef.IsSparse ?? false,
-                            SortOrdersTable = indexDef.SortOrderLetters,
-                            //Config = indexDef.Config,
-                            //RtreeType
-                        }
-                    }
-                };
-
-                (await _grpcClient.UpdateIndexAsync(req, cancellationToken: cancellationToken)).HandleErrorResponse();
-            }
+            (await _grpcClient.AddIndexAsync(req, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
-        public async Task DropIndexAsync(string nsName, string[] indexName, CancellationToken cancellationToken = default)
+        /// <inheritdoc/>
+        public async Task UpdateIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
         {
-            foreach (var name in indexName)
+            var req = new UpdateIndexRequest
             {
-                (await _grpcClient.DropIndexAsync(new DropIndexRequest
+                DbName = _connectionString.DatabaseName,
+                NsName = nsName,
+                Definition = new Reindexer.Grpc.Index
                 {
-                    DbName = _connectionString.DatabaseName,
-                    NsName = nsName,
-                    Definition = new Reindexer.Grpc.Index
+                    Name = indexDefinition.Name,
+                    FieldType = indexDefinition.FieldType.ToEnumString(),
+                    IndexType = indexDefinition.IndexType.ToEnumString(),
+                    JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name } },
+                    Options = new IndexOptions
                     {
-                        Name = name
+                        CollateMode = Enum.TryParse(indexDefinition.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ?
+                            collateMode :
+                            IndexOptions.Types.CollateMode.CollateNoneMode,
+                        IsArray = indexDefinition.IsArray ?? false,
+                        IsDense = indexDefinition.IsDense ?? false,
+                        IsPk = indexDefinition.IsPk ?? false,
+                        IsSparse = indexDefinition.IsSparse ?? false,
+                        SortOrdersTable = indexDefinition.SortOrderLetters,
+                        //Config = indexDef.Config,
+                        //RtreeType
                     }
-                }, cancellationToken: cancellationToken)).HandleErrorResponse();
-            }
+                }
+            };
 
+            (await _grpcClient.UpdateIndexAsync(req, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
+        public async Task DropIndexAsync(string nsName, string indexName, CancellationToken cancellationToken = default)
+        {
+            (await _grpcClient.DropIndexAsync(new DropIndexRequest
+            {
+                DbName = _connectionString.DatabaseName,
+                NsName = nsName,
+                Definition = new Reindexer.Grpc.Index
+                {
+                    Name = indexName
+                }
+            }, cancellationToken: cancellationToken)).HandleErrorResponse();
+        }
+
+        /// <inheritdoc/>
         public async Task<ReindexerTransaction> StartTransactionAsync(string nsName, CancellationToken cancellationToken = default)
         {
             var tranRsp = await _grpcClient.BeginTransactionAsync(new BeginTransactionRequest
@@ -312,37 +328,42 @@ namespace ReindexerNet.Remote.Grpc
             return await handleRsp;
         }
 
+        /// <inheritdoc/>
         public async Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public async Task<int> InsertAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await ModifyItemAsync(nsName, ItemModifyMode.Insert, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public async Task<int> UpdateAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await ModifyItemAsync(nsName, ItemModifyMode.Update, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public async Task<int> UpsertAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await ModifyItemAsync(nsName, ItemModifyMode.Upsert, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken).ConfigureAwait(false);
         }
 
-
+        /// <inheritdoc/>
         public async Task<int> DeleteAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await ModifyItemAsync(nsName, ItemModifyMode.Delete, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
         public async Task<QueryItemsOf<TItem>> ExecuteSqlAsync<TItem>(string sql, CancellationToken cancellationToken = default)
         {
             var asyncReq = _grpcClient.SelectSql(new SelectSqlRequest
@@ -373,17 +394,20 @@ namespace ReindexerNet.Remote.Grpc
             return result;
         }
 
+        /// <inheritdoc/>
         public Task<QueryItemsOf<object>> ExecuteSqlAsync(string sql, CancellationToken cancellationToken = default)
         {
             return ExecuteSqlAsync<object>(sql, cancellationToken);
         }
 
+        /// <inheritdoc/>
         public async Task CreateDatabaseAsync(string dbName, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.CreateDatabaseAsync(new CreateDatabaseRequest { DbName = dbName }, cancellationToken: cancellationToken))
                 .HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public async Task<IEnumerable<Database>> EnumDatabasesAsync(CancellationToken cancellationToken = default)
         {
             var rsp = await _grpcClient.EnumDatabasesAsync(new EnumDatabasesRequest(), cancellationToken: cancellationToken);
@@ -391,6 +415,7 @@ namespace ReindexerNet.Remote.Grpc
             return rsp.Names.Select(n => new Database { Name = n });
         }
 
+        /// <inheritdoc/>
         public async Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default)
         {
             var rsp = await _grpcClient.EnumNamespacesAsync(new EnumNamespacesRequest { DbName = _connectionString.DatabaseName },
@@ -440,6 +465,7 @@ namespace ReindexerNet.Remote.Grpc
             });
         }
 
+        /// <inheritdoc/>
         public async Task SetSchemaAsync(string nsName, string jsonSchema, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.SetSchemaAsync(new SetSchemaRequest
@@ -453,6 +479,7 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public async Task<string> GetMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
         {
             var rsp = await _grpcClient.GetMetaAsync(new GetMetaRequest
@@ -469,6 +496,7 @@ namespace ReindexerNet.Remote.Grpc
             return rsp.Metadata;
         }
 
+        /// <inheritdoc/>
         public async Task PutMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
         {
             (await _grpcClient.PutMetaAsync(new PutMetaRequest
@@ -483,6 +511,7 @@ namespace ReindexerNet.Remote.Grpc
             }, cancellationToken: cancellationToken)).HandleErrorResponse();
         }
 
+        /// <inheritdoc/>
         public async Task<IEnumerable<string>> EnumMetaAsync(string nsName, CancellationToken cancellationToken = default)
         {
             var rsp = await _grpcClient.EnumMetaAsync(new EnumMetaRequest

@@ -27,12 +27,16 @@ namespace ReindexerNet.Embedded
 
         private readonly ReindexerConnectionString _connectionString;
 
+        /// <summary>
+        /// Item serializer
+        /// </summary>
         protected IReindexerSerializer Serializer { get; }
 
         /// <summary>
         /// Creates a new embedded Reindexer database.
         /// </summary>
-        /// <param name="dbPath">Database path</param>        
+        /// <param name="dbPath">Database path</param>
+        /// <param name="serializer">Custom serializer for item serializations. default(Json serializer)</param>        
         public ReindexerEmbedded(string dbPath, IReindexerSerializer serializer = null)
         {
             _connectionString = new ReindexerConnectionString { DatabaseName = dbPath };
@@ -84,33 +88,30 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public void AddIndex(string nsName, Index[] indexDefinitions)
+        public void AddIndex(string nsName, Index indexDefinition)
         {
-            using (var nsNameRx = nsName.GetHandle())
-                foreach (var index in indexDefinitions)
-                {
-                    if (index.JsonPaths == null || index.JsonPaths.Count == 0)
-                        index.JsonPaths = new List<string> { index.Name };
-                    using (var jsonRx = InternalSerializeJson(index).GetStringHandle())
-                        Assert.ThrowIfError(() =>
-                                ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
-                        );
-                }
+            using var nsNameRx = nsName.GetHandle();
+            if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
+                indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+            using var jsonRx = InternalSerializeJson(indexDefinition).GetStringHandle();
+            Assert.ThrowIfError(() =>
+                    ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+            );
         }
 
         /// <inheritdoc/>
-        public Task AddIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default)
+        public Task AddIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
         {
-            AddIndex(nsName, indexDefinitions);
+            AddIndex(nsName, indexDefinition);
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
         public void CloseNamespace(string nsName)
         {
-            using (var nsNameRx = nsName.GetHandle())
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
+            using var nsNameRx = nsName.GetHandle();
+            Assert.ThrowIfError(() =>
+                ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
         }
 
         /// <inheritdoc/>
@@ -128,14 +129,14 @@ namespace ReindexerNet.Embedded
                 Directory.CreateDirectory(_connectionString.DatabaseName); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
             }
 
-            using (var dsn = $"builtin://{_connectionString.DatabaseName}".GetHandle())
-            using (var version = ReindexerBinding.ReindexerVersion.GetHandle())
-                Assert.ThrowIfError(() =>
-                   ReindexerBinding.reindexer_connect(Rx,
-                       dsn,
-                       options ?? new ConnectionOptions(),
-                       version)
-               );
+            using var dsn = $"builtin://{_connectionString.DatabaseName}".GetHandle();
+            using var version = ReindexerBinding.ReindexerVersion.GetHandle();
+            Assert.ThrowIfError(() =>
+               ReindexerBinding.reindexer_connect(Rx,
+                   dsn,
+                   options ?? new ConnectionOptions(),
+                   version)
+           );
         }
 
         /// <inheritdoc/>
@@ -146,20 +147,17 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public void DropIndex(string nsName, string[] indexName)
+        public void DropIndex(string nsName, string indexName)
         {
-            using (var nsNameRx = nsName.GetHandle())
-                foreach (var iname in indexName)
-                {
-                    using (var inameRx = iname.GetHandle())
-                        Assert.ThrowIfError(() =>
-                            ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
-                        );
-                }
+            using var nsNameRx = nsName.GetHandle();
+            using var inameRx = indexName.GetHandle();
+            Assert.ThrowIfError(() =>
+                ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
+            );
         }
 
         /// <inheritdoc/>
-        public Task DropIndexAsync(string nsName, string[] indexName, CancellationToken cancellationToken = default)
+        public Task DropIndexAsync(string nsName, string indexName, CancellationToken cancellationToken = default)
         {
             DropIndex(nsName, indexName);
             return Task.CompletedTask;
@@ -168,10 +166,10 @@ namespace ReindexerNet.Embedded
         /// <inheritdoc/>
         public void DropNamespace(string nsName)
         {
-            using (var nsNameRx = nsName.GetHandle())
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
-                );
+            using var nsNameRx = nsName.GetHandle();
+            Assert.ThrowIfError(() =>
+                ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
+            );
         }
 
         /// <inheritdoc/>
@@ -274,24 +272,22 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public void UpdateIndex(string nsName, Index[] indexDefinitions)
+        public void UpdateIndex(string nsName, Index indexDefinition)
         {
-            using (var nsNameRx = nsName.GetHandle())
-                foreach (var index in indexDefinitions)
-                {
-                    if (index.JsonPaths == null || index.JsonPaths.Count == 0)
-                        index.JsonPaths = new List<string> { index.Name };
-                    using (var jsonRx = InternalSerializeJson(index).GetStringHandle())
-                        Assert.ThrowIfError(() =>
-                            ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
-                        );
-                }
+            using var nsNameRx = nsName.GetHandle();
+            if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
+                indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+            using var jsonRx = InternalSerializeJson(indexDefinition).GetStringHandle();
+            Assert.ThrowIfError(() =>
+                ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+            );
+
         }
 
         /// <inheritdoc/>
-        public Task UpdateIndexAsync(string nsName, Index[] indexDefinitions, CancellationToken cancellationToken = default)
+        public Task UpdateIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
         {
-            UpdateIndex(nsName, indexDefinitions);
+            UpdateIndex(nsName, indexDefinition);
             return Task.CompletedTask;
         }
 
@@ -462,6 +458,7 @@ namespace ReindexerNet.Embedded
             return Task.FromResult(Delete<T>(nsName, items, precepts));
         }
 
+        /// <inheritdoc/>
         public void CreateDatabase(string dbName)
         {
             var newRx = ReindexerBinding.init_reindexer();
@@ -476,12 +473,14 @@ namespace ReindexerNet.Embedded
             ReindexerBinding.destroy_reindexer(newRx);
         }
 
+        /// <inheritdoc/>
         public Task CreateDatabaseAsync(string dbName, CancellationToken cancellationToken = default)
         {
             CreateDatabase(dbName);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<Database> EnumDatabases()
         {
             var dbPath = _connectionString.DatabaseName;
@@ -489,21 +488,25 @@ namespace ReindexerNet.Embedded
             return Directory.GetParent(dbPath).EnumerateDirectories().Select(d => new Database { Name = d.Name });
         }
 
+        /// <inheritdoc/>
         public Task<IEnumerable<Database>> EnumDatabasesAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(EnumDatabases());
         }
 
+        /// <inheritdoc/>
         public IEnumerable<Namespace> EnumNamespaces()
         {
             return ExecuteSql<Namespace>(GetNamespacesQuery).Items;
         }
 
+        /// <inheritdoc/>
         public Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(EnumNamespaces());
         }
 
+        /// <inheritdoc/>
         public void SetSchema(string nsName, string jsonSchema)
         {
             using var nsNameRx = nsName.GetHandle();
@@ -513,12 +516,14 @@ namespace ReindexerNet.Embedded
                 ReindexerBinding.reindexer_set_schema(Rx, nsNameRx, jsonSchemaRx, _ctxInfo));
         }
 
+        /// <inheritdoc/>
         public Task SetSchemaAsync(string nsName, string jsonSchema, CancellationToken cancellationToken = default)
         {
             SetSchema(nsName, jsonSchema);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public string GetMeta(string nsName, MetaInfo metadata)
         {
             using var nsNameRx = nsName.GetHandle();
@@ -534,11 +539,13 @@ namespace ReindexerNet.Embedded
             }
         }
 
+        /// <inheritdoc/>
         public Task<string> GetMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(GetMeta(nsName, metadata));
         }
 
+        /// <inheritdoc/>
         public void PutMeta(string nsName, MetaInfo metadata)
         {
             using var nsNameRx = nsName.GetHandle();
@@ -547,17 +554,20 @@ namespace ReindexerNet.Embedded
             Assert.ThrowIfError(() => ReindexerBinding.reindexer_put_meta(Rx, nsNameRx, keyRx, dataRx, _ctxInfo));
         }
 
+        /// <inheritdoc/>
         public Task PutMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
         {
             PutMeta(nsName, metadata);
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<string> EnumMeta(string nsName)
         {
             throw new NotImplementedException();//TODO: c binding doesn't support this, get via sql script
         }
 
+        /// <inheritdoc/>
         public Task<IEnumerable<string>> EnumMetaAsync(string nsName, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(EnumMeta(nsName));
