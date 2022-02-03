@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.1] - 2022-02-03
 ### Added
-- 
+- Added some missing xml docs.
 ### Changed
 - Removed multiple index modification from api similar to Reindexer native api.
 
