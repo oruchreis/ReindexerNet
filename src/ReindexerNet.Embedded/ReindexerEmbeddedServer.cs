@@ -20,8 +20,9 @@ namespace ReindexerNet.Embedded
         /// Creates a reindexer server instance
         /// </summary>
         /// <param name="serverOptions">Connection string for the server.</param>
-        public ReindexerEmbeddedServer(ServerOptions serverOptions)
-            : base(serverOptions.DatabaseName)
+        /// <param name="serializer"></param>
+        public ReindexerEmbeddedServer(ServerOptions serverOptions, IReindexerSerializer serializer = null)
+            : base(serverOptions.DatabaseName, serializer)
         {
             _serverOptions = serverOptions;
             _pServer = ReindexerBinding.init_reindexer_server();
