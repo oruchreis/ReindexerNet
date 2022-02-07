@@ -129,5 +129,15 @@ namespace ReindexerNet
                 _invoker.Rollback();
             }
         }
+
+        public int ModifyItems(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
+        {
+            return CheckOperation(() => _invoker.ModifyItems(mode, itemDatas, dataEncoding, precepts));
+        }
+
+        public async Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return await CheckOperationAsync(async () => await _invoker.ModifyItemsAsync(mode, itemDatas, dataEncoding, precepts, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+        }
     }
 }

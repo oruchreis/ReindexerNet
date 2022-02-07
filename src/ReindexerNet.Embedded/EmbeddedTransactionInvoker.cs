@@ -43,12 +43,12 @@ namespace ReindexerNet.Embedded
             return Task.FromResult(Commit());
         }
 
-        public void ModifyItem(ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, string[] precepts = null)
+        public void ModifyItem(ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
         {
             precepts = precepts ?? new string[0];
             using (var writer = new CJsonWriter())
             {
-                writer.PutVarCUInt((int)_serializer.Type); // format
+                writer.PutVarCUInt((int)dataEncoding); // format
                 writer.PutVarCUInt((int)mode);// mode
                 writer.PutVarCUInt(0);// stateToken
 
@@ -71,7 +71,18 @@ namespace ReindexerNet.Embedded
             var result = 0;
             foreach (var item in items)
             {
-                ModifyItem(mode, _serializer.Serialize(item), precepts);
+                ModifyItem(mode, _serializer.Serialize(item), _serializer.Type, precepts);
+                result++;
+            }
+            return result;
+        }
+
+        public int ModifyItems(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
+        {
+            var result = 0;
+            foreach (var itemData in itemDatas)
+            {
+                ModifyItem(mode, itemData, dataEncoding, precepts);
                 result++;
             }
             return result;
@@ -80,6 +91,11 @@ namespace ReindexerNet.Embedded
         public Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(ModifyItems(mode, items, precepts));
+        }
+
+        public Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(ModifyItems(mode, itemDatas, dataEncoding, precepts));
         }
 
         public void Rollback()

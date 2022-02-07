@@ -90,6 +90,16 @@ namespace ReindexerNet
         /// <returns></returns>
         int ModifyItems<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null);
         /// <summary>
+        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) on multiple items with preserialized item data.
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <param name="mode"></param>
+        /// <param name="itemDatas"></param>
+        /// <param name="dataEncoding"></param>
+        /// <param name="precepts"></param>
+        /// <returns></returns>
+        int ModifyItems(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null);
+        /// <summary>
         /// Serialze and Insert an item to the namespace.
         /// </summary>
         /// <typeparam name="TItem">Item type</typeparam>

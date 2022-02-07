@@ -305,7 +305,7 @@ namespace ReindexerNet.Remote.Grpc
             return new ReindexerTransaction(new GrpcTransactionInvoker(_grpcClient, tranRsp.Id, _serializer));
         }
 
-        private async Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, IEnumerable<ByteString> itemsBytes,
+        private async Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, IEnumerable<ByteString> itemsBytes, EncodingType dataEncoding,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             using var asyncReq = _grpcClient.ModifyItem();
@@ -315,7 +315,7 @@ namespace ReindexerNet.Remote.Grpc
                 await asyncReq.RequestStream.WriteAsync(new ModifyItemRequest
                 {
                     DbName = _connectionString.DatabaseName,
-                    EncodingType = _outputFlags.EncodingType,
+                    EncodingType = dataEncoding,
                     Mode = mode.ToModifyMode(),
                     NsName = nsName,
                     Data = itemBytes,
@@ -332,35 +332,50 @@ namespace ReindexerNet.Remote.Grpc
         public async Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
+            return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), 
+                _outputFlags.EncodingType, precepts, cancellationToken);
+        }
+
+        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, 
+            string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return ModifyItemAsync(nsName, mode, itemDatas.Select(itemData => ByteString.CopyFrom(itemData)), 
+                dataEncoding switch
+                {
+                    SerializerType.Json => EncodingType.Json,
+                    SerializerType.Msgpack => EncodingType.Msgpack,
+                    SerializerType.Cjson => EncodingType.Cjson,
+                    SerializerType.Protobuf => EncodingType.Protobuf,
+                    _ => throw new NotImplementedException(),
+                }, precepts, cancellationToken);
         }
 
         /// <inheritdoc/>
         public async Task<int> InsertAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, ItemModifyMode.Insert, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
+            return await ModifyItemsAsync(nsName, ItemModifyMode.Insert, items, precepts, cancellationToken);
         }
 
         /// <inheritdoc/>
         public async Task<int> UpdateAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, ItemModifyMode.Update, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken);
+            return await ModifyItemsAsync(nsName, ItemModifyMode.Update, items, precepts, cancellationToken);
         }
 
         /// <inheritdoc/>
         public async Task<int> UpsertAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, ItemModifyMode.Upsert, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken).ConfigureAwait(false);
+            return await ModifyItemsAsync(nsName, ItemModifyMode.Upsert, items, precepts, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<int> DeleteAsync<TItem>(string nsName, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, ItemModifyMode.Delete, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), precepts, cancellationToken).ConfigureAwait(false);
+            return await ModifyItemsAsync(nsName, ItemModifyMode.Delete, items, precepts, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

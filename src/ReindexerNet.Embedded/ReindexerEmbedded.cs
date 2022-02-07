@@ -292,14 +292,14 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public int ModifyItem(string nsName, ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, string[] precepts = null)
+        public int ModifyItem(string nsName, ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
         {
             var result = 0;
             precepts = precepts ?? new string[0];
             using (var writer = new CJsonWriter())
             {
                 writer.PutVString(nsName);
-                writer.PutVarCUInt((int)Serializer.Type);//format
+                writer.PutVarCUInt((int)dataEncoding);//format
                 writer.PutVarCUInt((int)mode);//mode
                 writer.PutVarCUInt(0);//stateToken
 
@@ -335,7 +335,19 @@ namespace ReindexerNet.Embedded
             var result = 0;
             foreach (var item in items)
             {
-                result += ModifyItem(nsName, mode, Serializer.Serialize(item), precepts);
+                result += ModifyItem(nsName, mode, Serializer.Serialize(item), Serializer.Type, precepts);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public int ModifyItems(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
+        {
+            var result = 0;
+            foreach (var itemData in itemDatas)
+            {
+                result += ModifyItem(nsName, mode, itemData, dataEncoding, precepts);
             }
 
             return result;
@@ -346,6 +358,13 @@ namespace ReindexerNet.Embedded
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(ModifyItems(nsName, mode, items, precepts));
+        }
+
+        /// <inheritdoc/>
+        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, 
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(ModifyItems(nsName, mode, itemDatas, dataEncoding, precepts));
         }
 
         /// <inheritdoc/>

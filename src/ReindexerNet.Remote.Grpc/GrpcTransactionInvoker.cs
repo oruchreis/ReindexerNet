@@ -5,6 +5,7 @@ using ReindexerGrpc = Reindexer.Grpc.Reindexer;
 using Reindexer.Grpc;
 using Google.Protobuf;
 using System.Threading;
+using System.Linq;
 
 namespace ReindexerNet.Remote.Grpc
 {
@@ -44,20 +45,32 @@ namespace ReindexerNet.Remote.Grpc
             throw new NotSupportedException("Reindexer grpc client doesn't support sync method, use ModifyItemAsync instead.");
         }
 
-        public async Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items,
+        public int ModifyItems(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
+        {
+            throw new NotSupportedException("Reindexer grpc client doesn't support sync method, use ModifyItemAsync instead.");
+        }
+
+        private async Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<ByteString> itemDatas, SerializerType dataEncoding,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
             using var asyncReq = _grpcClient.AddTxItem();
 
             var handleRsp = asyncReq.ResponseStream.HandleErrorResponseAsync(cancellationToken: cancellationToken);
-            foreach (var item in items)
+            foreach (var itemData in itemDatas)
             {
                 await asyncReq.RequestStream.WriteAsync(new AddTxItemRequest
                 {
                     Id = _tranId,
                     Mode = mode.ToModifyMode(),
-                    Data = ByteString.CopyFrom(_serializer.Serialize(item)),
-                    EncodingType = EncodingType.Json
+                    Data = itemData,
+                    EncodingType = dataEncoding switch
+                    {
+                        SerializerType.Json => EncodingType.Json,
+                        SerializerType.Msgpack => EncodingType.Msgpack,
+                        SerializerType.Cjson => EncodingType.Cjson,
+                        SerializerType.Protobuf => EncodingType.Protobuf,
+                        _ => throw new NotImplementedException(),
+                    }
                 });
                 if (cancellationToken.IsCancellationRequested)
                     break;
@@ -65,6 +78,21 @@ namespace ReindexerNet.Remote.Grpc
 
             await asyncReq.RequestStream.CompleteAsync();
             return await handleRsp;
+        }
+
+
+        public Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items,
+            string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return ModifyItemsAsync(mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), 
+                _serializer.Type, precepts, cancellationToken);
+        }
+
+        public Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding,
+            string[] precepts = null, CancellationToken cancellationToken = default)
+        {
+            return ModifyItemsAsync(mode, itemDatas.Select(itemData => ByteString.CopyFrom(itemData)), 
+                dataEncoding, precepts, cancellationToken);
         }
 
         public void Rollback()

@@ -112,6 +112,17 @@ namespace ReindexerNet
         /// <returns></returns>
         Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
+        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) on multiple items with preserialized item data.
+        /// </summary>
+        /// <param name="nsName"></param>
+        /// <param name="mode"></param>
+        /// <param name="itemDatas"></param>
+        /// <param name="dataEncoding"></param>
+        /// <param name="precepts"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default);
+        /// <summary>
         /// Serialze and Insert an item to the namespace.
         /// </summary>
         /// <typeparam name="TItem">Item type</typeparam>
