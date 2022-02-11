@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Linq;
 using System.Net;
+using Grpc.Core.Interceptors;
 #if LEGACY_GRPC_CORE
 using System.Text.RegularExpressions;
 using GrpcChannel = Grpc.Core.Channel;
@@ -34,13 +35,15 @@ namespace ReindexerNet.Remote.Grpc
         /// <param name="serializer"></param>
         /// <param name="maxSendMessageSize"></param>
         /// <param name="maxReceiveMessageSize"></param>        
-        /// <param name="grpcChannelOptions"></param>
+        /// <param name="grpcChannelOptions">Experimental parameter, maybe removed in future</param>
+        /// <param name="grpcInterceptor">Experimental parameter, maybe removed in future</param>
 #else
         /// <param name="connectionString">Connection string for the implementation.</param>
         /// <param name="serializer"></param>
         /// <param name="maxSendMessageSize"></param>
         /// <param name="maxReceiveMessageSize"></param>
-        /// <param name="grpcMethodConfigs"></param>
+        /// <param name="grpcMethodConfigs">Experimental parameter, maybe removed in future</param>
+        /// <param name="grpcInterceptor">Experimental parameter, maybe removed in future</param>
 #endif
         public ReindexerGrpcClient(ReindexerConnectionString connectionString, IReindexerSerializer serializer = null,
             int? maxSendMessageSize = null, int? maxReceiveMessageSize = null
@@ -49,6 +52,7 @@ namespace ReindexerNet.Remote.Grpc
 #else
             , IList<MethodConfig> grpcMethodConfigs = null
 #endif
+            , Interceptor grpcInterceptor = null
             )
         {
             _connectionString = connectionString;
@@ -109,9 +113,11 @@ namespace ReindexerNet.Remote.Grpc
                 channelOptions.ServiceConfig.MethodConfigs.Add(methodConfig);
             }
             _channel = GrpcChannel.ForAddress(_connectionString.GrpcAddress, channelOptions);
-#endif
-
-            _grpcClient = new ReindexerGrpc.ReindexerClient(_channel);
+#endif            
+            if (grpcInterceptor == null)
+                _grpcClient = new ReindexerGrpc.ReindexerClient(_channel);
+            else
+                _grpcClient = new ReindexerGrpc.ReindexerClient(_channel.Intercept(grpcInterceptor));
         }
 
         /// <inheritdoc/>
@@ -319,7 +325,7 @@ namespace ReindexerNet.Remote.Grpc
                     Mode = mode.ToModifyMode(),
                     NsName = nsName,
                     Data = itemBytes,
-                });
+                }).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested)
                     break;
             }
