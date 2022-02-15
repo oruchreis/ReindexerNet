@@ -30,27 +30,18 @@ namespace ReindexerNet.Remote.Grpc
         private ReindexerGrpc.ReindexerClient _grpcClient;
         private readonly OutputFlags _outputFlags;
 
-#if LEGACY_GRPC_CORE
-        /// <param name="connectionString">Connection string for the implementation.</param>
-        /// <param name="serializer"></param>
-        /// <param name="maxSendMessageSize"></param>
-        /// <param name="maxReceiveMessageSize"></param>        
-        /// <param name="grpcChannelOptions">Experimental parameter, maybe removed in future</param>
-        /// <param name="grpcInterceptor">Experimental parameter, maybe removed in future</param>
-#else
         /// <param name="connectionString">Connection string for the implementation.</param>
         /// <param name="serializer"></param>
         /// <param name="maxSendMessageSize"></param>
         /// <param name="maxReceiveMessageSize"></param>
-        /// <param name="grpcMethodConfigs">Experimental parameter, maybe removed in future</param>
+        /// <param name="configureChannelOptions">Experimental parameter, maybe removed in future</param>
         /// <param name="grpcInterceptor">Experimental parameter, maybe removed in future</param>
-#endif
         public ReindexerGrpcClient(ReindexerConnectionString connectionString, IReindexerSerializer serializer = null,
             int? maxSendMessageSize = null, int? maxReceiveMessageSize = null
 #if LEGACY_GRPC_CORE
-            , IList<ChannelOption> grpcChannelOptions = null
+            , Action<IList<ChannelOption>> configureChannelOptions = null
 #else
-            , IList<MethodConfig> grpcMethodConfigs = null
+            , Action<GrpcChannelOptions> configureChannelOptions = null
 #endif
             , Interceptor grpcInterceptor = null
             )
@@ -83,13 +74,12 @@ namespace ReindexerNet.Remote.Grpc
             var channelOptions = new List<ChannelOption>();
             channelOptions.Add(new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxReceiveMessageSize ?? -1));
             channelOptions.Add(new ChannelOption(ChannelOptions.MaxSendMessageLength, maxSendMessageSize ?? -1));
-            if (grpcChannelOptions != null)
-                channelOptions.AddRange(grpcChannelOptions);
+            configureChannelOptions?.Invoke(channelOptions);
 
             _channel = new GrpcChannel(ipEndpoint.Host, ipEndpoint.Port //doesn't support subdirectories.
                 , ChannelCredentials.Insecure, channelOptions);
 #else
-            grpcMethodConfigs = grpcMethodConfigs ?? new[]{ new MethodConfig
+            var grpcMethodConfigs = new[]{ new MethodConfig
             {
                 Names = { MethodName.Default },
                 RetryPolicy = new RetryPolicy
@@ -103,15 +93,19 @@ namespace ReindexerNet.Remote.Grpc
             }};
             var channelOptions = new GrpcChannelOptions
             {
-                ServiceConfig = new ServiceConfig { },
-                MaxReceiveMessageSize = maxReceiveMessageSize,
-                MaxSendMessageSize = maxSendMessageSize,
+                ServiceConfig = new ServiceConfig { }                
             };
+
+            channelOptions.MaxReceiveMessageSize = maxReceiveMessageSize;
+            channelOptions.MaxSendMessageSize = maxSendMessageSize;
 
             foreach (var methodConfig in grpcMethodConfigs)
             {
                 channelOptions.ServiceConfig.MethodConfigs.Add(methodConfig);
             }
+
+            configureChannelOptions?.Invoke(channelOptions);
+
             _channel = GrpcChannel.ForAddress(_connectionString.GrpcAddress, channelOptions);
 #endif            
             if (grpcInterceptor == null)
