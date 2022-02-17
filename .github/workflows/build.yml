@@ -121,7 +121,7 @@ jobs:
       with:
         dotnet-version: '6.x'
     - name: Publish Nuget Package
-      uses: rohith/publish-nuget@v2
+      uses: alirezanet/publish-nuget@v3.0.0
       with:
         PROJECT_FILE_PATH: src/ReindexerNet.${{ matrix.project }}/ReindexerNet.${{ matrix.project }}.csproj
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
