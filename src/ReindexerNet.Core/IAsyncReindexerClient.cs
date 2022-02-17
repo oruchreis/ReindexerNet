@@ -70,9 +70,15 @@ namespace ReindexerNet
         /// <summary>
         /// Enumerates all active namespaces
         /// </summary>
+        /// <param name="name">Filter by name</param>
+        /// <param name="onlyNames">Get only names. If set true, it will get indicies and other properties of the namespace.</param>
+        /// <param name="hideSystems">Hide system namespaces</param>
+        /// <param name="withClosed">Get closed namespaces too</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<Namespace>> EnumNamespacesAsync(string name = null, bool onlyNames = false, 
+            bool hideSystems = true, bool withClosed = false,
+            CancellationToken cancellationToken = default);
         /// <summary>
         /// Creates new index definitions.
         /// </summary>

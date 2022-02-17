@@ -93,7 +93,7 @@ namespace ReindexerNet.Remote.Grpc
             }};
             var channelOptions = new GrpcChannelOptions
             {
-                ServiceConfig = new ServiceConfig { }                
+                ServiceConfig = new ServiceConfig { }
             };
 
             channelOptions.MaxReceiveMessageSize = maxReceiveMessageSize;
@@ -332,14 +332,14 @@ namespace ReindexerNet.Remote.Grpc
         public async Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))), 
+            return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))),
                 _outputFlags.EncodingType, precepts, cancellationToken);
         }
 
-        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, 
+        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
-            return ModifyItemAsync(nsName, mode, itemDatas.Select(itemData => ByteString.CopyFrom(itemData)), 
+            return ModifyItemAsync(nsName, mode, itemDatas.Select(itemData => ByteString.CopyFrom(itemData)),
                 dataEncoding switch
                 {
                     SerializerType.Json => EncodingType.Json,
@@ -431,10 +431,22 @@ namespace ReindexerNet.Remote.Grpc
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Namespace>> EnumNamespacesAsync(string name = null, bool onlyNames = false,
+            bool hideSystems = true, bool withClosed = false, CancellationToken cancellationToken = default)
         {
-            var rsp = await _grpcClient.EnumNamespacesAsync(new EnumNamespacesRequest { DbName = _connectionString.DatabaseName },
+            var rsp = await _grpcClient.EnumNamespacesAsync(new EnumNamespacesRequest
+            {
+                DbName = _connectionString.DatabaseName,
+                Options = new EnumNamespacesOptions
+                {
+                    Filter = name ?? "",
+                    OnlyNames = onlyNames,
+                    HideSystems = hideSystems,
+                    WithClosed = withClosed,
+                }
+            },
                 cancellationToken: cancellationToken);
+
             rsp.ErrorResponse.HandleErrorResponse();
             return rsp.NamespacesDefinitions.Select(ns => new Namespace
             {

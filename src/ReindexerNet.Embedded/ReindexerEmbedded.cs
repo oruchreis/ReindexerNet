@@ -361,7 +361,7 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, 
+        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(ModifyItems(nsName, mode, itemDatas, dataEncoding, precepts));
@@ -514,15 +514,29 @@ namespace ReindexerNet.Embedded
         }
 
         /// <inheritdoc/>
-        public IEnumerable<Namespace> EnumNamespaces()
+        public IEnumerable<Namespace> EnumNamespaces(string name = null, bool onlyNames = false,
+            bool hideSystems = true, bool withClosed = false)
         {
-            return ExecuteSql<Namespace>(GetNamespacesQuery).Items;
+            var filters = new List<string>();
+            if (hideSystems)
+                filters.Add("NOT(name LIKE '#%')");
+            if (name != null)
+                filters.Add($"name LIKE '{name}'");
+            var query = new StringBuilder($"select {(onlyNames ? "name" : "*")} FROM #namespaces");
+            if (filters.Any())
+            {
+                query.AppendFormat(" WHERE {0}", string.Join(" AND ", filters));
+            }
+                
+            return ExecuteSql<Namespace>(query.ToString()).Items
+                .Where(ns => ns.Storage == null || withClosed || ns.Storage.Enabled == true);
         }
 
         /// <inheritdoc/>
-        public Task<IEnumerable<Namespace>> EnumNamespacesAsync(CancellationToken cancellationToken = default)
+        public Task<IEnumerable<Namespace>> EnumNamespacesAsync(string name = null, bool onlyNames = false,
+            bool hideSystems = true, bool withClosed = false, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(EnumNamespaces());
+            return Task.FromResult(EnumNamespaces(name, onlyNames, hideSystems, withClosed));
         }
 
         /// <inheritdoc/>

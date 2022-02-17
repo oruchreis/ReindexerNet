@@ -52,10 +52,15 @@ namespace ReindexerNet
         /// <param name="newName"></param>
         void RenameNamespace(string oldName, string newName);
         /// <summary>
-        /// Enumerates all active namespaces
+        /// Enumerates namespaces
         /// </summary>
+        /// <param name="name">Filter by name</param>
+        /// <param name="onlyNames">Get only names. If set true, it will get indicies and other properties of the namespace.</param>
+        /// <param name="hideSystems">Hide system namespaces</param>
+        /// <param name="withClosed">Get closed namespaces too</param>
         /// <returns></returns>
-        IEnumerable<Namespace> EnumNamespaces();
+        IEnumerable<Namespace> EnumNamespaces(string name = null, bool onlyNames = false, 
+            bool hideSystems = true, bool withClosed = false);
         /// <summary>
         /// Creates new index definitions.
         /// </summary>
