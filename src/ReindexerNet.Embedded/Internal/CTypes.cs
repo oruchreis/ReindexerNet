@@ -6,12 +6,21 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Text;
+using int8_t = System.SByte;
+using int32_t = System.Int32;
 using int64_t = System.Int64;
 using uint64_t = System.UInt64;
 using uintptr_t = System.UIntPtr;
 
 namespace ReindexerNet.Embedded.Internal
 {
+    [StructLayout(LayoutKind.Sequential)]
+    struct reindexer_config
+    {
+        int64_t allocator_cache_limit;
+        float allocator_max_cache_part;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     struct reindexer_buffer
     {
@@ -142,7 +151,7 @@ namespace ReindexerNet.Embedded.Internal
             {
                 var ptr = (IntPtr)(byte*)rb.data;
                 var result = Marshal.PtrToStringAnsi(ptr);
-                ReindexerBinding.malloc_free(ptr);
+                ReindexerBinding.reindexer_malloc_free(ptr);
                 return result;
             }
         }
@@ -159,7 +168,9 @@ namespace ReindexerNet.Embedded.Internal
     struct reindexer_string
     {
         public IntPtr p;//void* => reindexer içeride const char*'a cast ediyor.
-        public int n; //bunu içeride Span.Slice gibi kullanıyor. Belki p ReadOnlySpan<char> da olabilir.
+        public int32_t n; //bunu içeride Span.Slice gibi kullanıyor. Belki p ReadOnlySpan<char> da olabilir.
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public int8_t[] reserved;
 
         public static ReindexerStringHandle From(byte[] byteArray)
         {

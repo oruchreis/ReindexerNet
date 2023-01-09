@@ -11,600 +11,593 @@ using System.Text.Json;
 using System.Linq;
 using System.Threading;
 
-namespace ReindexerNet.Embedded
+namespace ReindexerNet.Embedded;
+
+/// <summary>
+/// Reindexer Embedded database mode. It creates a new embedded Reindexer native database and disposes on <see cref="IDisposable.Dispose"/> method.
+/// It is thread-safe, so you can use in multiple threads. If your database will be long lived, you don't have to dispose.
+/// </summary>
+public partial class ReindexerEmbedded : IReindexerClient
 {
     /// <summary>
-    /// Reindexer Embedded database mode. It creates a new embedded Reindexer native database and disposes on <see cref="IDisposable.Dispose"/> method.
-    /// It is thread-safe, so you can use in multiple threads. If your database will be long lived, you don't have to dispose.
+    /// Reindexer native object pointer.
     /// </summary>
-    public partial class ReindexerEmbedded : IReindexerClient
+    protected UIntPtr Rx;
+    private reindexer_ctx_info _ctxInfo = new reindexer_ctx_info { ctx_id = 0, exec_timeout = -1 }; //TODO: Implement async/await logic.
+
+    private readonly ReindexerConnectionString _connectionString;
+
+    /// <summary>
+    /// Item serializer
+    /// </summary>
+    protected IReindexerSerializer Serializer { get; }
+
+    /// <summary>
+    /// Creates a new embedded Reindexer database.
+    /// </summary>
+    /// <param name="dbPath">Database path</param>
+    /// <param name="serializer">Custom serializer for item serializations. default(Json serializer)</param>        
+    public ReindexerEmbedded(string dbPath, IReindexerSerializer serializer = null)
     {
-        /// <summary>
-        /// Reindexer native object pointer.
-        /// </summary>
-        protected UIntPtr Rx;
-        private reindexer_ctx_info _ctxInfo = new reindexer_ctx_info { ctx_id = 0, exec_timeout = -1 }; //TODO: Implement async/await logic.
+        _connectionString = new ReindexerConnectionString { DatabaseName = dbPath };
+        Serializer = serializer ?? new ReindexerJsonSerializer();
+        Rx = ReindexerBinding.init_reindexer();
+    }
 
-        private readonly ReindexerConnectionString _connectionString;
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
-        /// <summary>
-        /// Item serializer
-        /// </summary>
-        protected IReindexerSerializer Serializer { get; }
+    private static byte[] InternalSerializeJson<T>(T obj)
+    {
+        return JsonSerializer.SerializeToUtf8Bytes(obj, _jsonSerializerOptions);
+    }
 
-        /// <summary>
-        /// Creates a new embedded Reindexer database.
-        /// </summary>
-        /// <param name="dbPath">Database path</param>
-        /// <param name="serializer">Custom serializer for item serializations. default(Json serializer)</param>        
-        public ReindexerEmbedded(string dbPath, IReindexerSerializer serializer = null)
+    private static readonly object _logWriterLocker = new object();
+    private static LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
+
+    /// <summary>
+    /// Enables logger and send internal reindexer logs to <paramref name="logWriterAction"/>.
+    /// </summary>
+    /// <param name="logWriterAction">Action to send logs</param>
+    public static void EnableLogger(LogWriterAction logWriterAction)
+    {
+        lock (_logWriterLocker)
         {
-            _connectionString = new ReindexerConnectionString { DatabaseName = dbPath };
-            Serializer = serializer ?? new ReindexerJsonSerializer();
-            Rx = ReindexerBinding.init_reindexer();
+            ReindexerBinding.reindexer_disable_logger(); //if we free previous delegate before disabling, gc may collect before enabling.
+            _logWriter = logWriterAction;
+            ReindexerBinding.reindexer_enable_logger(_logWriter);
+        }
+    }
+
+    /// <summary>
+    /// Disables logger.
+    /// </summary>
+    public static void DisableLogger()
+    {
+        lock (_logWriterLocker)
+        {
+            ReindexerBinding.reindexer_disable_logger();//if we free previous delegate before disabling, gc may collect before enabling.
+            _logWriter = null;
+        }
+    }
+
+    /// <inheritdoc/>
+    public void AddIndex(string nsName, Index indexDefinition)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
+            indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+        using var jsonRx = ReindexerEmbedded.InternalSerializeJson(indexDefinition).GetStringHandle();
+        Assert.ThrowIfError(() =>
+                ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+        );
+    }
+
+    /// <inheritdoc/>
+    public Task AddIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
+    {
+        AddIndex(nsName, indexDefinition);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public void CloseNamespace(string nsName)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
+    }
+
+    /// <inheritdoc/>
+    public Task CloseNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
+    {
+        CloseNamespace(nsName);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public virtual void Connect(ConnectionOptions options = null)
+    {
+        if (!Directory.Exists(_connectionString.DatabaseName))
+        {
+            Directory.CreateDirectory(_connectionString.DatabaseName); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
         }
 
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
-        {
-#if NET5_0_OR_GREATER
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-#else
-            IgnoreNullValues = true,
-#endif
-        };
+        using var dsn = $"builtin://{_connectionString.DatabaseName}".GetHandle();
+        using var version = ReindexerBinding.ReindexerVersion.GetHandle();
+        Assert.ThrowIfError(() =>
+           ReindexerBinding.reindexer_connect(Rx,
+               dsn,
+               options ?? new ConnectionOptions(),
+               version)
+       );
+    }
 
-        private byte[] InternalSerializeJson<T>(T obj)
-        {
-            return JsonSerializer.SerializeToUtf8Bytes(obj, _jsonSerializerOptions);
-        }
+    /// <inheritdoc/>
+    public Task ConnectAsync(ConnectionOptions options = null, CancellationToken cancellationToken = default)
+    {
+        Connect(options);
+        return Task.CompletedTask;
+    }
 
-        private static readonly object _logWriterLocker = new object();
-        private static LogWriterAction _logWriter; //we must pin the delegate before informing to reindexer, so we keep a reference to it, so gc won't collect it.
+    /// <inheritdoc/>
+    public void DropIndex(string nsName, string indexName)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        using var inameRx = indexName.GetHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
+        );
+    }
 
-        /// <summary>
-        /// Enables logger and send internal reindexer logs to <paramref name="logWriterAction"/>.
-        /// </summary>
-        /// <param name="logWriterAction">Action to send logs</param>
-        public static void EnableLogger(LogWriterAction logWriterAction)
-        {
-            lock (_logWriterLocker)
+    /// <inheritdoc/>
+    public Task DropIndexAsync(string nsName, string indexName, CancellationToken cancellationToken = default)
+    {
+        DropIndex(nsName, indexName);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public void DropNamespace(string nsName)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
+        );
+    }
+
+    /// <inheritdoc/>
+    public Task DropNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
+    {
+        DropNamespace(nsName);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public void OpenNamespace(string nsName, NamespaceOptions options = null)
+    {
+        using (var nsNameRx = nsName.GetHandle())
+            Assert.ThrowIfError(() =>
             {
-                ReindexerBinding.reindexer_disable_logger(); //if we free previous delegate before disabling, gc may collect before enabling.
-                _logWriter = logWriterAction;
-                ReindexerBinding.reindexer_enable_logger(_logWriter);
-            }
-        }
-
-        /// <summary>
-        /// Disables logger.
-        /// </summary>
-        public static void DisableLogger()
-        {
-            lock (_logWriterLocker)
-            {
-                ReindexerBinding.reindexer_disable_logger();//if we free previous delegate before disabling, gc may collect before enabling.
-                _logWriter = null;
-            }
-        }
-
-        /// <inheritdoc/>
-        public void AddIndex(string nsName, Index indexDefinition)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
-                indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
-            using var jsonRx = InternalSerializeJson(indexDefinition).GetStringHandle();
-            Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
-            );
-        }
-
-        /// <inheritdoc/>
-        public Task AddIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
-        {
-            AddIndex(nsName, indexDefinition);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void CloseNamespace(string nsName)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
-        }
-
-        /// <inheritdoc/>
-        public Task CloseNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
-        {
-            CloseNamespace(nsName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public virtual void Connect(ConnectionOptions options = null)
-        {
-            if (!Directory.Exists(_connectionString.DatabaseName))
-            {
-                Directory.CreateDirectory(_connectionString.DatabaseName); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
-            }
-
-            using var dsn = $"builtin://{_connectionString.DatabaseName}".GetHandle();
-            using var version = ReindexerBinding.ReindexerVersion.GetHandle();
-            Assert.ThrowIfError(() =>
-               ReindexerBinding.reindexer_connect(Rx,
-                   dsn,
-                   options ?? new ConnectionOptions(),
-                   version)
-           );
-        }
-
-        /// <inheritdoc/>
-        public Task ConnectAsync(ConnectionOptions options = null, CancellationToken cancellationToken = default)
-        {
-            Connect(options);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void DropIndex(string nsName, string indexName)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            using var inameRx = indexName.GetHandle();
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
-            );
-        }
-
-        /// <inheritdoc/>
-        public Task DropIndexAsync(string nsName, string indexName, CancellationToken cancellationToken = default)
-        {
-            DropIndex(nsName, indexName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void DropNamespace(string nsName)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
-            );
-        }
-
-        /// <inheritdoc/>
-        public Task DropNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
-        {
-            DropNamespace(nsName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void OpenNamespace(string nsName, NamespaceOptions options = null)
-        {
-            using (var nsNameRx = nsName.GetHandle())
-                Assert.ThrowIfError(() =>
+                reindexer_error rsp = default;
+                for (int retry = 0; retry < 2; retry++)
                 {
-                    reindexer_error rsp = default;
-                    for (int retry = 0; retry < 2; retry++)
+                    rsp = ReindexerBinding.reindexer_open_namespace(Rx, nsNameRx, options ?? new NamespaceOptions(), _ctxInfo);
+                    if (rsp.code != 0)
                     {
-                        rsp = ReindexerBinding.reindexer_open_namespace(Rx, nsNameRx, options ?? new NamespaceOptions(), _ctxInfo);
-                        if (rsp.code != 0)
-                        {
-                            ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo);
-                        }
+                        ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo);
                     }
-                    return rsp;
-                });
-        }
-
-        /// <inheritdoc/>
-        public Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null, CancellationToken cancellationToken = default)
-        {
-            OpenNamespace(nsName, options);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void Ping()
-        {
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_ping(Rx));
-        }
-
-        /// <inheritdoc/>
-        public Task PingAsync(CancellationToken cancellationToken = default)
-        {
-            Ping();
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void RenameNamespace(string oldName, string newName)
-        {
-            using (var oldNameRx = oldName.GetHandle())
-            using (var newNameRx = newName.GetHandle())
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_rename_namespace(Rx, oldNameRx, newNameRx, _ctxInfo));
-        }
-
-        /// <inheritdoc/>
-        public Task RenameNamespaceAsync(string oldName, string newName, CancellationToken cancellationToken = default)
-        {
-            RenameNamespace(oldName, newName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public ReindexerTransaction StartTransaction(string nsName)
-        {
-            UIntPtr tr = UIntPtr.Zero;
-            using (var nsNameRx = nsName.GetHandle())
-                Assert.ThrowIfError(() =>
-                {
-                    var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsNameRx);
-                    tr = rsp.tx_id;
-                    return rsp.err;
-                });
-            return new ReindexerTransaction(new EmbeddedTransactionInvoker(Rx, tr, _ctxInfo, Serializer));
-        }
-
-        /// <inheritdoc/>
-        public Task<ReindexerTransaction> StartTransactionAsync(string nsName, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(StartTransaction(nsName));
-        }
-
-        /// <inheritdoc/>
-        public void TruncateNamespace(string nsName)
-        {
-            using (var nsNameRx = nsName.GetHandle())
-                Assert.ThrowIfError(() =>
-                    ReindexerBinding.reindexer_truncate_namespace(Rx, nsNameRx, _ctxInfo)
-                );
-        }
-
-        /// <inheritdoc/>
-        public Task TruncateNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
-        {
-            TruncateNamespace(nsName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public void UpdateIndex(string nsName, Index indexDefinition)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
-                indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
-            using var jsonRx = InternalSerializeJson(indexDefinition).GetStringHandle();
-            Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
-            );
-
-        }
-
-        /// <inheritdoc/>
-        public Task UpdateIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
-        {
-            UpdateIndex(nsName, indexDefinition);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public int ModifyItem(string nsName, ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
-        {
-            var result = 0;
-            precepts = precepts ?? new string[0];
-            using (var writer = new CJsonWriter())
-            {
-                writer.PutVString(nsName);
-                writer.PutVarCUInt((int)dataEncoding);//format
-                writer.PutVarCUInt((int)mode);//mode
-                writer.PutVarCUInt(0);//stateToken
-
-                writer.PutVarCUInt(precepts.Length);//len(precepts)
-                foreach (var precept in precepts)
-                {
-                    writer.PutVString(precept);
                 }
+                return rsp;
+            });
+    }
 
-                reindexer_buffer.PinBufferFor(writer.CurrentBuffer, itemBytes, (args, data) =>
-                {
-                    var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data, _ctxInfo));
-                    try
-                    {
-                        var reader = new CJsonReader(rsp.@out);
-                        var rawQueryParams = reader.ReadRawQueryParams();
+    /// <inheritdoc/>
+    public Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null, CancellationToken cancellationToken = default)
+    {
+        OpenNamespace(nsName, options);
+        return Task.CompletedTask;
+    }
 
-                        result = rawQueryParams.count;
-                    }
-                    finally
-                    {
-                        rsp.@out.Free();
-                    }
-                });
+    /// <inheritdoc/>
+    public void Ping()
+    {
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_ping(Rx));
+    }
+
+    /// <inheritdoc/>
+    public Task PingAsync(CancellationToken cancellationToken = default)
+    {
+        Ping();
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public void RenameNamespace(string oldName, string newName)
+    {
+        using var oldNameRx = oldName.GetHandle();
+        using var newNameRx = newName.GetHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_rename_namespace(Rx, oldNameRx, newNameRx, _ctxInfo));
+    }
+
+    /// <inheritdoc/>
+    public Task RenameNamespaceAsync(string oldName, string newName, CancellationToken cancellationToken = default)
+    {
+        RenameNamespace(oldName, newName);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public ReindexerTransaction StartTransaction(string nsName)
+    {
+        UIntPtr tr = UIntPtr.Zero;
+        using (var nsNameRx = nsName.GetHandle())
+            Assert.ThrowIfError(() =>
+            {
+                var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsNameRx);
+                tr = rsp.tx_id;
+                return rsp.err;
+            });
+        return new ReindexerTransaction(new EmbeddedTransactionInvoker(Rx, tr, _ctxInfo, Serializer));
+    }
+
+    /// <inheritdoc/>
+    public Task<ReindexerTransaction> StartTransactionAsync(string nsName, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(StartTransaction(nsName));
+    }
+
+    /// <inheritdoc/>
+    public void TruncateNamespace(string nsName)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_truncate_namespace(Rx, nsNameRx, _ctxInfo)
+        );
+    }
+
+    /// <inheritdoc/>
+    public Task TruncateNamespaceAsync(string nsName, CancellationToken cancellationToken = default)
+    {
+        TruncateNamespace(nsName);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public void UpdateIndex(string nsName, Index indexDefinition)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
+            indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+        using var jsonRx = ReindexerEmbedded.InternalSerializeJson(indexDefinition).GetStringHandle();
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
+        );
+
+    }
+
+    /// <inheritdoc/>
+    public Task UpdateIndexAsync(string nsName, Index indexDefinition, CancellationToken cancellationToken = default)
+    {
+        UpdateIndex(nsName, indexDefinition);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public int ModifyItem(string nsName, ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
+    {
+        var result = 0;
+        precepts = precepts ?? new string[0];
+        using (var writer = new CJsonWriter())
+        {
+            writer.PutVString(nsName);
+            writer.PutVarCUInt((int)dataEncoding);//format
+            writer.PutVarCUInt((int)mode);//mode
+            writer.PutVarCUInt(0);//stateToken
+
+            writer.PutVarCUInt(precepts.Length);//len(precepts)
+            foreach (var precept in precepts)
+            {
+                writer.PutVString(precept);
             }
 
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public int ModifyItems<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null)
-        {
-            var result = 0;
-            foreach (var item in items)
+            reindexer_buffer.PinBufferFor(writer.CurrentBuffer, itemBytes, (args, data) =>
             {
-                result += ModifyItem(nsName, mode, Serializer.Serialize(item), Serializer.Type, precepts);
-            }
-
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public int ModifyItems(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
-        {
-            var result = 0;
-            foreach (var itemData in itemDatas)
-            {
-                result += ModifyItem(nsName, mode, itemData, dataEncoding, precepts);
-            }
-
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
-            string[] precepts = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(ModifyItems(nsName, mode, items, precepts));
-        }
-
-        /// <inheritdoc/>
-        public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(ModifyItems(nsName, mode, itemDatas, dataEncoding, precepts));
-        }
-
-        /// <inheritdoc/>
-        public QueryItemsOf<T> ExecuteSql<T>(string sql)
-        {
-            var result = new QueryItemsOf<T>
-            {
-                Items = new List<T>()
-            };
-
-            using (var sqlRx = sql.GetHandle())
-            {
-                var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sqlRx, 1, new int[0], 0, _ctxInfo));
+                var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_modify_item_packed(Rx, args, data, _ctxInfo));
                 try
                 {
                     var reader = new CJsonReader(rsp.@out);
                     var rawQueryParams = reader.ReadRawQueryParams();
-                    var explain = rawQueryParams.explainResults;
 
-                    result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
-                    if (explain.Length > 0)
-                    {
-                        result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain, _jsonSerializerOptions);
-                    }
-
-                    for (var i = 0; i < rawQueryParams.count; i++)
-                    {
-                        var item = reader.ReadRawItemParams();
-                        if (item.data.Length > 0)
-                            result.Items.Add(Serializer.Deserialize<T>(item.data));
-                    }
-
-                    if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
-                    {
-                        throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
-                    }
-
-                    return result;
+                    result = rawQueryParams.count;
                 }
                 finally
                 {
                     rsp.@out.Free();
                 }
-            }
+            });
         }
 
-        /// <inheritdoc/>
-        public Task<QueryItemsOf<T>> ExecuteSqlAsync<T>(string sql, CancellationToken cancellationToken = default)
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public int ModifyItems<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null)
+    {
+        var result = 0;
+        foreach (var item in items)
         {
-            return Task.FromResult(ExecuteSql<T>(sql));
+            result += ModifyItem(nsName, mode, Serializer.Serialize(item), Serializer.Type, precepts);
         }
 
-        /// <inheritdoc/>
-        public QueryItemsOf<object> ExecuteSql(string sql)
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public int ModifyItems(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
+    {
+        var result = 0;
+        foreach (var itemData in itemDatas)
         {
-            return ExecuteSql<object>(sql);
+            result += ModifyItem(nsName, mode, itemData, dataEncoding, precepts);
         }
 
-        /// <inheritdoc/>
-        public Task<QueryItemsOf<object>> ExecuteSqlAsync(string sql, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(ExecuteSql<object>(sql));
-        }
+        return result;
+    }
 
-        /// <inheritdoc/>
-        public int Insert<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
-        {
-            return ModifyItems(nsName, ItemModifyMode.Insert, items, precepts);
-        }
+    /// <inheritdoc/>
+    public Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
+        string[] precepts = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ModifyItems(nsName, mode, items, precepts));
+    }
 
-        /// <inheritdoc/>
-        public int Update<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
-        {
-            return ModifyItems(nsName, ItemModifyMode.Update, items, precepts);
-        }
+    /// <inheritdoc/>
+    public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ModifyItems(nsName, mode, itemDatas, dataEncoding, precepts));
+    }
 
-        /// <inheritdoc/>
-        public int Upsert<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+    /// <inheritdoc/>
+    public QueryItemsOf<T> ExecuteSql<T>(string sql)
+    {
+        var result = new QueryItemsOf<T>
         {
-            return ModifyItems(nsName, ItemModifyMode.Upsert, items, precepts);
-        }
+            Items = new List<T>()
+        };
 
-        /// <inheritdoc/>
-        public int Delete<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+        using var sqlRx = sql.GetHandle();
+        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sqlRx, 1, new int[0], 0, _ctxInfo));
+        try
         {
-            return ModifyItems(nsName, ItemModifyMode.Delete, items, precepts);
-        }
+            var reader = new CJsonReader(rsp.@out);
+            var rawQueryParams = reader.ReadRawQueryParams();
+            var explain = rawQueryParams.explainResults;
 
-        /// <inheritdoc/>
-        public Task<int> InsertAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Insert<T>(nsName, items, precepts));
-        }
-
-        /// <inheritdoc/>
-        public Task<int> UpdateAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Update<T>(nsName, items, precepts));
-        }
-
-        /// <inheritdoc/>
-        public Task<int> UpsertAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Upsert<T>(nsName, items, precepts));
-        }
-
-        /// <inheritdoc/>
-        public Task<int> DeleteAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Delete<T>(nsName, items, precepts));
-        }
-
-        /// <inheritdoc/>
-        public void CreateDatabase(string dbName)
-        {
-            var newRx = ReindexerBinding.init_reindexer();
-            using (var dsn = $"builtin://{dbName}".GetHandle())
-            using (var version = ReindexerBinding.ReindexerVersion.GetHandle())
-                Assert.ThrowIfError(() =>
-                   ReindexerBinding.reindexer_connect(newRx,
-                       dsn,
-                       new ConnectionOptions(),
-                       version)
-               );
-            ReindexerBinding.destroy_reindexer(newRx);
-        }
-
-        /// <inheritdoc/>
-        public Task CreateDatabaseAsync(string dbName, CancellationToken cancellationToken = default)
-        {
-            CreateDatabase(dbName);
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<Database> EnumDatabases()
-        {
-            var dbPath = _connectionString.DatabaseName;
-
-            return Directory.GetParent(dbPath).EnumerateDirectories().Select(d => new Database { Name = d.Name });
-        }
-
-        /// <inheritdoc/>
-        public Task<IEnumerable<Database>> EnumDatabasesAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(EnumDatabases());
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<Namespace> EnumNamespaces(string name = null, bool onlyNames = false,
-            bool hideSystems = true, bool withClosed = false)
-        {
-            var filters = new List<string>();
-            if (hideSystems)
-                filters.Add("NOT(name LIKE '#%')");
-            if (name != null)
-                filters.Add($"name LIKE '{name}'");
-            var query = new StringBuilder($"select {(onlyNames ? "name" : "*")} FROM #namespaces");
-            if (filters.Any())
+            result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
+            if (explain.Length > 0)
             {
-                query.AppendFormat(" WHERE {0}", string.Join(" AND ", filters));
+                result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain, _jsonSerializerOptions);
             }
-                
-            return ExecuteSql<Namespace>(query.ToString()).Items
-                .Where(ns => ns.Storage == null || withClosed || ns.Storage.Enabled == true);
+
+            for (var i = 0; i < rawQueryParams.count; i++)
+            {
+                var item = reader.ReadRawItemParams();
+                if (item.data.Length > 0)
+                    result.Items.Add(Serializer.Deserialize<T>(item.data));
+            }
+
+            if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
+            {
+                throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
+            }
+
+            return result;
         }
-
-        /// <inheritdoc/>
-        public Task<IEnumerable<Namespace>> EnumNamespacesAsync(string name = null, bool onlyNames = false,
-            bool hideSystems = true, bool withClosed = false, CancellationToken cancellationToken = default)
+        finally
         {
-            return Task.FromResult(EnumNamespaces(name, onlyNames, hideSystems, withClosed));
+            rsp.@out.Free();
         }
+    }
 
-        /// <inheritdoc/>
-        public void SetSchema(string nsName, string jsonSchema)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            using var jsonSchemaRx = jsonSchema.GetHandle();
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<T>> ExecuteSqlAsync<T>(string sql, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ExecuteSql<T>(sql));
+    }
 
+    /// <inheritdoc/>
+    public QueryItemsOf<object> ExecuteSql(string sql)
+    {
+        return ExecuteSql<object>(sql);
+    }
+
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<object>> ExecuteSqlAsync(string sql, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ExecuteSql<object>(sql));
+    }
+
+    /// <inheritdoc/>
+    public int Insert<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+    {
+        return ModifyItems(nsName, ItemModifyMode.Insert, items, precepts);
+    }
+
+    /// <inheritdoc/>
+    public int Update<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+    {
+        return ModifyItems(nsName, ItemModifyMode.Update, items, precepts);
+    }
+
+    /// <inheritdoc/>
+    public int Upsert<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+    {
+        return ModifyItems(nsName, ItemModifyMode.Upsert, items, precepts);
+    }
+
+    /// <inheritdoc/>
+    public int Delete<T>(string nsName, IEnumerable<T> items, string[] precepts = null)
+    {
+        return ModifyItems(nsName, ItemModifyMode.Delete, items, precepts);
+    }
+
+    /// <inheritdoc/>
+    public Task<int> InsertAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Insert<T>(nsName, items, precepts));
+    }
+
+    /// <inheritdoc/>
+    public Task<int> UpdateAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Update<T>(nsName, items, precepts));
+    }
+
+    /// <inheritdoc/>
+    public Task<int> UpsertAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Upsert<T>(nsName, items, precepts));
+    }
+
+    /// <inheritdoc/>
+    public Task<int> DeleteAsync<T>(string nsName, IEnumerable<T> items, string[] precepts = null, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Delete<T>(nsName, items, precepts));
+    }
+
+    /// <inheritdoc/>
+    public void CreateDatabase(string dbName)
+    {
+        var newRx = ReindexerBinding.init_reindexer();
+        using (var dsn = $"builtin://{dbName}".GetHandle())
+        using (var version = ReindexerBinding.ReindexerVersion.GetHandle())
             Assert.ThrowIfError(() =>
-                ReindexerBinding.reindexer_set_schema(Rx, nsNameRx, jsonSchemaRx, _ctxInfo));
-        }
+               ReindexerBinding.reindexer_connect(newRx,
+                   dsn,
+                   new ConnectionOptions(),
+                   version)
+           );
+        ReindexerBinding.destroy_reindexer(newRx);
+    }
 
-        /// <inheritdoc/>
-        public Task SetSchemaAsync(string nsName, string jsonSchema, CancellationToken cancellationToken = default)
-        {
-            SetSchema(nsName, jsonSchema);
-            return Task.CompletedTask;
-        }
+    /// <inheritdoc/>
+    public Task CreateDatabaseAsync(string dbName, CancellationToken cancellationToken = default)
+    {
+        CreateDatabase(dbName);
+        return Task.CompletedTask;
+    }
 
-        /// <inheritdoc/>
-        public string GetMeta(string nsName, MetaInfo metadata)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            using var keyRx = metadata.Key.GetHandle();
-            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_get_meta(Rx, nsNameRx, keyRx, _ctxInfo));
-            try
-            {
-                return rsp.@out;
-            }
-            finally
-            {
-                rsp.@out.Free();
-            }
-        }
+    /// <inheritdoc/>
+    public IEnumerable<Database> EnumDatabases()
+    {
+        var dbPath = _connectionString.DatabaseName;
 
-        /// <inheritdoc/>
-        public Task<string> GetMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(GetMeta(nsName, metadata));
-        }
+        return Directory.GetParent(dbPath).EnumerateDirectories().Select(d => new Database { Name = d.Name });
+    }
 
-        /// <inheritdoc/>
-        public void PutMeta(string nsName, MetaInfo metadata)
-        {
-            using var nsNameRx = nsName.GetHandle();
-            using var keyRx = metadata.Key.GetHandle();
-            using var dataRx = metadata.Value.GetHandle();
-            Assert.ThrowIfError(() => ReindexerBinding.reindexer_put_meta(Rx, nsNameRx, keyRx, dataRx, _ctxInfo));
-        }
+    /// <inheritdoc/>
+    public Task<IEnumerable<Database>> EnumDatabasesAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(EnumDatabases());
+    }
 
-        /// <inheritdoc/>
-        public Task PutMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public IEnumerable<Namespace> EnumNamespaces(string name = null, bool onlyNames = false,
+        bool hideSystems = true, bool withClosed = false)
+    {
+        var filters = new List<string>();
+        if (hideSystems)
+            filters.Add("NOT(name LIKE '#%')");
+        if (name != null)
+            filters.Add($"name LIKE '{name}'");
+        var query = new StringBuilder($"select {(onlyNames ? "name" : "*")} FROM #namespaces");
+        if (filters.Any())
         {
-            PutMeta(nsName, metadata);
-            return Task.CompletedTask;
+            query.AppendFormat(" WHERE {0}", string.Join(" AND ", filters));
         }
+            
+        return ExecuteSql<Namespace>(query.ToString()).Items
+            .Where(ns => ns.Storage == null || withClosed || ns.Storage.Enabled == true);
+    }
 
-        /// <inheritdoc/>
-        public IEnumerable<string> EnumMeta(string nsName)
-        {
-            throw new NotImplementedException();//TODO: c binding doesn't support this, get via sql script
-        }
+    /// <inheritdoc/>
+    public Task<IEnumerable<Namespace>> EnumNamespacesAsync(string name = null, bool onlyNames = false,
+        bool hideSystems = true, bool withClosed = false, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(EnumNamespaces(name, onlyNames, hideSystems, withClosed));
+    }
 
-        /// <inheritdoc/>
-        public Task<IEnumerable<string>> EnumMetaAsync(string nsName, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public void SetSchema(string nsName, string jsonSchema)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        using var jsonSchemaRx = jsonSchema.GetHandle();
+
+        Assert.ThrowIfError(() =>
+            ReindexerBinding.reindexer_set_schema(Rx, nsNameRx, jsonSchemaRx, _ctxInfo));
+    }
+
+    /// <inheritdoc/>
+    public Task SetSchemaAsync(string nsName, string jsonSchema, CancellationToken cancellationToken = default)
+    {
+        SetSchema(nsName, jsonSchema);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public string GetMeta(string nsName, MetaInfo metadata)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        using var keyRx = metadata.Key.GetHandle();
+        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_get_meta(Rx, nsNameRx, keyRx, _ctxInfo));
+        try
         {
-            return Task.FromResult(EnumMeta(nsName));
+            return rsp.@out;
         }
+        finally
+        {
+            rsp.@out.Free();
+        }
+    }
+
+    /// <inheritdoc/>
+    public Task<string> GetMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(GetMeta(nsName, metadata));
+    }
+
+    /// <inheritdoc/>
+    public void PutMeta(string nsName, MetaInfo metadata)
+    {
+        using var nsNameRx = nsName.GetHandle();
+        using var keyRx = metadata.Key.GetHandle();
+        using var dataRx = metadata.Value.GetHandle();
+        Assert.ThrowIfError(() => ReindexerBinding.reindexer_put_meta(Rx, nsNameRx, keyRx, dataRx, _ctxInfo));
+    }
+
+    /// <inheritdoc/>
+    public Task PutMetaAsync(string nsName, MetaInfo metadata, CancellationToken cancellationToken = default)
+    {
+        PutMeta(nsName, metadata);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<string> EnumMeta(string nsName)
+    {
+        throw new NotImplementedException();//TODO: c binding doesn't support this, get via sql script
+    }
+
+    /// <inheritdoc/>
+    public Task<IEnumerable<string>> EnumMetaAsync(string nsName, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(EnumMeta(nsName));
     }
 }
 #pragma warning restore S4136 // Method overloads should be grouped together

@@ -17,7 +17,7 @@ jobs:
       DOTNET_NOLOGO: 1
     strategy:
       matrix:
-        os: [ 'ubuntu-18.04', 'ubuntu-20.04' ]
+        os: [ 'ubuntu-18.04', 'ubuntu-20.04', 'ubuntu-22.04' ]
     steps:
     - uses: actions/checkout@v2
     - name: Caching
@@ -28,12 +28,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-
     - name: Setup .NET Sdk
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
             3.1.x
             5.x
             6.x
+            7.x
+    - name: Test .NET 7
+      run: dotnet test -v quiet -f net7.0 --logger "console;verbosity=detailed" --nologo /nologo
     - name: Test .NET 6
       run: dotnet test -v quiet -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
     - name: Test .NET 5

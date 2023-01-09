@@ -1,33 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace ReindexerNet
+namespace ReindexerNet;
+
+/// <summary>
+/// Default serializer for reindexer operations. This serializer uses <see cref="JsonSerializer"/> in background.
+/// </summary>
+public class ReindexerJsonSerializer : IReindexerSerializer
 {
-    public class ReindexerJsonSerializer : IReindexerSerializer
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
-        {
-#if NET5_0_OR_GREATER
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-#else
-            IgnoreNullValues = true,
-#endif
-            
-        };
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 
-        public SerializerType Type => SerializerType.Json;
-        public T Deserialize<T>(ReadOnlySpan<byte> bytes)
-        {
-            return JsonSerializer.Deserialize<T>(bytes, _jsonSerializerOptions);
-        }
+    /// <inheritdoc />
+    public SerializerType Type => SerializerType.Json;
 
-        public ReadOnlySpan<byte> Serialize<T>(T item)
-        {
-            return JsonSerializer.SerializeToUtf8Bytes(item, _jsonSerializerOptions);
-        }
+    /// <inheritdoc />
+    public T Deserialize<T>(ReadOnlySpan<byte> bytes)
+    {
+        return JsonSerializer.Deserialize<T>(bytes, _jsonSerializerOptions);
+    }
+
+    /// <inheritdoc />
+    public ReadOnlySpan<byte> Serialize<T>(T item)
+    {
+        return JsonSerializer.SerializeToUtf8Bytes(item, _jsonSerializerOptions);
     }
 }

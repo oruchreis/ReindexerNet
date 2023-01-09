@@ -6,15 +6,39 @@ using System.Threading.Tasks;
 
 namespace ReindexerNet.Embedded
 {
+    /// <summary>
+    /// Reindexer Server Connection String
+    /// </summary>
     public class ServerOptions : ReindexerConnectionString
     {
+        /// <summary>
+        /// Enables Grpc
+        /// </summary>
         public bool EnableGrpc { get; set; } = false;
+        /// <summary>
+        /// Storage options
+        /// </summary>
         public StorageOptions Storage { get; set; } = new StorageOptions();
+        /// <summary>
+        /// Network options
+        /// </summary>
         public NetworkOptions Network { get; set; } = new NetworkOptions();
+        /// <summary>
+        /// Logger options
+        /// </summary>
         public LoggerOptions Logger { get; set; } = new LoggerOptions();
+        /// <summary>
+        /// Metric options
+        /// </summary>
         public MetricOptions Metrics { get; set; } = new MetricOptions();
+        /// <summary>
+        /// Debug options
+        /// </summary>
         public DebugOptions Debug { get; set; } = new DebugOptions();
 
+        /// <summary>
+        /// Creates reindexer server connection string
+        /// </summary>
         public ServerOptions()
         {
 
@@ -52,6 +76,7 @@ namespace ReindexerNet.Embedded
 
         }
 
+        /// <inheritdoc/>
         protected override void FillValue(string key, string value)
         {
             if (key.Equals("storagepath", StringComparison.InvariantCultureIgnoreCase))
@@ -97,54 +122,70 @@ namespace ReindexerNet.Embedded
                 base.FillValue(key, value);
         }
 
+        /// <summary>
+        /// Creates server options from <c>key1=value1;key2=value2</c> string
+        /// </summary>
+        /// <param name="keyValueString"></param>
         public static implicit operator ServerOptions(string keyValueString)
         {
             return new ServerOptions(keyValueString);
         }
 
+        /// <summary>
+        /// Gets yaml representation of the server option.
+        /// </summary>
+        /// <param name="serverOptions"></param>
         public static implicit operator string(ServerOptions serverOptions)
         {
             return serverOptions?.ToYaml();
         }
 
+        /// <summary>
+        /// Gets yaml representation of the server option.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return ToYaml();
         }
 
+        /// <summary>
+        /// Gets yaml representation of the server option.
+        /// </summary>
+        /// <returns></returns>
         public string ToYaml()
         {
-            return $@"
-  storage:
-    path: ""{Storage.Path}""
-    engine: {Storage.Engine.ToString().ToLowerInvariant()}
-    startwitherrors: false
-    autorepair: {Storage.AutoRepair.ToString().ToLowerInvariant()}
-  net:
-    httpaddr: {HttpAddress}
-    rpcaddr: {RpcAddress}
-    security: {Network.EnableSecurity.ToString().ToLowerInvariant()}
-    grpc: {EnableGrpc.ToString().ToLowerInvariant()}
-    grpcaddr: {GrpcAddress}
-    rpc_threading: {Network.RpcThreading.ToString().ToLowerInvariant()}
-    http_threading: {Network.HttpThreading.ToString().ToLowerInvariant()}
-    maxupdatessize: {Network.MaxUpdatesSize}
-    tx_idle_timeout: {Network.TxIdleTimeout}
-    max_http_body_size: {Network.MaxHttpBodySize}
-  logger:
-    serverlog: ""{Logger.ServerLogFile}""
-    corelog: ""{Logger.CoreLogFile}""
-    httplog: ""{Logger.HttpLogFile}""
-    rpclog: ""{Logger.RpcLogFile}""
-    loglevel: {Logger.Level.ToString().ToLowerInvariant()}
-  debug:
-    pprof: {Debug.PProf.ToString().ToLowerInvariant()}
-    allocs: {Debug.Allocs.ToString().ToLowerInvariant()}
-  metrics:
-    prometheus: {Metrics.EnablePrometheus.ToString().ToLowerInvariant()}
-    collect_period: {Metrics.CollectPeriod}
-    clientsstats: {Metrics.EnableClientStats.ToString().ToLowerInvariant()}
-";
+            return $"""
+             storage:
+               path: '{Storage.Path}'
+               engine: {Storage.Engine.ToString().ToLowerInvariant()}
+               startwitherrors: false
+               autorepair: {Storage.AutoRepair.ToString().ToLowerInvariant()}
+             net:
+               httpaddr: {HttpAddress}
+               rpcaddr: {RpcAddress}
+               security: {Network.EnableSecurity.ToString().ToLowerInvariant()}
+               grpc: {EnableGrpc.ToString().ToLowerInvariant()}
+               grpcaddr: {GrpcAddress}
+               rpc_threading: {Network.RpcThreading.ToString().ToLowerInvariant()}
+               http_threading: {Network.HttpThreading.ToString().ToLowerInvariant()}
+               maxupdatessize: {Network.MaxUpdatesSize}
+               tx_idle_timeout: {Network.TxIdleTimeout}
+               max_http_body_size: {Network.MaxHttpBodySize}
+             logger:
+               serverlog: '{Logger.ServerLogFile}'
+               corelog: '{Logger.CoreLogFile}'
+               httplog: '{Logger.HttpLogFile}'
+               rpclog: '{Logger.RpcLogFile}'
+               loglevel: {Logger.Level.ToString().ToLowerInvariant()}
+             debug:
+               pprof: {Debug.PProf.ToString().ToLowerInvariant()}
+               allocs: {Debug.Allocs.ToString().ToLowerInvariant()}
+             metrics:
+               prometheus: {Metrics.EnablePrometheus.ToString().ToLowerInvariant()}
+               collect_period: {Metrics.CollectPeriod}
+               clientsstats: {Metrics.EnableClientStats.ToString().ToLowerInvariant()}
+             """;
         }
     }
 }
