@@ -58,7 +58,7 @@ namespace ReindexerNet {
     /// <value>Cost expectation of this selector</value>
     [DataMember(Name="cost", EmitDefaultValue=false)]
     [JsonPropertyName("cost")]
-    public long? Cost { get; set; }
+    public double? Cost { get; set; }
 
     /// <summary>
     /// Number of uniq keys, processed by this selector (may be incorrect, in case of internal query optimization/caching

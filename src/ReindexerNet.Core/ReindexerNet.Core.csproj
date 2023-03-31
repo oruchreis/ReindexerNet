@@ -11,9 +11,9 @@
 		<Description>ReindexerNet.Core includes rest api models for Reindexer and includes base interfaces for ReindexerNet.</Description>
 		<PackageTags>reindexer embedded document-db in-memory</PackageTags>
 		<PackageIcon>icon.png</PackageIcon>
-		<Version>0.3.7</Version>
-		<AssemblyVersion>0.3.7</AssemblyVersion>
-		<FileVersion>0.3.7</FileVersion>
+		<Version>0.3.8</Version>
+		<AssemblyVersion>0.3.8</AssemblyVersion>
+		<FileVersion>0.3.8</FileVersion>
 		<Authors>oruchreis</Authors>
 		<Copyright>oruchreis</Copyright>
 		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
@@ -21,6 +21,8 @@
 		<PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<LangVersion>preview</LangVersion>
 	</PropertyGroup>
 
@@ -28,6 +30,7 @@
 		<PackageReference Include="System.Text.Json" Version="7.0.0" Condition="'$(TargetFramework)'=='net7.0'" />
 		<PackageReference Include="System.Text.Json" Version="6.0.0" Condition="'$(TargetFramework)'=='net6.0'" />
 		<PackageReference Include="System.Text.Json" Version="5.0.0" Condition="'$(TargetFramework)'!='net7.0' and '$(TargetFramework)'!='net6.0'" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>
 
 	<ItemGroup>
