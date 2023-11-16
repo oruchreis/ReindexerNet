@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReindexerNet.CoreTest", "Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReindexerNet.Remote.OpenApi", "src\ReindexerNet.Remote.OpenApi\ReindexerNet.Remote.OpenApi.csproj", "{2A0214F8-1EE1-4113-8C2E-3B7CFDE408C0}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReindexerNet.EmbeddedBenchmarks", "Tests\ReindexerNet.EmbeddedBenchmarks\ReindexerNet.EmbeddedBenchmarks.csproj", "{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,18 @@ Global
 		{2A0214F8-1EE1-4113-8C2E-3B7CFDE408C0}.Release|x64.Build.0 = Release|Any CPU
 		{2A0214F8-1EE1-4113-8C2E-3B7CFDE408C0}.Release|x86.ActiveCfg = Release|Any CPU
 		{2A0214F8-1EE1-4113-8C2E-3B7CFDE408C0}.Release|x86.Build.0 = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|x64.Build.0 = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Debug|x86.Build.0 = Debug|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|x64.ActiveCfg = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|x64.Build.0 = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|x86.ActiveCfg = Release|Any CPU
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -131,6 +145,7 @@ Global
 		{FC84FB4C-D514-418F-B724-9B9FFEE783B6} = {35748DFB-8C8D-495E-A269-47D39734293C}
 		{2E74E850-3F12-4C3C-9D41-3BE33D8C3465} = {35748DFB-8C8D-495E-A269-47D39734293C}
 		{4BFE34B5-4DF8-4EA6-9568-25003DE1DB01} = {35748DFB-8C8D-495E-A269-47D39734293C}
+		{BF8CE8FF-C900-4EC2-BD25-107E0F21ED22} = {35748DFB-8C8D-495E-A269-47D39734293C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13C12A53-3841-44FA-9B26-F38C5DF90B08}
