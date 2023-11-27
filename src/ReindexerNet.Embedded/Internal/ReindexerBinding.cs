@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Diagnostics;
 #if NET472
 using System.Diagnostics;
 #else
@@ -51,7 +50,7 @@ internal static class ReindexerBinding
         int dlclose(IntPtr handle);
     }
 
-    private class LinuxNew : IPosixLib
+    private sealed class LinuxNew : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
@@ -71,7 +70,7 @@ internal static class ReindexerBinding
         public static extern int dlclose(IntPtr handle);
     }
 
-    private class LinuxOld : IPosixLib
+    private sealed class LinuxOld : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
@@ -91,7 +90,7 @@ internal static class ReindexerBinding
         public static extern int dlclose(IntPtr handle);
     }
 
-    private class MacOsx : IPosixLib
+    private sealed class MacOsx : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
@@ -111,7 +110,7 @@ internal static class ReindexerBinding
         internal static extern int dlclose(IntPtr handle);
     }
 
-    private class Mono : IPosixLib
+    private sealed class Mono : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
@@ -131,7 +130,7 @@ internal static class ReindexerBinding
         internal static extern int dlclose(IntPtr handle);
     }
 
-    private class CoreClr : IPosixLib
+    private sealed class CoreClr : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
@@ -197,16 +196,13 @@ internal static class ReindexerBinding
 
     // flags for dlopen
 
-    private const int RTLD_LAZY = 0x00001;        /* Lazy function call binding.  */
+    //private const int RTLD_LAZY = 0x00001;        /* Lazy function call binding.  */
     private const int RTLD_NOW = 0x00002;      /* Immediate function call binding.  */
-    private const int RTLD_DEEPBIND = 0x00008;        /* Use deep binding.  */
+    //private const int RTLD_DEEPBIND = 0x00008;        /* Use deep binding.  */
     /* If the following bit is set in the MODE argument to `dlopen',
        the symbols of the loaded object and its dependencies are made
        visible as if the object were linked directly into the program.  */
-    private const int RTLD_GLOBAL = 0x00100;
-    /* Unix98 demands the following flag which is the inverse to RTLD_GLOBAL.
-       The implementation does this by default and so we can define the
-       value to zero.  */
+    //private const int RTLD_GLOBAL = 0x00100; /* Unix98 demands the following flag which is the inverse to RTLD_GLOBAL. The implementation does this by default and so we can define the value to zero.  */
     private const int RTLD_LOCAL = 0;
 
 #pragma warning disable IDE1006 // Naming Styles
@@ -508,15 +504,18 @@ internal static class ReindexerBinding
             libraryFile = $"lib{BindingLibrary}.dylib";
             platformPath = Path.Combine("runtimes", "osx" + arch, "native");
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            libraryFile = $"lib{BindingLibrary}.so";
-            platformPath = Path.Combine("runtimes", "linux" + arch, "native");
-        }
-        else // RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             libraryFile = $"{BindingLibrary}.dll";
             platformPath = Path.Combine("runtimes", "win" + arch, "native");
+        }
+        else
+        {
+            libraryFile = $"lib{BindingLibrary}.so";
+            if (RuntimeInformation.RuntimeIdentifier.StartsWith("linux-musl") || RuntimeInformation.RuntimeIdentifier.StartsWith("alpine"))
+                platformPath = Path.Combine("runtimes", "linux-musl" + arch, "native");
+            else
+                platformPath = Path.Combine("runtimes", "linux" + arch, "native");
         }
 
         foreach (var searchBinPath in _searchBinPaths)

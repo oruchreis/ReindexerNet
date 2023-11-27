@@ -1,123 +1,28 @@
 name: Build, Test, Package
 
 on:
-  push:
+  workflow_run:
+    workflows: 
+      - 'Windows Test'
+      - 'Unix Test'
     branches: [ master ]
-    paths:
-      - 'src/**.csproj'
-      - '.github/workflows/build.yml'
-  pull_request:
-    branches: [ master ]
+    types: 
+      - completed
 
-jobs:
-  windows-test:
-    runs-on: windows-2022
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_NOLOGO: 1
-    strategy:
-      matrix:
-        runtime: [ 'win-x64', 'win-x86' ]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Caching
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
-        restore-keys: |
-          ${{ runner.os }}-
-    - name: Setup .NET Sdk
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: |
-            3.1.x
-            5.x
-            6.x
-            7.x
-    #- name: Clean #https://github.com/actions/virtual-environments/issues/1090
-    #  run: dotnet clean -f netcoreapp3.1 --runtime ${{ matrix.runtime }} && dotnet nuget locals all --clear
-    - name: Test .NET 7 ${{ matrix.runtime }}
-      run: dotnet test -v normal -f net7.0 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
-    - name: Test .NET 6 ${{ matrix.runtime }}
-      run: dotnet test -v normal -f net6.0 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
-    - name: Test .NET 5 ${{ matrix.runtime }}
-      if: ${{ matrix.runtime != 'win-x86' }} #https://github.com/actions/setup-dotnet/issues/72
-      run: dotnet test -v normal -f net5.0 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
-    - name: Test .NET Core 3.1 ${{ matrix.runtime }}
-      if: ${{ matrix.runtime != 'win-x86' }} #https://github.com/actions/setup-dotnet/issues/72
-      run: dotnet test -v normal -f netcoreapp3.1 --logger "console;verbosity=detailed" --runtime ${{ matrix.runtime }}
-      
-  ubuntu-test:
-    runs-on: ubuntu-latest  
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_NOLOGO: 1
-    steps:
-    - uses: actions/checkout@v2
-    - name: Caching
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
-        restore-keys: |
-          ${{ runner.os }}-
-    - name: Setup .NET Sdk
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: |
-            3.1.x
-            5.x
-            6.x
-            7.x
-    - name: Test .NET 7
-      run: dotnet test -v normal -f net7.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET 6
-      run: dotnet test -v normal -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET 5
-      run: dotnet test -v normal -f net5.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET Core 3.1
-      run: dotnet test -v normal -f netcoreapp3.1 --logger "console;verbosity=detailed" --nologo /nologo
-      
-  osx-test:
-    runs-on: macos-latest
-    env:
-      DYLD_PRINT_LIBRARIES: 1
-      DOTNET_CLI_TELEMETRY_OPTOUT: 1
-      DOTNET_NOLOGO: 1
-    steps:
-    - uses: actions/checkout@v2
-    - name: Caching
-      uses: actions/cache@v2
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-${{ hashFiles('**/*.csproj') }} #hash of project files
-        restore-keys: |
-          ${{ runner.os }}-
-    - name: Setup .NET Sdk
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: |
-            3.1.x
-            5.x
-            6.x
-            7.x
-    - name: Test .NET 7
-      run: dotnet test -v normal -f net7.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET 6
-      run: dotnet test -v normal -f net6.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET 5
-      run: dotnet test -v normal -f net5.0 --logger "console;verbosity=detailed" --nologo /nologo
-    - name: Test .NET Core 3.1
-      run: dotnet test -v normal -f netcoreapp3.1 --logger "console;verbosity=detailed" --nologo /nologo
-      
+jobs:  
   upload-packages:
-    needs: [windows-test, ubuntu-test, osx-test] 
-    if: success()
     runs-on: windows-2022
     strategy:
       matrix:
-        project: [ 'Core', 'Embedded','Remote.Grpc' ]
+        project: 
+        - 'Core'
+        - 'Embedded'
+        - 'Remote.Grpc'
+        - 'Embedded.NativeAssets.Win-x64'
+        - 'Embedded.NativeAssets.Win-x86'
+        - 'Embedded.NativeAssets.Osx-x64'
+        - 'Embedded.NativeAssets.Linux-x64'
+        - 'Embedded.NativeAssets.AlpineLinux-x64'
     steps:
     - uses: actions/checkout@v2
     - name: Caching
@@ -130,7 +35,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '7.x'
+        dotnet-version: '8.x'
     - name: Publish Nuget Package
       uses: alirezanet/publish-nuget@v3.0.4
       with:

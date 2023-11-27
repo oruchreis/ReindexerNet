@@ -1,0 +1,121 @@
+name: Unix Test
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'src/**.csproj'
+      - 'src/**.cs'
+      - 'src/**.so'
+      - 'src/**.dylib'
+      - '.github/workflows/unix-test.yml'
+
+jobs:
+  ubuntu-test:
+    runs-on: ${{ matrix.target.runs-on }}
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    strategy:
+      matrix:
+        target:
+          - name: ubuntu20
+            runs-on: 'ubuntu-20.04'
+            shell: bash -e
+            rid: linux-x64
+          - name: ubuntu22
+            runs-on: 'ubuntu-22.04'
+            shell: bash -e
+            rid: linux-x64
+          - name: alpine
+            runs-on: 'ubuntu-latest'
+            shell: alpine.sh --root
+            rid: linux-musl-x64
+          - name: osx
+            runs-on: 'macos-latest'
+            shell: bash -e
+            rid: osx-x64
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Shell
+      run: |        
+        echo "#!/bin/sh
+        ${{matrix.target.shell}} \"\$@\"" > shell.sh
+        cat shell.sh
+        chmod +x shell.sh
+        echo "$PWD" >> $GITHUB_PATH
+    - name: Setup Alpine OS
+      if: startsWith(matrix.target.name,'alpine')
+      uses: jirutka/setup-alpine@v1
+      id: alpine-target
+      with:
+        arch: x86_64
+        packages: >
+          sudo
+          bash
+          icu-libs
+          krb5-libs
+          libgcc
+          libintl
+          libssl1.1
+          libstdc++
+          zlib
+        shell-name: alpine.sh
+    - name: Caching
+      uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ matrix.target.name }}-${{ hashFiles('**/*.csproj') }} #hash of project files
+        restore-keys: |
+          ${{ matrix.target.name }}-
+    - name: Setup Dotnet on Alpine
+      if: startsWith(matrix.target.name,'alpine')
+      run: |
+        wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+        chmod +x ./dotnet-install.sh        
+        ./dotnet-install.sh --channel 3.1 --install-dir $HOME/.dotnet
+        ./dotnet-install.sh --channel 5.0 --install-dir $HOME/.dotnet
+        ./dotnet-install.sh --channel 6.0 --install-dir $HOME/.dotnet
+        ./dotnet-install.sh --channel 7.0 --install-dir $HOME/.dotnet
+        ./dotnet-install.sh --channel 8.0 --install-dir $HOME/.dotnet
+        echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
+        echo "$DOTNET_ROOT" >> $GITHUB_PATH
+        echo "$DOTNET_ROOT/tools" >> $GITHUB_PATH
+        ln -s $HOME/.dotnet/dotnet /usr/bin/dotnet
+      shell: shell.sh {0}
+    - name: Setup .NET Sdk
+      if: startsWith(matrix.target.name,'alpine') == 'false'
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+            3.1.x
+            5.x
+            6.x
+            7.x
+            8.x
+    - name: List SDKs
+      run: |
+        dotnet --list-sdks
+      shell: shell.sh {0}
+    - name: Build # grpc protoc wants glibc on Alpine builds. so we build at ubuntu instead. https://github.com/grpc/grpc/issues/18428#issuecomment-535041155
+      run: |      
+        dotnet build -f net8.0
+        dotnet build -f net7.0
+        dotnet build -f net6.0
+        dotnet build -f net5.0
+        dotnet build -f netcoreapp3.1
+    - name: Test .NET 8
+      run: dotnet test -v quiet -f net8.0 -r ${{ matrix.target.rid }} --no-build --logger "console;verbosity=detailed" --nologo /nologo
+      shell: shell.sh {0}
+    - name: Test .NET 7
+      run: dotnet test -v quiet -f net7.0 -r ${{ matrix.target.rid }} --no-build --logger "console;verbosity=detailed" --nologo /nologo
+      shell: shell.sh {0}
+    - name: Test .NET 6
+      run: dotnet test -v quiet -f net6.0 -r ${{ matrix.target.rid }} --no-build --logger "console;verbosity=detailed" --nologo /nologo
+      shell: shell.sh {0}
+    - name: Test .NET 5
+      run: dotnet test -v quiet -f net5.0 -r ${{ matrix.target.rid }} --no-build --logger "console;verbosity=detailed" --nologo /nologo
+      shell: shell.sh {0}
+    - name: Test .NET Core 3.1
+      run: dotnet test -v quiet -f netcoreapp3.1 -r ${{ matrix.target.rid }} --no-build --logger "console;verbosity=detailed" --nologo /nologo
+      shell: shell.sh {0}

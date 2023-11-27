@@ -3,11 +3,10 @@
 [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
 [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
 [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
-![Build, Test](https://github.com/oruchreis/ReindexerNet/workflows/Build,%20Test,%20Package/badge.svg)
 
-![win-x64, win-x86 Test](https://github.com/oruchreis/ReindexerNet/workflows/win-x64,%20win-x86%20Test/badge.svg)
-![linux-x64 Test](https://github.com/oruchreis/ReindexerNet/workflows/linux-x64%20Test/badge.svg)
-![osx-x64 Test](https://github.com/oruchreis/ReindexerNet/workflows/osx-x64%20Test/badge.svg)
+[![Build, Test, Package](https://github.com/oruchreis/ReindexerNet/actions/workflows/build.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/build.yml)
+[![Unix Test](https://github.com/oruchreis/ReindexerNet/actions/workflows/unix-test.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/unix-test.yml)
+[![Windows Test](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml)
 
 ReindexerNet is a .NET binding(builtin & builtinserver) and connector(Grpc, ~~OpenApi~~) for embeddable in-memory document db [Reindexer](https://github.com/Restream/reindexer). 
 It is still in alpha state and there are a lot of works to do and .net apis are changing constantly. Even though we are using in production for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment. So please test in your environment before using.
