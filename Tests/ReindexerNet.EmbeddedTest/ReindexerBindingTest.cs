@@ -126,6 +126,8 @@ public class ReindexerBindingTest
     private const string FrameworkName = "NET6";
 #elif NET7_0
     private const string FrameworkName = "NET7";
+#elif NET8_0
+    private const string FrameworkName = "NET8";
 #elif NETCOREAPP2_2
     private const string FrameworkName="NETCOREAPP2_2";
 #elif NETCOREAPP3_1

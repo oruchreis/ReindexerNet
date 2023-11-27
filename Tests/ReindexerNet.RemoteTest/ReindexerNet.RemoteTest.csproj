@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netcoreapp3.1;net472</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net8.0;net7.0;net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
@@ -21,10 +21,15 @@
     <PackageReference Include="coverlet.collector" Version="3.1.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>    
+    </PackageReference>
   </ItemGroup>
   
   <ItemGroup>
+	<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.csproj" />
+	<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Linux-x64\ReindexerNet.Embedded.NativeAssets.Linux-x64.csproj" />
+	<ProjectReference Condition="$([MSBuild]::IsOSPlatform('osx'))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Osx-x64\ReindexerNet.Embedded.NativeAssets.Osx-x64.csproj" />
+	<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) == 'x64'" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x64\ReindexerNet.Embedded.NativeAssets.Win-x64.csproj" />
+	<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) != 'x64'" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x86\ReindexerNet.Embedded.NativeAssets.Win-x86.csproj" />
     <ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
     <ProjectReference Include="..\..\src\ReindexerNet.Remote.Grpc\ReindexerNet.Remote.Grpc.csproj" />
     <ProjectReference Include="..\ReindexerNet.CoreTest\ReindexerNet.CoreTest.csproj" />
