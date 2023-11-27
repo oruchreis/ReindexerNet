@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2023-11-30
+### Added 
+- Updated Reindexer Embedded to 3.20
+- Musl (linux-musl, Alpine Linux) support for Embedded
+- .Net 8 Support
+### Changed
+- Updated Grpc dependency version to 2.50.0
+
+## [0.3.8] - 2023-03-31
+### Fixed 
+- ExplainDef model.
+- x86 Tests
+
 ## [0.3.7] - 2023-01-16
 ### Added
 - Updated Rx native lib to 3.12.0

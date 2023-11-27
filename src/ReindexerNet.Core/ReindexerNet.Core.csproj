@@ -1,39 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netstandard2.0;net472;netstandard2.1</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netstandard2.0;netstandard2.1</TargetFrameworks>
 		<RootNamespace>ReindexerNet</RootNamespace>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
 		<PackageId>ReindexerNet.Core</PackageId>
 		<Title>ReindexerNet.Core</Title>
 		<Description>ReindexerNet.Core includes rest api models for Reindexer and includes base interfaces for ReindexerNet.</Description>
 		<PackageTags>reindexer embedded document-db in-memory</PackageTags>
-		<PackageIcon>icon.png</PackageIcon>
-		<Version>0.3.8</Version>
-		<AssemblyVersion>0.3.8</AssemblyVersion>
-		<FileVersion>0.3.8</FileVersion>
-		<Authors>oruchreis</Authors>
-		<Copyright>oruchreis</Copyright>
-		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<LangVersion>preview</LangVersion>
+		<Version>0.3.10</Version>
+		<AssemblyVersion>0.3.10</AssemblyVersion>
+		<FileVersion>0.3.10</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="System.Text.Json" Version="7.0.0" Condition="'$(TargetFramework)'=='net8.0'" />
 		<PackageReference Include="System.Text.Json" Version="7.0.0" Condition="'$(TargetFramework)'=='net7.0'" />
 		<PackageReference Include="System.Text.Json" Version="6.0.0" Condition="'$(TargetFramework)'=='net6.0'" />
-		<PackageReference Include="System.Text.Json" Version="5.0.0" Condition="'$(TargetFramework)'!='net7.0' and '$(TargetFramework)'!='net6.0'" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Include="../../doc/images/icon.png" Pack="true" PackagePath="\" />
+		<PackageReference Include="System.Text.Json" Version="5.0.0" Condition="'$(TargetFramework)'!='net8.0' and '$(TargetFramework)'!='net7.0' and '$(TargetFramework)'!='net6.0'" />
 	</ItemGroup>
 </Project>

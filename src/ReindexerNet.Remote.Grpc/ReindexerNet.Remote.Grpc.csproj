@@ -1,31 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netstandard2.0;net472;netstandard2.1</TargetFrameworks>
-		<TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net7.0;net6.0;net5.0;netstandard2.0;netstandard2.1</TargetFrameworks>
-		<RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
 		<RootNamespace>ReindexerNet.Remote.Grpc</RootNamespace>
 		<AllowUnsafeBlocks Condition="'$(TargetFramework)'=='net472' or '$(TargetFramework)'=='netstandard2.0'">true</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
 		<PackageId>ReindexerNet.Remote.Grpc</PackageId>
 		<Title>ReindexerNet.Remote.Grpc</Title>
 		<Description>Reindexer Grpc library to connect to a standalone reindexer server.</Description>
 		<PackageTags>reindexer remote grpc standalone document-db in-memory</PackageTags>
-		<PackageIcon>icon.png</PackageIcon>
-		<Version>0.3.8.3032</Version>
-		<AssemblyVersion>0.3.8</AssemblyVersion>
-		<FileVersion>0.3.8</FileVersion>
-		<Authors>oruchreis</Authors>
-		<Copyright>oruchreis</Copyright>
-		<PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<LangVersion>preview</LangVersion>		
+		<Version>0.3.10.3032</Version>
+		<AssemblyVersion>0.3.10</AssemblyVersion>
+		<FileVersion>0.3.10</FileVersion>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition="'$(TargetFramework)'=='net472' or '$(TargetFramework)'=='netstandard2.0'">
@@ -38,15 +22,14 @@
 	
 	<ItemGroup>
 		<PackageReference Include="Google.Protobuf" Version="3.18.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.40.0">
+		<PackageReference Include="Grpc.Tools" Version="2.50.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)'!='net472' and '$(TargetFramework)'!='netstandard2.0'">		
-		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.40.0" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.50.0" />
 	</ItemGroup>
 	<ItemGroup Condition="$(DefineConstants.Contains(LEGACY_GRPC_CORE))">
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />

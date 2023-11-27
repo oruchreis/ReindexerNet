@@ -10,7 +10,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Query for getting namespaces.
         /// </summary>
-        protected internal const string GetNamespacesQuery = "select name FROM #namespaces";
+        protected internal const string GetNamespacesQuery = "select name FROM #namespaces where storage.enabled = true and not name like '#%'";
         /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
         {
