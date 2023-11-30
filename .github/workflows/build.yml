@@ -1,6 +1,11 @@
 name: Build, Test, Package
 
 on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'src/**.csproj'
+      - '.github/workflows/build.yml'
   workflow_run:
     workflows: 
       - 'Windows Test'
