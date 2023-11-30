@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x64\ReindexerNet.Embedded.NativeAssets.Win-x64.csproj" />
 		<ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
 	</ItemGroup>
 
