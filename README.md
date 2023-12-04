@@ -9,14 +9,58 @@
 [![Windows Test](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml)
 
 ReindexerNet is a .NET binding(builtin & builtinserver) and connector(Grpc, ~~OpenApi~~) for embeddable in-memory document db [Reindexer](https://github.com/Restream/reindexer). 
-We are using ReindexerNET in production environments for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment. So please test in your environment before using.
+We are using ReindexerNET in production environments for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment without testing. So please test in your environment before using.
 
 If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check [change logs here](CHANGELOG.md).
 
 ## Sample Usage:
+- Add one of these client packages according to your use case
+  - For builtin/builtinserver mode which is embedded client: [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
+  - For grpc usage to remote reindexer server: [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
+  - For rest api usage to remote reindexer server:  [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
+- If you plan to use ReindexerNet.Embedded client, you must add at least one of these native packages
+  - [![Windows-x64 Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x64?label=Embedded.Native.Win-x64&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x64)
+  - [![Windows-x86 Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x86?label=Embedded.Native.Win-x86&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x86)
+  - [![Osx Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-x64?label=Embedded.Native.Osx&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-x64)
+  - [![Linux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Linux-x64?label=Embedded.Native.Linux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Linux-x64)
+  - [![AlpineLinux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.AlpineLinux-x64?label=Embedded.Native.AlpineLinux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.AlpineLinux-x64)
+ - Or you can add all native packages like this:
+
+```xml
+<ItemGroup>
+  <PackageReference 
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.3.10.3200"
+    Condition="$([MSBuild]::IsOSPlatform('linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.3.10.3200"
+    Condition="$([MSBuild]::IsOSPlatform('linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference 
+    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.3.10.3200"
+    Condition="$([MSBuild]::IsOSPlatform('osx'))"  />
+  <PackageReference 
+    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.3.10.3200"
+    Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) == 'x64'" />
+  <PackageReference 
+    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.3.10.3200" 
+    Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) != 'x64'" />
+</ItemGroup>
+```
+
+- You should start to create a client object, connect to a remote server or builtin/builtinserver like in this example:
 ```csharp
 private static readonly IReindexerClient _rxClient;
 
+public async Task InitClientAsync()
+{
+    DbPath = Path.Combine(Path.GetTempPath(), "ReindexerDB");
+    _rxClient = new ReindexerEmbedded(DbPath);
+    await _rxClient.ConnectAsync();	
+}
+```
+Normally ReindexerEmbedded client is IDisposable, and you should dispose it if you want to use it for a short period of time. But usually cache operations are used for a long time in the lifetime of the application. So we defined client object here as a static object. If you want to close connection at shutdown of the application, you should call Dispose method on the shutdown event of the application. This frees the file handles kept on the disk.
+
+- Then you need a class for schema and you should create cache table and add proper indicies for searching:
+```csharp
 internal class CacheEntity
 {
     public Guid Id { get; set; }
@@ -26,13 +70,6 @@ internal class CacheEntity
     public int[] IntArray { get; set; }
     public string[] StrArray { get; set; }
     public string Payload { get; set; }
-}
-
-public async Task InitClientAsync()
-{
-    DbPath = Path.Combine(Path.GetTempPath(), "ReindexerDB");
-    _rxClient = new ReindexerEmbedded(DbPath);
-    await _rxClient.ConnectAsync();	
 }
 
 public async Task CreateCacheTable()
@@ -47,7 +84,9 @@ public async Task CreateCacheTable()
 
     //Please refer to Reindexer's documentation for more index specifications
 }
-
+```
+- Insert and Query operations:
+```csharp
 public async Task InsertAsync()
 {
     var data = new CacheEntity[10];
