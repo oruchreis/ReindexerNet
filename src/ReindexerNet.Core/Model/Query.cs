@@ -87,6 +87,13 @@ namespace ReindexerNet
         public List<string> SelectFunctions { get; set; }
 
         /// <summary>
+        /// Output fulltext rank in QueryResult. Allowed only with fulltext query Default : false
+        /// </summary>
+        [DataMember(Name = "select_with_rank", EmitDefaultValue = false)]
+        [JsonPropertyName("select_with_rank")]
+        public bool? SelectWithRank { get; set; }
+
+        /// <summary>
         /// Ask query calculate aggregation
         /// </summary>
         /// <value>Ask query calculate aggregation</value>
@@ -110,6 +117,12 @@ namespace ReindexerNet
         [JsonPropertyName("explain")]
         public bool? Explain { get; set; }
 
+        /// <summary>
+        /// Strict mode for query. Adds additional check for fields('names')/indexes('indexes') existence in sorting and filtering conditions. enum (none, names, indexes)  Default : "names"
+        /// </summary>
+        [DataMember(Name = "strict_mode ", EmitDefaultValue = false)]
+        [JsonPropertyName("strict_mode ")]
+        public string? StrictMode { get; set; }
 
         /// <summary>
         /// Get the string presentation of the object

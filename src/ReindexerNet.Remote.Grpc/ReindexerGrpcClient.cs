@@ -28,6 +28,7 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
     private readonly GrpcChannel _channel;
     private readonly ReindexerGrpc.ReindexerClient _grpcClient;
     private readonly OutputFlags _outputFlags;
+    private static readonly ReindexerJsonSerializer _defaultJsonSerializer = new();
 
     /// <param name="connectionString">Connection string for the implementation.</param>
     /// <param name="serializer"></param>
@@ -70,9 +71,11 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
             _connectionString.GrpcAddress = "http://" + _connectionString.GrpcAddress;
 #if LEGACY_GRPC_CORE
         var ipEndpoint = new Uri(_connectionString.GrpcAddress, UriKind.Absolute);
-        var channelOptions = new List<ChannelOption>();
-        channelOptions.Add(new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxReceiveMessageSize ?? -1));
-        channelOptions.Add(new ChannelOption(ChannelOptions.MaxSendMessageLength, maxSendMessageSize ?? -1));
+        var channelOptions = new List<ChannelOption>
+        {
+            new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxReceiveMessageSize ?? -1),
+            new ChannelOption(ChannelOptions.MaxSendMessageLength, maxSendMessageSize ?? -1)
+        };
         configureChannelOptions?.Invoke(channelOptions);
 
         _channel = new GrpcChannel(ipEndpoint.Host, ipEndpoint.Port //doesn't support subdirectories.
@@ -227,7 +230,21 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
                 Name = indexDefinition.Name,
                 FieldType = indexDefinition.FieldType.ToEnumString(),
                 IndexType = indexDefinition.IndexType.ToEnumString(),
+
+/* Unmerged change from project 'ReindexerNet.Remote.Grpc (net472)'
+Before:
                 JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name } },
+After:
+                JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name] },
+*/
+
+/* Unmerged change from project 'ReindexerNet.Remote.Grpc (netstandard2.0)'
+Before:
+                JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name } },
+After:
+                JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name] },
+*/
+                JsonPaths = { indexDefinition.JsonPaths ?? [indexDefinition.Name] },
                 Options = new IndexOptions
                 {
                     CollateMode = Enum.TryParse(indexDefinition.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ? collateMode : IndexOptions.Types.CollateMode.CollateNoneMode,
@@ -257,7 +274,7 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
                 Name = indexDefinition.Name,
                 FieldType = indexDefinition.FieldType.ToEnumString(),
                 IndexType = indexDefinition.IndexType.ToEnumString(),
-                JsonPaths = { indexDefinition.JsonPaths ?? new List<string>() { indexDefinition.Name } },
+                JsonPaths = { indexDefinition.JsonPaths ?? [indexDefinition.Name] },
                 Options = new IndexOptions
                 {
                     CollateMode = Enum.TryParse(indexDefinition.CollateMode, true, out IndexOptions.Types.CollateMode collateMode) ?
@@ -379,6 +396,60 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
     }
 
     /// <inheritdoc/>
+    public Task<QueryItemsOf<TItem>> ExecuteAsync<TItem>(string @namespace, Action<IQueryBuilder> query, CancellationToken cancellationToken = default)
+    {
+        using var builder = new SerializableQueryBuilder(_defaultJsonSerializer, @namespace);
+        query(builder);
+        var buffer = builder.CloseQuery();
+
+        return ExecuteAsync<TItem>(buffer.ToArray(), SerializerType.Json, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<QueryItemsOf<TItem>> ExecuteAsync<TItem>(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default)
+    {
+        var asyncReq = _grpcClient.Select(new SelectRequest
+        {
+            DbName = _connectionString.DatabaseName,
+            Query = new Reindexer.Grpc.Query{ Data = ByteString.CopyFrom(query), EncdoingType = queryEncoding switch
+            {
+                SerializerType.Json => EncodingType.Json,
+                SerializerType.Msgpack => EncodingType.Msgpack,
+                SerializerType.Cjson => EncodingType.Cjson,
+                SerializerType.Protobuf => EncodingType.Protobuf,
+                _ => throw new NotImplementedException(),
+            } },
+            Flags = _outputFlags
+        });
+        var result = new QueryItemsOf<TItem> { Items = [] };
+        var hasResultOptSet = false;
+        await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_serializer, cancellationToken))
+        {
+            if (!hasResultOptSet)
+            {
+                if (resultOpt != null)
+                {
+                    result.QueryTotalItems = resultOpt.TotalItems != 0 ? resultOpt.TotalItems : resultOpt.QueryTotalItems; //why?
+                    result.Explain = !string.IsNullOrWhiteSpace(resultOpt.Explain) ? resultOpt.Explain.AsSpan().DeserializeJson<ExplainDef>() : new ExplainDef();
+                    result.CacheEnabled = resultOpt.CacheEnabled;
+                }
+
+                hasResultOptSet = true;
+            }
+            if (queryItems.Items?.Count > 0)
+                result.Items.AddRange(queryItems.Items);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<object>> ExecuteAsync(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default)
+    {
+        return ExecuteAsync<object>(query, queryEncoding, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public async Task<QueryItemsOf<TItem>> ExecuteSqlAsync<TItem>(string sql, CancellationToken cancellationToken = default)
     {
         var asyncReq = _grpcClient.SelectSql(new SelectSqlRequest
@@ -387,7 +458,7 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
             Sql = sql,
             Flags = _outputFlags
         });
-        var result = new QueryItemsOf<TItem> { Items = new List<TItem>() };
+        var result = new QueryItemsOf<TItem> { Items = [] };
         var hasResultOptSet = false;
         await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_serializer, cancellationToken))
         {

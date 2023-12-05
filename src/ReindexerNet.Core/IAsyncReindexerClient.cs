@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -169,6 +170,24 @@ namespace ReindexerNet
         /// <returns></returns>
         Task<int> DeleteAsync<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
         /// <summary>
+        /// Executes a reindexer nosql query
+        /// </summary>
+        /// <typeparam name="TItem"></typeparam>
+        /// <param name="query"></param>
+        /// <param name="queryEncoding"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<QueryItemsOf<TItem>> ExecuteAsync<TItem>(string @namespace, Action<IQueryBuilder> query, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Executes a reindexer nosql query
+        /// </summary>
+        /// <typeparam name="TItem"></typeparam>
+        /// <param name="query"></param>
+        /// <param name="queryEncoding"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<QueryItemsOf<TItem>> ExecuteAsync<TItem>(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default);
+        /// <summary>
         /// Executes an sql query.
         /// </summary>
         /// <typeparam name="TItem">Item type to return</typeparam>
@@ -176,6 +195,14 @@ namespace ReindexerNet
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<QueryItemsOf<TItem>> ExecuteSqlAsync<TItem>(string sql, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Executes a reindexer nosql query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="queryEncoding"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<QueryItemsOf<object>> ExecuteAsync(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default);
         /// <summary>
         /// Executes an sql query.
         /// </summary>

@@ -930,9 +930,11 @@ public class SelectBenchmark
     [Benchmark]
     public IList<object?> ReindexerNet_SelectArray()
     {
-        var result = new List<object?>();
-        result.Add(_rxClient.ExecuteSql($"Select * FROM Entities WHERE IntArray IN ({N})"));
-        result.Add(_rxClient.ExecuteSql($"Select * FROM Entities WHERE StrArray IN ('{N}')"));
+        var result = new List<object?>
+        {
+            _rxClient.ExecuteSql($"Select * FROM Entities WHERE IntArray IN ({N})"),
+            _rxClient.ExecuteSql($"Select * FROM Entities WHERE StrArray IN ('{N}')")
+        };
         return result;
     }
 
@@ -940,9 +942,11 @@ public class SelectBenchmark
     [Benchmark]
     public IList<object?> ReindexerNetDense_SelectArray()
     {
-        var result = new List<object?>();
-        result.Add(_rxClientDense.ExecuteSql($"Select * FROM Entities WHERE IntArray IN ({N})"));
-        result.Add(_rxClientDense.ExecuteSql($"Select * FROM Entities WHERE StrArray IN ('{N}')"));
+        var result = new List<object?>
+        {
+            _rxClientDense.ExecuteSql($"Select * FROM Entities WHERE IntArray IN ({N})"),
+            _rxClientDense.ExecuteSql($"Select * FROM Entities WHERE StrArray IN ('{N}')")
+        };
         return result;
     }
 
@@ -1005,9 +1009,11 @@ public class SelectBenchmark
     [Benchmark]
     public IList<object?> Realm_SelectArray()
     {
-        var result = new List<object?>();
-        result.Add(_realm.All<BenchmarkRealmEntity>().Filter("ANY IntArray.@values == $0", N).ToList());
-        result.Add(_realm.All<BenchmarkRealmEntity>().Filter("ANY StrArray.@values == '$0'", N.ToString()).ToList());
+        var result = new List<object?>
+        {
+            _realm.All<BenchmarkRealmEntity>().Filter("ANY IntArray.@values == $0", N).ToList(),
+            _realm.All<BenchmarkRealmEntity>().Filter("ANY StrArray.@values == '$0'", N.ToString()).ToList()
+        };
         return result;
     }
 }

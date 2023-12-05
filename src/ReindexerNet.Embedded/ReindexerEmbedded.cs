@@ -2,6 +2,7 @@
 #pragma warning disable S4136 // Method overloads should be grouped together
 using ReindexerNet.Embedded.Internal.Helpers;
 using ReindexerNet.Embedded.Internal;
+using ReindexerNet.Internal;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Linq;
 using System.Threading;
+using System.Linq.Expressions;
 
 namespace ReindexerNet.Embedded;
 
@@ -49,6 +51,8 @@ public partial class ReindexerEmbedded : IReindexerClient
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
+    private static readonly ReindexerJsonSerializer _defaultJsonSerializer = new();
+
     private static byte[] InternalSerializeJson<T>(T obj)
     {
         return JsonSerializer.SerializeToUtf8Bytes(obj, _jsonSerializerOptions);
@@ -86,9 +90,9 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void AddIndex(string nsName, Index indexDefinition)
     {
-        using var nsNameRx = nsName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
         if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
-            indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+            indexDefinition.JsonPaths = [indexDefinition.Name];
         using var jsonRx = ReindexerEmbedded.InternalSerializeJson(indexDefinition).GetStringHandle();
         Assert.ThrowIfError(() =>
                 ReindexerBinding.reindexer_add_index(Rx, nsNameRx, jsonRx, _ctxInfo)
@@ -105,7 +109,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void CloseNamespace(string nsName)
     {
-        using var nsNameRx = nsName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_close_namespace(Rx, nsNameRx, _ctxInfo));
     }
@@ -125,8 +129,8 @@ public partial class ReindexerEmbedded : IReindexerClient
             Directory.CreateDirectory(_connectionString.DatabaseName); //reindexer sometimes throws permission exception from c++ mkdir func. so we try to crate directory before.
         }
 
-        using var dsn = $"builtin://{_connectionString.DatabaseName}".GetHandle();
-        using var version = ReindexerBinding.ReindexerVersion.GetHandle();
+        using var dsn = $"builtin://{_connectionString.DatabaseName}".GetStringHandle();
+        using var version = ReindexerBinding.ReindexerVersion.GetStringHandle();
         Assert.ThrowIfError(() =>
            ReindexerBinding.reindexer_connect(Rx,
                dsn,
@@ -145,8 +149,8 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void DropIndex(string nsName, string indexName)
     {
-        using var nsNameRx = nsName.GetHandle();
-        using var inameRx = indexName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
+        using var inameRx = indexName.GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_drop_index(Rx, nsNameRx, inameRx, _ctxInfo)
         );
@@ -162,7 +166,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void DropNamespace(string nsName)
     {
-        using var nsNameRx = nsName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_drop_namespace(Rx, nsNameRx, _ctxInfo)
         );
@@ -178,7 +182,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void OpenNamespace(string nsName, NamespaceOptions options = null)
     {
-        using (var nsNameRx = nsName.GetHandle())
+        using (var nsNameRx = nsName.GetStringHandle())
             Assert.ThrowIfError(() =>
             {
                 reindexer_error rsp = default;
@@ -218,8 +222,8 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void RenameNamespace(string oldName, string newName)
     {
-        using var oldNameRx = oldName.GetHandle();
-        using var newNameRx = newName.GetHandle();
+        using var oldNameRx = oldName.GetStringHandle();
+        using var newNameRx = newName.GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_rename_namespace(Rx, oldNameRx, newNameRx, _ctxInfo));
     }
@@ -235,7 +239,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     public ReindexerTransaction StartTransaction(string nsName)
     {
         UIntPtr tr = UIntPtr.Zero;
-        using (var nsNameRx = nsName.GetHandle())
+        using (var nsNameRx = nsName.GetStringHandle())
             Assert.ThrowIfError(() =>
             {
                 var rsp = ReindexerBinding.reindexer_start_transaction(Rx, nsNameRx);
@@ -254,7 +258,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void TruncateNamespace(string nsName)
     {
-        using var nsNameRx = nsName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_truncate_namespace(Rx, nsNameRx, _ctxInfo)
         );
@@ -270,9 +274,9 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void UpdateIndex(string nsName, Index indexDefinition)
     {
-        using var nsNameRx = nsName.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
         if (indexDefinition.JsonPaths == null || indexDefinition.JsonPaths.Count == 0)
-            indexDefinition.JsonPaths = new List<string> { indexDefinition.Name };
+            indexDefinition.JsonPaths = [indexDefinition.Name];
         using var jsonRx = ReindexerEmbedded.InternalSerializeJson(indexDefinition).GetStringHandle();
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_update_index(Rx, nsNameRx, jsonRx, _ctxInfo)
@@ -291,7 +295,7 @@ public partial class ReindexerEmbedded : IReindexerClient
     public int ModifyItem(string nsName, ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
     {
         var result = 0;
-        precepts = precepts ?? new string[0];
+        precepts = precepts ?? [];
         using (var writer = new CJsonWriter())
         {
             writer.PutVString(nsName);
@@ -364,45 +368,110 @@ public partial class ReindexerEmbedded : IReindexerClient
     }
 
     /// <inheritdoc/>
-    public QueryItemsOf<T> ExecuteSql<T>(string sql)
+    public QueryItemsOf<T> Execute<T>(string @namespace, Action<IQueryBuilder> query)
+    {
+        using var builder = new CJsonQueryBuilder(_defaultJsonSerializer, @namespace);
+        query(builder);
+        var buffer = builder.CloseQuery();
+
+        var result = new QueryItemsOf<T>
+        {
+            Items = []
+        };
+
+        reindexer_buffer.PinBufferFor(buffer, queryRx =>
+        {
+            var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select_query(Rx, queryRx, 1, [], 0, _ctxInfo));
+            try
+            {
+                GetItemsFromReindexerResult(result, rsp);
+            }
+            finally
+            {
+                rsp.@out.Free();
+            }
+        });
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<TItem>> ExecuteAsync<TItem>(string @namespace, Action<IQueryBuilder> query, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Execute<TItem>(@namespace, query));
+    }
+
+    /// <inheritdoc/>
+    public QueryItemsOf<T> Execute<T>(byte[] query, SerializerType queryEncoding)
     {
         var result = new QueryItemsOf<T>
         {
-            Items = new List<T>()
+            Items = []
         };
 
-        using var sqlRx = sql.GetHandle();
-        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sqlRx, 1, new int[0], 0, _ctxInfo));
+        using var queryRx = query.GetHandle();
+        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select_query(Rx, queryRx, 1, [], 0, _ctxInfo));
         try
         {
-            var reader = new CJsonReader(rsp.@out);
-            var rawQueryParams = reader.ReadRawQueryParams();
-            var explain = rawQueryParams.explainResults;
-
-            result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
-            if (explain.Length > 0)
-            {
-                result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain, _jsonSerializerOptions);
-            }
-
-            for (var i = 0; i < rawQueryParams.count; i++)
-            {
-                var item = reader.ReadRawItemParams();
-                if (item.data.Length > 0)
-                    result.Items.Add(Serializer.Deserialize<T>(item.data));
-            }
-
-            if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
-            {
-                throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
-            }
-
-            return result;
+            return GetItemsFromReindexerResult(result, rsp);
         }
         finally
         {
             rsp.@out.Free();
         }
+    }
+
+    /// <inheritdoc/>
+    public QueryItemsOf<T> ExecuteSql<T>(string sql)
+    {
+        var result = new QueryItemsOf<T>
+        {
+            Items = []
+        };
+
+        using var sqlRx = sql.GetStringHandle();
+        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_select(Rx, sqlRx, 1, [], 0, _ctxInfo));
+        try
+        {
+            return GetItemsFromReindexerResult(result, rsp);
+        }
+        finally
+        {
+            rsp.@out.Free();
+        }
+    }
+
+    private QueryItemsOf<T> GetItemsFromReindexerResult<T>(QueryItemsOf<T> result, reindexer_ret rsp)
+    {
+        var reader = new CJsonReader(rsp.@out);
+        var rawQueryParams = reader.ReadRawQueryParams();
+        var explain = rawQueryParams.explainResults;
+
+        result.QueryTotalItems = rawQueryParams.totalcount != 0 ? rawQueryParams.totalcount : rawQueryParams.count;
+        if (explain.Length > 0)
+        {
+            result.Explain = JsonSerializer.Deserialize<ExplainDef>(explain, _jsonSerializerOptions);
+        }
+
+        for (var i = 0; i < rawQueryParams.count; i++)
+        {
+            var item = reader.ReadRawItemParams();
+            if (item.data.Length > 0)
+                result.Items.Add(Serializer.Deserialize<T>(item.data));
+        }
+
+        if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
+        {
+            throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<T>> ExecuteAsync<T>(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Execute<T>(query, queryEncoding));
     }
 
     /// <inheritdoc/>
@@ -412,9 +481,21 @@ public partial class ReindexerEmbedded : IReindexerClient
     }
 
     /// <inheritdoc/>
+    public QueryItemsOf<object> Execute(byte[] query, SerializerType queryEncoding)
+    {
+        return Execute<object>(query, queryEncoding);
+    }
+
+    /// <inheritdoc/>
     public QueryItemsOf<object> ExecuteSql(string sql)
     {
         return ExecuteSql<object>(sql);
+    }
+
+    /// <inheritdoc/>
+    public Task<QueryItemsOf<object>> ExecuteAsync(byte[] query, SerializerType queryEncoding, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Execute<object>(query, queryEncoding));
     }
 
     /// <inheritdoc/>
@@ -475,8 +556,8 @@ public partial class ReindexerEmbedded : IReindexerClient
     public void CreateDatabase(string dbName)
     {
         var newRx = ReindexerBinding.init_reindexer();
-        using (var dsn = $"builtin://{dbName}".GetHandle())
-        using (var version = ReindexerBinding.ReindexerVersion.GetHandle())
+        using (var dsn = $"builtin://{dbName}".GetStringHandle())
+        using (var version = ReindexerBinding.ReindexerVersion.GetStringHandle())
             Assert.ThrowIfError(() =>
                ReindexerBinding.reindexer_connect(newRx,
                    dsn,
@@ -521,7 +602,7 @@ public partial class ReindexerEmbedded : IReindexerClient
         {
             query.AppendFormat(" WHERE {0}", string.Join(" AND ", filters));
         }
-            
+
         return ExecuteSql<Namespace>(query.ToString()).Items
             .Where(ns => ns.Storage == null || withClosed || ns.Storage.Enabled == true);
     }
@@ -536,8 +617,8 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void SetSchema(string nsName, string jsonSchema)
     {
-        using var nsNameRx = nsName.GetHandle();
-        using var jsonSchemaRx = jsonSchema.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
+        using var jsonSchemaRx = jsonSchema.GetStringHandle();
 
         Assert.ThrowIfError(() =>
             ReindexerBinding.reindexer_set_schema(Rx, nsNameRx, jsonSchemaRx, _ctxInfo));
@@ -553,8 +634,8 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public string GetMeta(string nsName, MetaInfo metadata)
     {
-        using var nsNameRx = nsName.GetHandle();
-        using var keyRx = metadata.Key.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
+        using var keyRx = metadata.Key.GetStringHandle();
         var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_get_meta(Rx, nsNameRx, keyRx, _ctxInfo));
         try
         {
@@ -575,9 +656,9 @@ public partial class ReindexerEmbedded : IReindexerClient
     /// <inheritdoc/>
     public void PutMeta(string nsName, MetaInfo metadata)
     {
-        using var nsNameRx = nsName.GetHandle();
-        using var keyRx = metadata.Key.GetHandle();
-        using var dataRx = metadata.Value.GetHandle();
+        using var nsNameRx = nsName.GetStringHandle();
+        using var keyRx = metadata.Key.GetStringHandle();
+        using var dataRx = metadata.Value.GetStringHandle();
         Assert.ThrowIfError(() => ReindexerBinding.reindexer_put_meta(Rx, nsNameRx, keyRx, dataRx, _ctxInfo));
     }
 

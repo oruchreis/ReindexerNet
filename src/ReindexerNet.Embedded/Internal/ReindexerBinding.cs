@@ -23,7 +23,7 @@ namespace ReindexerNet.Embedded.Internal;
 
 internal static class ReindexerBinding
 {
-    public const string ReindexerVersion = "v3.12.0";
+    public const string ReindexerVersion = "v3.20.0";
 
     private const string BindingLibrary = "reindexer_embedded_server";
     private static class Windows
@@ -465,14 +465,14 @@ internal static class ReindexerBinding
     }
 #pragma warning restore S3963 // "static" fields should be initialized inline
 
-    private static readonly HashSet<string> _searchBinPaths = new HashSet<string>{
+    private static readonly HashSet<string> _searchBinPaths = [
             $"{AppDomain.CurrentDomain?.BaseDirectory ?? ""}\\bin",
             Path.GetDirectoryName(Assembly.GetExecutingAssembly()?.Location ?? "."),
             Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location ?? "."),
             Directory.GetCurrentDirectory(),
             "bin",
             ""
-            };
+            ];
 
     private static void LoadAndBindNativeLibrary()
     {

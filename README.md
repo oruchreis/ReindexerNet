@@ -30,19 +30,19 @@ If you have any questions about Reindexer, please use [main page](https://github
 <ItemGroup>
   <PackageReference 
     Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.3.10.3200"
-    Condition="$([MSBuild]::IsOSPlatform('linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference
     Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.3.10.3200"
-    Condition="$([MSBuild]::IsOSPlatform('linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference 
     Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.3.10.3200"
-    Condition="$([MSBuild]::IsOSPlatform('osx'))"  />
+    Condition="$([MSBuild]::IsOSPlatform('OSX'))"  />
   <PackageReference 
     Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.3.10.3200"
-    Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) == 'x64'" />
+    Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   <PackageReference 
     Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.3.10.3200" 
-    Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) != 'x64'" />
+    Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
 </ItemGroup>
 ```
 
@@ -292,11 +292,11 @@ Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical 
  - [x] RestApi models [![Core  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
  - [x] Embedded mode binding (Builtin) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
  - [x] Embedded Server mode binding (Builtin-server) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
- - [x] Embedded bindings for win-x64, linux-x64, osx-x64 and win-x86
+ - [x] Embedded bindings for win-x64, linux-x64, linux-musl-x64, osx-x64 and win-x86
  - [x] GRPC connector for remote servers (Standalone server/Grpc) [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
- - [ ] Query Interface
- - [ ] CJson Serializer
- - [ ] Dsl Query Builder
+ - [x] Query Interface
+ - [x] CJson Serializer
+ - [x] Dsl Query Builder
  - [ ] OpenApi/Json connector for remote servers
  - [ ] CProto connector for remote servers
  - [ ] Documentation 

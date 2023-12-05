@@ -6,7 +6,7 @@ namespace ReindexerNet.Embedded.Internal.Helpers
 {
     internal static class TypeHelper
     {
-        public static ReindexerStringHandle GetHandle(this string str)
+        public static ReindexerStringHandle GetStringHandle(this string str)
         {
             return reindexer_string.From(str);
         }

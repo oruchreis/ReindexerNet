@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using ReindexerNet.Internal;
 
 namespace ReindexerNet.EmbeddedTest;
 
@@ -68,13 +69,13 @@ public class ReindexerBindingTest
     {
         AssertError(
             ReindexerBinding.reindexer_connect(_rx,
-            $"builtin://{Path.Combine(Path.GetTempPath(), "ReindexerBindingTest")}".GetHandle(),
+            $"builtin://{Path.Combine(Path.GetTempPath(), "ReindexerBindingTest")}".GetStringHandle(),
             new ConnectOpts
             {
                 options = ConnectOpt.kConnectOptAllowNamespaceErrors,
                 storage = StorageTypeOpt.kStorageTypeOptLevelDB,
                 expectedClusterID = 0
-            }, ReindexerBinding.ReindexerVersion.GetHandle()));
+            }, ReindexerBinding.ReindexerVersion.GetStringHandle()));
     }
 
     [TestMethod]
@@ -89,7 +90,7 @@ public class ReindexerBindingTest
         var dbPath = Path.Combine(Path.GetTempPath(), "TestDbForEnableStorage");
         if (Directory.Exists(dbPath))
             Directory.Delete(dbPath, true);
-        AssertError(ReindexerBinding.reindexer_enable_storage(ReindexerBinding.init_reindexer(), dbPath.GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_enable_storage(ReindexerBinding.init_reindexer(), dbPath.GetStringHandle(), _ctxInfo));
     }
 
     [TestMethod]
@@ -101,21 +102,21 @@ public class ReindexerBindingTest
     [TestMethod]
     public void OpenNamespace()
     {
-        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, "OpenNamespaceTest".GetHandle(),
+        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, "OpenNamespaceTest".GetStringHandle(),
             new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
             _ctxInfo));
-        AssertError(ReindexerBinding.reindexer_drop_namespace(_rx, "OpenNamespaceTest".GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_drop_namespace(_rx, "OpenNamespaceTest".GetStringHandle(), _ctxInfo));
     }
 
     [TestMethod]
     public void DropNamespace()
     {
-        var error = ReindexerBinding.reindexer_drop_namespace(_rx, "DropNamespaceTest".GetHandle(), _ctxInfo);
+        var error = ReindexerBinding.reindexer_drop_namespace(_rx, "DropNamespaceTest".GetStringHandle(), _ctxInfo);
         Assert.AreNotEqual(0, error.code);
-        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, "DropNamespaceTest".GetHandle(),
+        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, "DropNamespaceTest".GetStringHandle(),
             new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
             _ctxInfo));
-        AssertError(ReindexerBinding.reindexer_drop_namespace(_rx, "DropNamespaceTest".GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_drop_namespace(_rx, "DropNamespaceTest".GetStringHandle(), _ctxInfo));
     }
 
 #if NET472
@@ -138,7 +139,7 @@ public class ReindexerBindingTest
 
     public void ModifyItemPacked(string itemJson = null)
     {
-        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, DataTestNamespace.GetHandle(),
+        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, DataTestNamespace.GetStringHandle(),
             new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
             _ctxInfo));
 
@@ -149,9 +150,9 @@ public class ReindexerBindingTest
             IsPk = true,
             FieldType = FieldType.Int64,
             IndexType = IndexType.Hash,
-            JsonPaths = new List<string> { "Id" }
+            JsonPaths = ["Id"]
         }, _jsonSerializerOptions);
-        AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetStringHandle(), indexDefJson.GetStringHandle(), _ctxInfo));
         indexDefJson = JsonSerializer.Serialize(
         new Index
         {
@@ -159,13 +160,13 @@ public class ReindexerBindingTest
             IsPk = false,
             FieldType = FieldType.String,
             IndexType = IndexType.Hash,
-            JsonPaths = new List<string> { "Guid" }
+            JsonPaths = ["Guid"]
         }, _jsonSerializerOptions);
-        AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_add_index(_rx, DataTestNamespace.GetStringHandle(), indexDefJson.GetStringHandle(), _ctxInfo));
 
         var rsp = ReindexerBinding.reindexer_select(_rx,
-            $"SELECT 'indexes.name' FROM #namespaces WHERE name = '{DataTestNamespace}'".GetHandle(),
-            1, new int[0], 0, _ctxInfo);
+            $"SELECT 'indexes.name' FROM #namespaces WHERE name = '{DataTestNamespace}'".GetStringHandle(),
+            1, [], 0, _ctxInfo);
 
         if (rsp.err_code != 0)
             Assert.AreEqual(null, (string)rsp.@out);
@@ -217,8 +218,8 @@ public class ReindexerBindingTest
             ModifyItemPacked();
 
             var rsp = ReindexerBinding.reindexer_select(_rx,
-                $"SELECT * FROM {DataTestNamespace}".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
+                $"SELECT * FROM {DataTestNamespace}".GetStringHandle(),
+                1, [], 0, _ctxInfo);
             if (rsp.err_code != 0)
                 Assert.AreEqual(null, (string)rsp.@out);
             Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
@@ -230,7 +231,7 @@ public class ReindexerBindingTest
         }
         finally
         {
-            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetStringHandle(), _ctxInfo));
         }
     }
 
@@ -242,8 +243,8 @@ public class ReindexerBindingTest
             ModifyItemPacked();
 
             var rsp = ReindexerBinding.reindexer_select(_rx,
-                $"EXPLAIN SELECT * FROM {DataTestNamespace}".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
+                $"EXPLAIN SELECT * FROM {DataTestNamespace}".GetStringHandle(),
+                1, [], 0, _ctxInfo);
             if (rsp.err_code != 0)
                 Assert.AreEqual(null, (string)rsp.@out);
             Assert.AreNotEqual(UIntPtr.Zero, rsp.@out.results_ptr);
@@ -259,14 +260,14 @@ public class ReindexerBindingTest
         }
         finally
         {
-            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetStringHandle(), _ctxInfo));
         }
     }
 
     [TestMethod]
     public void DeleteSql()
     {
-        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, DataTestNamespace.GetHandle(),
+        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, DataTestNamespace.GetStringHandle(),
            new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
            _ctxInfo));
 
@@ -275,8 +276,8 @@ public class ReindexerBindingTest
             ModifyItemPacked($"{{\"Id\":2, \"Guid\":\"{Guid.NewGuid()}\"}}");
 
             var delRsp = ReindexerBinding.reindexer_select(_rx,
-                $"DELETE FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
-                1, new int[0], 0, _ctxInfo);
+                $"DELETE FROM {DataTestNamespace} WHERE Id=2".GetStringHandle(),
+                1, [], 0, _ctxInfo);
             if (delRsp.err_code != 0)
                 Assert.AreEqual(null, (string)delRsp.@out);
             Assert.AreNotEqual(UIntPtr.Zero, delRsp.@out.results_ptr);
@@ -286,7 +287,7 @@ public class ReindexerBindingTest
             Assert.AreNotEqual(0, offsets.Count);
 
             var selRsp = ReindexerBinding.reindexer_select(_rx,
-                $"SELECT * FROM {DataTestNamespace} WHERE Id=2".GetHandle(),
+                $"SELECT * FROM {DataTestNamespace} WHERE Id=2".GetStringHandle(),
                 1, new int[] { 0 }, 1, _ctxInfo);
             if (selRsp.err_code != 0)
                 Assert.AreEqual(null, (string)selRsp.@out);
@@ -298,7 +299,7 @@ public class ReindexerBindingTest
         }
         finally
         {
-            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetHandle(), _ctxInfo));
+            AssertError(ReindexerBinding.reindexer_close_namespace(_rx, DataTestNamespace.GetStringHandle(), _ctxInfo));
         }
     }
 
@@ -307,7 +308,7 @@ public class ReindexerBindingTest
     public void ParallelModifyItemPacked()
     {
         var nsName = "ParallelTestNs";
-        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, nsName.GetHandle(),
+        AssertError(ReindexerBinding.reindexer_open_namespace(_rx, nsName.GetStringHandle(),
             new StorageOpts { options = StorageOpt.kStorageOptCreateIfMissing | StorageOpt.kStorageOptEnabled },
             _ctxInfo));
 
@@ -318,9 +319,9 @@ public class ReindexerBindingTest
             IsPk = true,
             FieldType = FieldType.Int64,
             IndexType = IndexType.Hash,
-            JsonPaths = new List<string> { "Id" }
+            JsonPaths = ["Id"]
         }, _jsonSerializerOptions);
-        AssertError(ReindexerBinding.reindexer_add_index(_rx, nsName.GetHandle(), indexDefJson.GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_add_index(_rx, nsName.GetStringHandle(), indexDefJson.GetStringHandle(), _ctxInfo));
 
         using (var ser1 = new CJsonWriter())
         {
@@ -366,6 +367,6 @@ public class ReindexerBindingTest
         GC.Collect();
         GC.WaitForPendingFinalizers();
 #pragma warning restore S1215 // "GC.Collect" should not be called
-        AssertError(ReindexerBinding.reindexer_truncate_namespace(_rx, nsName.GetHandle(), _ctxInfo));
+        AssertError(ReindexerBinding.reindexer_truncate_namespace(_rx, nsName.GetStringHandle(), _ctxInfo));
     }
 }

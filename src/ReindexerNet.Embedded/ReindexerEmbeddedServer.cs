@@ -94,7 +94,7 @@ namespace ReindexerNet.Embedded
                     try
                     {
                         DebugHelper.Log("Starting reindexer server...");
-                        using (var configYaml = serverConfigYaml.GetHandle())
+                        using (var configYaml = serverConfigYaml.GetStringHandle())
                             ReindexerBinding.start_reindexer_server(_pServer, configYaml);
                     }
                     catch (Exception e)
@@ -121,9 +121,9 @@ namespace ReindexerNet.Embedded
                 Thread.Sleep(100);
             }
             DebugHelper.Log("Reindexer server is started.");
-            using (var dbNameRx = dbName.GetHandle())
-            using (var userRx = user.GetHandle())
-            using (var passRx = pass.GetHandle())
+            using (var dbNameRx = dbName.GetStringHandle())
+            using (var userRx = user.GetStringHandle())
+            using (var passRx = pass.GetStringHandle())
                 Assert.ThrowIfError(() => ReindexerBinding.get_reindexer_instance(_pServer, dbNameRx, userRx, passRx, ref Rx));
         }
 

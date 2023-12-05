@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace ReindexerNet;
 
@@ -144,12 +145,35 @@ public interface IReindexerClient : IAsyncReindexerClient, IDisposable
     /// <returns></returns>
     int Delete<TItem>(string nsName, IEnumerable<TItem> items, string[] precepts = null);
     /// <summary>
+    /// Executes a reindexer nosql query
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="query"></param>
+    /// <param name="queryEncoding"></param>
+    /// <returns></returns>
+    QueryItemsOf<T> Execute<T>(string @namespace, Action<IQueryBuilder> query);
+    /// <summary>
+    /// Executes a reindexer nosql query
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="query"></param>
+    /// <param name="queryEncoding"></param>
+    /// <returns></returns>
+    QueryItemsOf<T> Execute<T>(byte[] query, SerializerType queryEncoding);
+    /// <summary>
     /// Executes an sql query.
     /// </summary>
     /// <typeparam name="TItem">Item type to return</typeparam>
     /// <param name="sql">Sql query to perform.</param>
     /// <returns></returns>
     QueryItemsOf<TItem> ExecuteSql<TItem>(string sql);
+    /// <summary>
+    /// Executes a reindexer nosql query
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="queryEncoding"></param>
+    /// <returns></returns>
+    QueryItemsOf<object> Execute(byte[] query, SerializerType queryEncoding);
     /// <summary>
     /// Executes an sql query.
     /// </summary>
@@ -180,5 +204,5 @@ public interface IReindexerClient : IAsyncReindexerClient, IDisposable
     /// </summary>
     /// <param name="nsName"></param>
     /// <returns></returns>
-    IEnumerable<string> EnumMeta(string nsName);
+    IEnumerable<string> EnumMeta(string nsName);    
 }

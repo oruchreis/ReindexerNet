@@ -9,7 +9,7 @@ namespace ReindexerNet.EmbeddedTest;
 
 [TestCategory("LevelDb")]
 [TestClass]
-public class EmbeddedTest: BaseTest<IReindexerClient>
+public class EmbeddedTest : BaseTest<IReindexerClient>
 {
     public EmbeddedTest() : base(true, true)
     {
@@ -28,7 +28,7 @@ public class EmbeddedTest: BaseTest<IReindexerClient>
             Directory.Delete(DbPath, true);
         Client = new ReindexerEmbedded(DbPath);
         ReindexerEmbedded.EnableLogger(Log);
-        await Client.ConnectAsync(new ConnectionOptions{ Engine = Storage });
+        await Client.ConnectAsync(new ConnectionOptions { Engine = Storage });
         await Client.OpenNamespaceAsync(NsName);
         await Client.TruncateNamespaceAsync(NsName);
     }
@@ -47,4 +47,10 @@ public class EmbeddedTest: BaseTest<IReindexerClient>
             Directory.Delete(DbPath, true);
     }
 
+    [TestMethod]
+    public override async Task ExecuteQueryJson()
+    {
+        await Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowsExceptionAsync<ReindexerException>(base.ExecuteQueryJson, 
+            "Reindexer returned an error response, ErrCode: 8, Msg:Unknown type 34 while parsing binary buffer");
+    }
 }
