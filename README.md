@@ -11,7 +11,13 @@
 ReindexerNet is a .NET binding(builtin & builtinserver) and connector(Grpc, ~~OpenApi~~) for embeddable in-memory document db [Reindexer](https://github.com/Restream/reindexer). 
 We are using ReindexerNET in production environments for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment without testing. So please test in your environment before using.
 
-If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check [change logs here](CHANGELOG.md).
+If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check the [change logs here](CHANGELOG.md).
+
+## Contents
+- [Sample Usage](#sample-usage)
+- [Packages](#packages)
+- [Performance](#performance)
+- [Roadmap](#to-do-list)
 
 ## Sample Usage:
 - Add one of these client packages according to your use case
@@ -24,24 +30,24 @@ If you have any questions about Reindexer, please use [main page](https://github
   - [![Osx Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-x64?label=Embedded.Native.Osx&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-x64)
   - [![Linux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Linux-x64?label=Embedded.Native.Linux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Linux-x64)
   - [![AlpineLinux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.AlpineLinux-x64?label=Embedded.Native.AlpineLinux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.AlpineLinux-x64)
- - Or you can add all native packages like this:
+ - Or you can use conditon to add native packages that are only needed according to the operating system:
 
 ```xml
 <ItemGroup>
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.3.10.3200"
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.4.1.3200"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference
-    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.3.10.3200"
+    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.4.1.3200"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.3.10.3200"
+    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.4.1.3200"
     Condition="$([MSBuild]::IsOSPlatform('OSX'))"  />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.3.10.3200"
+    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.4.1.3200"
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.3.10.3200" 
+    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.4.1.3200" 
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
 </ItemGroup>
 ```
@@ -166,8 +172,8 @@ This package contains Grpc client to use Reindexer server over grpc protocol. It
 ### ReindexerNet.Core [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
 This package contains base types and common models for Reindexer and .net packages. You can use the models in this package as OpenApi/Rest models. Every model in this package has `DataContract` and `JsonPropertyName` attributes to support valid json serialization for Reindexer rest api.
 
-
-## ReindexerNet.Embedded Benchmarks and Comparations
+## Performance
+## ReindexerNet.Embedded Benchmarks and Comparisons
 ```
 ReindexerNet  v0.4.1 (Reindexer v3.20)
 Cachalot      v2.0.8
@@ -176,227 +182,203 @@ Realm.NET     v11.6.1
 
 BenchmarkDotNet v0.13.11, Windows 10 (10.0.19045.3636/22H2/2022Update)
 Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
-.NET SDK 8.0.100-rc.2.23502.2
-  [Host]     : .NET 7.0.13 (7.0.1323.51816), X64 RyuJIT AVX2
+.NET SDK 8.0.100
+  [Host]     : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
 ```
 ### Insert Benchmarks
 > #### Insert (Without controlling existance)
-
+```markdown
+| Method             | N      | Mean        | Error | Gen0         | Gen1        | Gen2      | Allocated   |
+|------------------- |------- |------------:|------:|-------------:|------------:|----------:|------------:|
+| Cachalot           | 10000  |    503.0 ms |    NA |   30000.0000 |   9000.0000 |         - |   211.52 MB |
+| CachalotCompressed | 10000  |  1,361.1 ms |    NA |  563000.0000 |  35000.0000 |         - |   3408.5 MB |
+| CachalotOnlyMemory | 10000  |    520.3 ms |    NA |   23000.0000 |   8000.0000 | 2000.0000 |   138.14 MB |
+| LiteDb             | 10000  |  1,018.3 ms |    NA |  302000.0000 |   1000.0000 |         - |  1829.46 MB |
+| LiteDbMemory       | 10000  |    978.7 ms |    NA |  304000.0000 |   1000.0000 |         - |  1919.56 MB |
+| Realm              | 10000  |    500.5 ms |    NA |    7000.0000 |   2000.0000 | 1000.0000 |    43.29 MB |
+| ReindexerNet       | 10000  |    215.8 ms |    NA |    1000.0000 |   1000.0000 |         - |        9 MB |
+| ReindexerNetDense  | 10000  |    215.1 ms |    NA |    1000.0000 |   1000.0000 |         - |        9 MB |
+| Cachalot           | 100000 |  3,574.3 ms |    NA |  293000.0000 |  88000.0000 |         - |  2157.84 MB |
+| CachalotCompressed | 100000 | 11,675.4 ms |    NA | 5506000.0000 | 315000.0000 |         - | 33376.07 MB |
+| CachalotOnlyMemory | 100000 |  2,587.6 ms |    NA |  211000.0000 |  56000.0000 | 1000.0000 |  1373.43 MB |
+| LiteDb             | 100000 | 13,296.9 ms |    NA | 3836000.0000 |  14000.0000 | 3000.0000 | 23072.51 MB |
+| LiteDbMemory       | 100000 | 12,576.0 ms |    NA | 3769000.0000 |  16000.0000 | 4000.0000 | 23563.28 MB |
+| Realm              | 100000 |  3,121.4 ms |    NA |   73000.0000 |  49000.0000 | 1000.0000 |   432.62 MB |
+| ReindexerNet       | 100000 |  1,970.3 ms |    NA |   16000.0000 |   2000.0000 | 1000.0000 |    94.52 MB |
+| ReindexerNetDense  | 100000 |  1,824.3 ms |    NA |   16000.0000 |   2000.0000 | 1000.0000 |    94.52 MB |
+```
 > #### Upsert (Update if exists, otherwise insert)
+```
+| Method             | N      | Mean        | Error | Gen0         | Gen1        | Allocated   |
+|------------------- |------- |------------:|------:|-------------:|------------:|------------:|
+| Cachalot           | 10000  |  1,707.0 ms |    NA |  106000.0000 |  10000.0000 |   658.26 MB |
+| CachalotCompressed | 10000  |  2,853.8 ms |    NA |  671000.0000 |  32000.0000 |  4059.77 MB |
+| CachalotOnlyMemory | 10000  |    315.8 ms |    NA |   20000.0000 |   5000.0000 |   125.98 MB |
+| LiteDb             | 10000  |    306.9 ms |    NA |   54000.0000 |           - |   327.39 MB |
+| LiteDbMemory       | 10000  |    213.3 ms |    NA |   53000.0000 |           - |   320.88 MB |
+| Realm              | 10000  |    218.5 ms |    NA |    7000.0000 |   6000.0000 |    43.31 MB |
+| ReindexerNet       | 10000  |    182.2 ms |    NA |    1000.0000 |           - |        9 MB |
+| ReindexerNetDense  | 10000  |    183.0 ms |    NA |    1000.0000 |           - |        9 MB |
+| Cachalot           | 100000 |  5,693.4 ms |    NA |  465000.0000 |  90000.0000 |     2979 MB |
+| CachalotCompressed | 100000 | 14,753.4 ms |    NA | 5712000.0000 | 303000.0000 | 34521.09 MB |
+| CachalotOnlyMemory | 100000 |  3,495.1 ms |    NA |  207000.0000 |  51000.0000 |  1258.28 MB |
+| LiteDb             | 100000 |  2,760.3 ms |    NA |  701000.0000 |  14000.0000 |   4196.2 MB |
+| LiteDbMemory       | 100000 |  2,582.1 ms |    NA |  633000.0000 |  14000.0000 |  3793.94 MB |
+| Realm              | 100000 |  2,061.4 ms |    NA |   72000.0000 |  51000.0000 |   432.61 MB |
+| ReindexerNet       | 100000 |  1,531.4 ms |    NA |   15000.0000 |           - |       99 MB |
+| ReindexerNetDense  | 100000 |  1,497.3 ms |    NA |   15000.0000 |           - |    96.62 MB |
+```
 
 ### Select Benchmarks
-> #### Single Primary Key(Guid) in a loop
-> ```
-> foreach (id in ids)
-> {
->     WHERE Id = id
-> }
-> ```
+#### Single Primary Key(Guid) in a loop
+```
+foreach (id in ids)
+{
+    WHERE Id = id
+}
 
-| Method                                        | Categories                                    | N    | Mean             | Error          | StdDev         | Gen0        | Gen1       | Gen2      | Allocated     |
-|---------------------------------------------- |---------------------------------------------- |----- |-----------------:|---------------:|---------------:|------------:|-----------:|----------:|--------------:|
-| Cachalot_SelectSinglePK                       | SelectSinglePK,Cachalot                       | 1000 |   282,785.050 us |  4,029.8328 us |    623.6211 us |  30500.0000 |  4000.0000 |         - |  187511.56 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectSinglePK             | SelectSinglePK,CachalotCompressed             | 1000 |   348,094.320 us | 31,687.8269 us |  8,229.2280 us |  35000.0000 |  5000.0000 |         - |  220151.91 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectSinglePK                 | SelectSinglePK,CachalotMemory                 | 1000 |   295,441.588 us | 18,397.1767 us |  2,846.9835 us |  30500.0000 |  4000.0000 |         - |  187511.17 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectSinglePK                         | SelectSinglePK,LiteDb                         | 1000 |   257,152.880 us | 91,902.9020 us | 23,866.8918 us |  35000.0000 |  5000.0000 |         - |   216416.3 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectSinglePK                   | SelectSinglePK,LiteDbMemory                   | 1000 |   258,560.020 us | 20,879.9150 us |  5,422.4476 us |  35500.0000 |  4500.0000 |  500.0000 |  215364.41 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectSinglePK                          | SelectSinglePK,Realm                          | 1000 |     2,481.698 us |    572.0812 us |    148.5677 us |     82.0313 |    78.1250 |         - |     516.25 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectSinglePK                   | SelectSinglePK,ReindexerNet                   | 1000 |     3,781.301 us |    100.0469 us |     15.4824 us |    125.0000 |    31.2500 |    3.9063 |      814.7 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectSinglePK           | SelectSinglePK,ReindexerNetSpanJson           | 1000 |     3,865.852 us |     69.9667 us |     10.8274 us |    121.0938 |    27.3438 |         - |     805.36 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectSinglePK                | SelectSinglePK,ReindexerNetSql                | 1000 |   118,826.668 us | 12,686.3854 us |  3,294.6140 us |   6800.0000 |  3600.0000 |  600.0000 |   38843.18 KB |
+| Method               | N    | Mean       | Error     | StdDev    | Min        | Max        | Gen0       | Gen1      | Gen2      | Allocated    |
+|--------------------- |----- |-----------:|----------:|----------:|-----------:|-----------:|-----------:|----------:|----------:|-------------:|
+| ReindexerNet         | 1000 |   3.772 ms | 0.0608 ms | 0.0569 ms |   3.675 ms |   3.909 ms |   140.6250 |   19.5313 |    3.9063 |    916.25 KB |
+| ReindexerNetSpanJson | 1000 |   4.087 ms | 0.0577 ms | 0.0540 ms |   3.963 ms |   4.184 ms |   132.8125 |   15.6250 |         - |    880.35 KB |
+| ReindexerNetSql      | 1000 | 106.503 ms | 2.1241 ms | 4.9651 ms |  97.281 ms | 117.538 ms |  7333.3333 | 4000.0000 | 1000.0000 |  39063.15 KB |
+| CachalotMemory       | 1000 | 206.542 ms | 2.2395 ms | 2.0949 ms | 201.875 ms | 209.943 ms | 30000.0000 | 5000.0000 |         - | 187603.98 KB |
+| Cachalot             | 1000 | 208.367 ms | 1.5068 ms | 1.2582 ms | 206.252 ms | 210.109 ms | 30333.3333 | 4000.0000 |         - | 187603.27 KB |
+| LiteDbMemory         | 1000 | 210.757 ms | 3.0700 ms | 2.8717 ms | 206.822 ms | 216.022 ms | 36000.0000 | 6000.0000 | 1000.0000 |  215746.8 KB |
+| LiteDb               | 1000 | 212.069 ms | 3.6957 ms | 6.5691 ms | 197.385 ms | 225.860 ms | 36000.0000 | 6000.0000 | 1000.0000 | 215787.06 KB |
+| Realm                | 1000 | 233.696 ms | 3.1694 ms | 2.9647 ms | 228.573 ms | 239.720 ms |  4333.3333 | 2666.6667 |  666.6667 |  23001.83 KB |
+| CachalotCompressed   | 1000 | 251.389 ms | 1.9690 ms | 1.7455 ms | 248.861 ms | 254.736 ms | 35500.0000 | 4500.0000 |         - | 220243.17 KB |
+```
 
+#### Multiple Primary Key(Guid) at once
+```
+WHERE Id IN (id_1,id_2,id_3,...,id_N)
 
-> #### Multiple Primary Key(Guid) at once
-> ```
-> WHERE Id IN (id_1,id_2,id_3,...,id_N)
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectMultiplePK                     | SelectMultiplePK,Cachalot                     | 1000 |   278,948.588 us |  3,533.1024 us |    546.7515 us |  28000.0000 |  4500.0000 |         - |  187879.49 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectMultiplePK           | SelectMultiplePK,CachalotCompressed           | 1000 |   327,700.900 us |  2,259.7422 us |    586.8479 us |  34000.0000 |  4500.0000 |         - |  217708.79 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectMultiplePK               | SelectMultiplePK,CachalotMemory               | 1000 |   317,860.340 us | 17,609.6170 us |  4,573.1616 us |  29000.0000 |  6000.0000 | 1000.0000 |  187881.41 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectMultiplePK                       | SelectMultiplePK,LiteDb                       | 1000 |   218,759.327 us |  9,240.6277 us |  2,399.7617 us |  31666.6667 |  5000.0000 |  666.6667 |  190726.18 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectMultiplePK                 | SelectMultiplePK,LiteDbMemory                 | 1000 |   232,426.967 us | 40,450.5974 us | 10,504.8917 us |  32000.0000 |  5000.0000 |  666.6667 |  192243.95 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectMultiplePK                        | SelectMultiplePK,Realm                        | 1000 |    10,461.847 us |    416.8394 us |     64.5064 us |     62.5000 |    46.8750 |         - |     521.59 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectMultiplePK                 | SelectMultiplePK,ReindexerNet                 | 1000 |       290.542 us |      5.0227 us |      1.3044 us |      8.7891 |     0.4883 |         - |      55.64 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectMultiplePK         | SelectMultiplePK,ReindexerNetSpanJson         | 1000 |       292.723 us |      6.2390 us |      1.6203 us |      8.7891 |     0.4883 |         - |      55.64 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectMultiplePK              | SelectMultiplePK,ReindexerNetSql              | 1000 |   103,247.260 us |  5,065.8543 us |  1,315.5863 us |   6833.3333 |  3666.6667 |  666.6667 |   38479.89 KB |
+| Method               | N    | Mean         | Error       | StdDev      | Median       | Min          | Max          | Gen0       | Gen1      | Gen2      | Allocated    |
+|--------------------- |----- |-------------:|------------:|------------:|-------------:|-------------:|-------------:|-----------:|----------:|----------:|-------------:|
+| ReindexerNet         | 1000 |     280.5 us |     1.20 us |     1.06 us |     280.6 us |     278.9 us |     282.8 us |     6.3477 |         - |         - |     40.91 KB |
+| ReindexerNetSpanJson | 1000 |     285.1 us |     5.63 us |     8.07 us |     280.7 us |     278.0 us |     302.9 us |     6.3477 |         - |         - |     39.96 KB |
+| ReindexerNetSql      | 1000 | 106,486.3 us | 2,129.47 us | 3,438.69 us | 105,796.1 us |  98,176.9 us | 113,709.0 us |  8400.0000 | 4800.0000 | 1200.0000 |  44307.83 KB |
+| LiteDb               | 1000 | 185,631.6 us | 2,317.46 us | 2,167.75 us | 186,081.7 us | 181,218.5 us | 188,559.2 us | 32500.0000 | 5000.0000 |  500.0000 | 197863.84 KB |
+| LiteDbMemory         | 1000 | 201,107.3 us | 3,993.21 us | 9,870.23 us | 196,599.5 us | 187,358.6 us | 226,621.6 us | 33000.0000 | 6000.0000 | 1000.0000 | 197536.98 KB |
+| CachalotMemory       | 1000 | 208,060.8 us | 1,865.30 us | 1,653.54 us | 207,961.0 us | 205,400.9 us | 211,116.9 us | 28666.6667 | 4333.3333 |         - | 193851.34 KB |
+| Cachalot             | 1000 | 227,040.3 us | 3,343.96 us | 3,127.94 us | 226,465.9 us | 223,353.5 us | 235,004.1 us | 28000.0000 | 5000.0000 |         - | 193853.33 KB |
+| Realm                | 1000 | 243,557.0 us | 1,778.28 us | 1,576.39 us | 243,424.7 us | 241,051.8 us | 246,540.9 us |  4333.3333 | 2333.3333 |  666.6667 |  23013.14 KB |
+| CachalotCompressed   | 1000 | 251,255.9 us | 1,220.44 us |   952.84 us | 251,492.5 us | 249,395.1 us | 252,855.4 us | 35000.0000 | 5000.0000 |         - | 223683.38 KB |
+```
 
 
-> #### Single Hash in a loop
-> ```
-> foreach (value in values)
-> {
->     WHERE StringProperty = value
-> }
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectSingleHash                     | SelectSingleHash,Cachalot                     | 1000 |   495,281.120 us |  7,065.3711 us |  1,834.8544 us |  33000.0000 |  4000.0000 |         - |  203251.58 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectSingleHash           | SelectSingleHash,CachalotCompressed           | 1000 |   499,396.525 us | 11,637.6496 us |  1,800.9392 us |  33000.0000 |  4000.0000 |         - |  203259.39 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectSingleHash               | SelectSingleHash,CachalotMemory               | 1000 |   494,665.950 us |  4,578.2394 us |    708.4876 us |  33000.0000 |  4000.0000 |         - |  202883.13 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectSingleHash                       | SelectSingleHash,LiteDb                       | 1000 |   258,610.400 us |  8,568.2965 us |  2,225.1594 us |  36000.0000 |  4500.0000 |  500.0000 |  218752.75 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectSingleHash                 | SelectSingleHash,LiteDbMemory                 | 1000 |   256,300.775 us |  8,398.4181 us |  1,299.6645 us |  35500.0000 |  4500.0000 |  500.0000 |  217346.21 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectSingleHash                        | SelectSingleHash,Realm                        | 1000 |   136,388.090 us |  4,077.2886 us |  1,058.8589 us |   1250.0000 |  1000.0000 |         - |    8911.91 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectSingleHash                 | SelectSingleHash,ReindexerNet                 | 1000 |   112,529.608 us | 13,604.9193 us |  3,533.1543 us |   6800.0000 |  3600.0000 |  600.0000 |   38930.61 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectSingleHash         | SelectSingleHash,ReindexerNetSpanJson         | 1000 |    82,073.017 us |  7,637.4217 us |  1,983.4142 us |   4000.0000 |  2166.6667 |  500.0000 |   22327.14 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectSingleHash              | SelectSingleHash,ReindexerNetSql              | 1000 |   119,879.556 us | 15,616.2359 us |  4,055.4869 us |   6800.0000 |  3600.0000 |  600.0000 |   38834.99 KB |
+#### Single Hash in a loop
+```
+foreach (value in values)
+{
+    WHERE StringProperty = value
+}
 
+| Method               | N    | Mean      | Error    | StdDev   | Min       | Max       | Gen0       | Gen1      | Gen2      | Allocated |
+|--------------------- |----- |----------:|---------:|---------:|----------:|----------:|-----------:|----------:|----------:|----------:|
+| ReindexerNetSpanJson | 1000 |  76.73 ms | 1.531 ms | 2.195 ms |  72.30 ms |  80.41 ms |  4285.7143 | 2428.5714 |  714.2857 |  22.02 MB |
+| ReindexerNet         | 1000 |  99.67 ms | 1.593 ms | 2.181 ms |  96.82 ms | 104.71 ms |  7333.3333 | 4000.0000 | 1000.0000 |  38.23 MB |
+| ReindexerNetSql      | 1000 | 109.15 ms | 2.178 ms | 4.499 ms |  99.27 ms | 118.38 ms |  7333.3333 | 4000.0000 | 1000.0000 |  38.14 MB |
+| LiteDb               | 1000 | 219.26 ms | 4.327 ms | 6.476 ms | 211.27 ms | 230.07 ms | 36000.0000 | 6000.0000 | 1000.0000 | 211.92 MB |
+| LiteDbMemory         | 1000 | 225.70 ms | 4.345 ms | 6.764 ms | 212.11 ms | 236.48 ms | 36000.0000 | 6000.0000 | 1000.0000 | 213.21 MB |
+| Realm                | 1000 | 371.69 ms | 3.742 ms | 3.500 ms | 366.67 ms | 378.11 ms |  5000.0000 | 2000.0000 |         - |  30.75 MB |
+| CachalotMemory       | 1000 | 395.27 ms | 3.091 ms | 2.891 ms | 391.74 ms | 402.18 ms | 33000.0000 | 5000.0000 |         - | 197.73 MB |
+| Cachalot             | 1000 | 396.81 ms | 3.622 ms | 3.211 ms | 392.42 ms | 401.60 ms | 33000.0000 | 4000.0000 |         - | 198.07 MB |
+| CachalotCompressed   | 1000 | 400.09 ms | 5.197 ms | 4.607 ms | 394.77 ms | 410.26 ms | 33000.0000 | 4000.0000 |         - | 198.08 MB |
+```
 
-> #### Single Hash in a Parallel loop
-> ```
-> Parallel.Foreach(values, value =>
-> {
->     WHERE StringProperty = value
-> });
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectSingleHashParallel             | SelectSingleHashParallel,Cachalot             | 1000 |   223,647.250 us | 11,039.6038 us |  1,708.3909 us |  35000.0000 |  7000.0000 |         - |  203285.11 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectSingleHashParallel   | SelectSingleHashParallel,CachalotCompressed   | 1000 |   220,399.560 us | 14,033.4679 us |  3,644.4471 us |  35333.3333 |  7333.3333 |         - |  203269.54 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectSingleHashParallel       | SelectSingleHashParallel,CachalotMemory       | 1000 |   263,773.960 us | 27,919.2992 us |  7,250.5533 us |  35000.0000 |  8000.0000 |         - |  202945.35 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectSingleHashParallel               | SelectSingleHashParallel,LiteDb               | 1000 |   221,579.473 us | 19,197.2353 us |  4,985.4610 us |  37000.0000 |  7666.6667 |  333.3333 |  216827.26 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectSingleHashParallel         | SelectSingleHashParallel,LiteDbMemory         | 1000 |   228,644.927 us | 29,638.3253 us |  7,696.9790 us |  37000.0000 |  7666.6667 |  333.3333 |  217929.17 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectSingleHashParallel                | SelectSingleHashParallel,Realm                | 1000 |    49,549.095 us | 16,808.3345 us |  2,601.1084 us |   2300.0000 |   500.0000 |         - |   13985.24 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectSingleHashParallel         | SelectSingleHashParallel,ReindexerNet         | 1000 |    55,591.460 us |  9,269.8340 us |  2,407.3465 us |   7222.2222 |  3222.2222 |  222.2222 |   39038.02 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectSingleHashParallel | SelectSingleHashParallel,ReindexerNetSpanJson | 1000 |    39,962.429 us |  5,217.6222 us |    807.4328 us |   4000.0000 |  2000.0000 |   71.4286 |   22432.14 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectSingleHashParallel      | SelectSingleHashParallel,ReindexerNetSql      | 1000 |    59,198.408 us |  8,624.5871 us |  1,334.6644 us |   7222.2222 |  3222.2222 |  222.2222 |   38848.56 KB |
+#### Single Hash in a Parallel loop
+```
+Parallel.Foreach(values, value =>
+{
+    WHERE StringProperty = value
+});
 
+| Method               | N    | Mean      | Error    | StdDev    | Min       | Max       | Gen0       | Gen1      | Gen2     | Allocated |
+|--------------------- |----- |----------:|---------:|----------:|----------:|----------:|-----------:|----------:|---------:|----------:|
+| ReindexerNetSpanJson | 1000 |  40.75 ms | 0.808 ms |  1.415 ms |  38.07 ms |  43.88 ms |  4076.9231 | 2076.9231 | 153.8462 |  22.12 MB |
+| ReindexerNet         | 1000 |  54.56 ms | 1.067 ms |  1.979 ms |  49.93 ms |  58.52 ms |  7300.0000 | 3200.0000 | 300.0000 |  38.34 MB |
+| ReindexerNetSql      | 1000 |  58.70 ms | 1.157 ms |  1.421 ms |  54.43 ms |  60.77 ms |  7300.0000 | 3200.0000 | 300.0000 |  38.15 MB |
+| Realm                | 1000 |  98.26 ms | 1.563 ms |  1.462 ms |  94.69 ms | 100.04 ms |  6600.0000 | 3400.0000 | 400.0000 |  36.01 MB |
+| CachalotMemory       | 1000 | 200.90 ms | 3.963 ms |  9.342 ms | 183.63 ms | 228.97 ms | 35000.0000 | 7000.0000 |        - | 197.77 MB |
+| CachalotCompressed   | 1000 | 209.76 ms | 4.179 ms | 10.328 ms | 189.66 ms | 228.95 ms | 35000.0000 | 7500.0000 |        - | 198.15 MB |
+| Cachalot             | 1000 | 214.24 ms | 4.240 ms |  9.570 ms | 192.58 ms | 230.81 ms | 35000.0000 | 8000.0000 |        - | 198.14 MB |
+| LiteDbMemory         | 1000 | 225.41 ms | 4.471 ms | 10.363 ms | 206.92 ms | 247.77 ms | 37000.0000 | 8500.0000 | 500.0000 | 211.58 MB |
+| LiteDb               | 1000 | 242.61 ms | 5.148 ms | 15.178 ms | 206.78 ms | 265.36 ms | 37000.0000 | 8333.3333 | 333.3333 | 210.86 MB |
+```
 
-> #### Multiple Hash at once
-> ```
-> WHERE StringProperty IN ('abc', 'def', .... )
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectMultipleHash                   | SelectMultipleHash,Cachalot                   | 1000 | 1,484,532.475 us | 37,109.4888 us |  5,742.7345 us | 152000.0000 | 22000.0000 |         - |  997263.42 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectMultipleHash         | SelectMultipleHash,CachalotCompressed         | 1000 | 1,832,603.760 us | 11,512.5847 us |  2,989.7817 us | 186000.0000 | 26000.0000 |         - | 1206270.39 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectMultipleHash             | SelectMultipleHash,CachalotMemory             | 1000 |   313,764.380 us | 11,475.7239 us |  2,980.2091 us |  29000.0000 |  6000.0000 | 1000.0000 |  187772.65 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectMultipleHash                     | SelectMultipleHash,LiteDb                     | 1000 |   226,051.750 us |  5,536.0051 us |    856.7029 us |  31666.6667 |  5000.0000 |  666.6667 |  191589.16 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectMultipleHash               | SelectMultipleHash,LiteDbMemory               | 1000 |   227,047.733 us | 11,887.6348 us |  3,087.1810 us |  31666.6667 |  5333.3333 |  666.6667 |  191670.53 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectMultipleHash                      | SelectMultipleHash,Realm                      | 1000 |    11,876.545 us |    951.3057 us |    247.0511 us |     62.5000 |    46.8750 |         - |     464.74 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectMultipleHash               | SelectMultipleHash,ReindexerNet               | 1000 |   102,228.168 us |  9,141.4401 us |  2,374.0030 us |   6800.0000 |  3600.0000 |  600.0000 |   38203.88 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectMultipleHash       | SelectMultipleHash,ReindexerNetSpanJson       | 1000 |    70,505.400 us |  5,345.3941 us |    827.2056 us |   4000.0000 |  2285.7143 |  571.4286 |   21600.45 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectMultipleHash            | SelectMultipleHash,ReindexerNetSql            | 1000 |   103,781.868 us |  2,847.8748 us |    739.5840 us |   6800.0000 |  3600.0000 |  600.0000 |   38296.22 KB |
+#### Multiple Hash at once
+```
+WHERE StringProperty IN ('abc', 'def', .... )
 
+| Method               | N    | Mean      | Error    | StdDev   | Min       | Max       | Gen0       | Gen1       | Gen2      | Allocated |
+|--------------------- |----- |----------:|---------:|---------:|----------:|----------:|-----------:|-----------:|----------:|----------:|
+| ReindexerNetSpanJson | 1000 |  76.59 ms | 1.484 ms | 1.388 ms |  75.02 ms |  80.02 ms |  5285.7143 |  3000.0000 |  857.1429 |  26.94 MB |
+| ReindexerNetSql      | 1000 | 108.02 ms | 2.122 ms | 3.486 ms | 101.71 ms | 114.66 ms |  8400.0000 |  4800.0000 | 1200.0000 |  43.22 MB |
+| ReindexerNet         | 1000 | 110.42 ms | 2.192 ms | 3.722 ms | 104.36 ms | 116.44 ms |  8400.0000 |  4800.0000 | 1200.0000 |  43.16 MB |
+| LiteDbMemory         | 1000 | 193.75 ms | 2.587 ms | 2.420 ms | 191.26 ms | 199.34 ms | 33000.0000 |  6000.0000 | 1000.0000 | 193.29 MB |
+| LiteDb               | 1000 | 197.36 ms | 2.779 ms | 3.985 ms | 192.03 ms | 208.02 ms | 33000.0000 |  6000.0000 | 1000.0000 | 193.13 MB |
+| CachalotMemory       | 1000 | 204.27 ms | 2.363 ms | 2.210 ms | 200.86 ms | 208.97 ms | 28000.0000 |  5000.0000 |         - | 189.21 MB |
+| Cachalot             | 1000 | 212.28 ms | 3.811 ms | 5.217 ms | 205.63 ms | 226.48 ms | 28000.0000 |  5000.0000 |         - | 189.21 MB |
+| Realm                | 1000 | 243.08 ms | 3.056 ms | 2.859 ms | 238.90 ms | 248.40 ms |  4333.3333 |  2333.3333 |  666.6667 |  22.42 MB |
+| CachalotCompressed   | 1000 | 454.42 ms | 3.513 ms | 2.743 ms | 450.31 ms | 458.75 ms | 64000.0000 | 10000.0000 |         - | 399.26 MB |
+```
 
-> #### Range Filtering
-> ```
-> WHERE IntProperty < i
-> WHERE IntProperty >= i
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectRange                          | SelectRange,Cachalot                          | 1000 | 2,688,260.175 us | 85,898.9574 us | 13,292.9587 us | 276000.0000 | 40000.0000 |         - | 1802101.88 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectRange                | SelectRange,CachalotCompressed                | 1000 | 3,099,263.400 us | 67,706.5567 us | 10,477.6646 us | 310000.0000 | 45000.0000 |         - | 2011108.75 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectRange                    | SelectRange,CachalotMemory                    | 1000 |   313,817.340 us | 24,892.1160 us |  6,464.4035 us |  28000.0000 |  6000.0000 | 1000.0000 |  185407.89 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectRange                            | SelectRange,LiteDb                            | 1000 |   215,661.108 us |  4,626.9026 us |    716.0183 us |  30333.3333 |  4666.6667 |  666.6667 |  182618.11 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectRange                      | SelectRange,LiteDbMemory                      | 1000 |   221,388.847 us |  6,773.8405 us |  1,759.1449 us |  30333.3333 |  4666.6667 |  666.6667 |  182624.05 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectRange                             | SelectRange,Realm                             | 1000 |     1,573.357 us |    450.8583 us |    117.0865 us |     46.8750 |    44.9219 |         - |     295.97 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectRange                      | SelectRange,ReindexerNet                      | 1000 |   106,644.072 us | 12,920.3608 us |  3,355.3767 us |   6800.0000 |  3600.0000 |  600.0000 |   38196.92 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectRange              | SelectRange,ReindexerNetSpanJson              | 1000 |    69,709.810 us |  7,478.6567 us |  1,942.1834 us |   4125.0000 |  2375.0000 |  625.0000 |   21593.97 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectRange                   | SelectRange,ReindexerNetSql                   | 1000 |   102,760.600 us |  6,674.4567 us |  1,733.3352 us |   6800.0000 |  3600.0000 |  600.0000 |   38196.14 KB |
+#### Range Filtering
+```
+WHERE IntProperty < i
+WHERE IntProperty >= i
 
-> #### Array Column Filtering(Single Item IN)
-> ```
-> WHERE N IN Integer_Array 
-> WHERE 'N' IN String_Array
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectArraySingle                    | SelectArraySingle,Cachalot                    | 1000 |       424.875 us |     32.1625 us |      8.3525 us |      9.2773 |     4.3945 |         - |      58.58 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectArraySingle          | SelectArraySingle,CachalotCompressed          | 1000 |       422.408 us |      3.3954 us |      0.8818 us |      9.2773 |     4.3945 |         - |       58.8 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectArraySingle              | SelectArraySingle,CachalotMemory              | 1000 |       437.087 us |     15.0301 us |      2.3259 us |      9.2773 |     4.3945 |         - |      58.58 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectArraySingle                      | SelectArraySingle,LiteDb                      | 1000 |       115.684 us |      2.0888 us |      0.5425 us |     17.7002 |     0.7324 |         - |      108.7 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectArraySingle                | SelectArraySingle,LiteDbMemory                | 1000 |       110.742 us |      2.0057 us |      0.5209 us |     15.9912 |     0.4883 |         - |         98 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectArraySingle                       | SelectArraySingle,Realm                       | 1000 |    25,987.981 us |    450.1629 us |    116.9059 us |           - |          - |         - |       3.16 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectArraySingle                | SelectArraySingle,ReindexerNet                | 1000 |         7.537 us |      0.2348 us |      0.0363 us |      0.2670 |     0.0076 |    0.0076 |       1.74 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectArraySingle        | SelectArraySingle,ReindexerNetSpanJson        | 1000 |         7.823 us |      0.7236 us |      0.1879 us |      0.2594 |          - |         - |       1.74 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectArraySingle             | SelectArraySingle,ReindexerNetSql             | 1000 |        11.432 us |      0.3705 us |      0.0962 us |      0.1678 |          - |         - |       1.23 KB |
+| Method               | N    | Mean        | Error     | StdDev    | Min         | Max         | Gen0        | Gen1       | Gen2      | Allocated |
+|--------------------- |----- |------------:|----------:|----------:|------------:|------------:|------------:|-----------:|----------:|----------:|
+| ReindexerNetSpanJson | 1000 |    68.98 ms |  1.234 ms |  1.884 ms |    65.60 ms |    72.79 ms |   4250.0000 |  2500.0000 |  750.0000 |  21.18 MB |
+| ReindexerNet         | 1000 |    91.01 ms |  1.781 ms |  2.316 ms |    86.20 ms |    94.46 ms |   7166.6667 |  4000.0000 | 1000.0000 |  37.39 MB |
+| ReindexerNetSql      | 1000 |    94.10 ms |  0.945 ms |  0.838 ms |    93.12 ms |    96.12 ms |   7166.6667 |  4000.0000 | 1000.0000 |  37.39 MB |
+| LiteDbMemory         | 1000 |   166.43 ms |  3.151 ms |  4.207 ms |   162.31 ms |   177.94 ms |  29000.0000 |  4000.0000 |         - | 178.44 MB |
+| LiteDb               | 1000 |   183.24 ms |  3.307 ms |  3.094 ms |   178.14 ms |   186.81 ms |  30500.0000 |  5000.0000 | 1000.0000 | 178.44 MB |
+| CachalotMemory       | 1000 |   206.58 ms |  1.655 ms |  1.548 ms |   203.80 ms |   208.95 ms |  28000.0000 |  5000.0000 |         - | 181.15 MB |
+| Realm                | 1000 |   228.51 ms |  4.063 ms |  3.800 ms |   223.23 ms |   233.08 ms |   4000.0000 |  2000.0000 |  500.0000 |  22.25 MB |
+| Cachalot             | 1000 | 2,125.57 ms | 41.912 ms | 86.555 ms | 1,989.19 ms | 2,358.20 ms | 276000.0000 | 40000.0000 |         - | 1742.7 MB |
+| CachalotCompressed   | 1000 | 2,267.47 ms | 35.480 ms | 59.279 ms | 2,215.05 ms | 2,421.11 ms | 310000.0000 | 45000.0000 |         - | 1946.9 MB |
+```
 
+#### Array Column Filtering(Single Item IN)
+```
+WHERE N IN Integer_Array 
+WHERE 'N' IN String_Array
 
-> #### Array Column Filtering(Contains, All)
-> ```
-> WHERE Integer_Array CONTAINS (1,2,3,....,N) 
-> WHERE String_Array CONTAINS ('abc', 'def', .... )
-> WHERE Integer_Array ALL (1,2,3,....,N)
-> WHERE Integer_Array ALL (1,2,3,....,N)
-> ```
-> | Method                                      | Categories                                  | N    | Mean          | Allocated    | Error         | StdDev        | Median        | Gen0       | Gen1       | Gen2      |
-> |-------------------------------------------- |-------------------------------------------- |----- |--------------:|-------------:|--------------:|--------------:|--------------:|-----------:|-----------:|----------:|
-| Cachalot_SelectArrayMultiple                  | SelectArrayMultiple,Cachalot                  | 1000 |   652,729.720 us | 66,142.3826 us | 17,176.9667 us |  58000.0000 |  9000.0000 |         - |  392384.68 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotCompressed_SelectArrayMultiple        | SelectArrayMultiple,CachalotCompressed        | 1000 | 1,318,515.020 us | 12,199.7214 us |  3,168.2289 us | 129000.0000 | 19000.0000 |         - |  825509.77 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| CachalotMemory_SelectArrayMultiple            | SelectArrayMultiple,CachalotMemory            | 1000 |   648,278.780 us | 31,402.6038 us |  8,155.1565 us |  59000.0000 | 10000.0000 | 1000.0000 |  392384.44 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDb_SelectArrayMultiple                    | SelectArrayMultiple,LiteDb                    | 1000 | 1,221,826.140 us | 12,537.1964 us |  3,255.8701 us | 122000.0000 | 26000.0000 | 1000.0000 |  745676.34 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| LiteDbMemory_SelectArrayMultiple              | SelectArrayMultiple,LiteDbMemory              | 1000 | 1,216,860.860 us | 31,751.1468 us |  8,245.6720 us | 122000.0000 | 28000.0000 | 1000.0000 |  745677.55 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| Realm_SelectArrayMultiple                     | SelectArrayMultiple,Realm                     | 1000 |   480,289.680 us | 10,716.3749 us |  2,783.0085 us |           - |          - |         - |     589.57 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNet_SelectArrayMultiple              | SelectArrayMultiple,ReindexerNet              | 1000 |   204,457.533 us | 21,413.5619 us |  5,561.0340 us |  13666.6667 |  7333.3333 | 1000.0000 |   78959.62 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSpanJson_SelectArrayMultiple      | SelectArrayMultiple,ReindexerNetSpanJson      | 1000 |   135,851.400 us | 16,115.7813 us |  4,185.2172 us |   8500.0000 |  4750.0000 | 1250.0000 |   44808.57 KB |
-|                                               |                                               |      |                  |                |                |             |            |           |               |
-| ReindexerNetSql_SelectArrayMultiple           | SelectArrayMultiple,ReindexerNetSql           | 1000 |   206,962.613 us | 14,102.3376 us |  3,662.3323 us |  13666.6667 |  7333.3333 | 1000.0000 |    78961.6 KB |
+| Method               | N    | Mean          | Error       | StdDev      | Min           | Max           | Gen0    | Gen1   | Gen2   | Allocated |
+|--------------------- |----- |--------------:|------------:|------------:|--------------:|--------------:|--------:|-------:|-------:|----------:|
+| ReindexerNet         | 1000 |      7.277 us |   0.0620 us |   0.0580 us |      7.131 us |      7.365 us |  0.2975 | 0.0076 | 0.0076 |   1.95 KB |
+| ReindexerNetSpanJson | 1000 |      7.330 us |   0.0774 us |   0.0724 us |      7.110 us |      7.406 us |  0.2975 | 0.0076 | 0.0076 |   1.95 KB |
+| ReindexerNetSql      | 1000 |     11.273 us |   0.0702 us |   0.0657 us |     11.148 us |     11.382 us |  0.1984 |      - |      - |    1.4 KB |
+| LiteDb               | 1000 |     89.227 us |   1.5614 us |   1.4605 us |     86.572 us |     91.953 us | 17.0898 | 0.4883 |      - | 105.03 KB |
+| LiteDbMemory         | 1000 |     89.300 us |   1.2470 us |   1.1054 us |     88.122 us |     91.294 us | 17.5781 | 0.4883 |      - | 109.07 KB |
+| Cachalot             | 1000 |    383.703 us |   5.4934 us |   5.1385 us |    375.625 us |    392.781 us |  9.2773 | 4.3945 |      - |  57.52 KB |
+| CachalotMemory       | 1000 |    384.297 us |   7.5295 us |  10.7985 us |    367.856 us |    403.976 us |  8.7891 | 3.9063 |      - |  57.35 KB |
+| CachalotCompressed   | 1000 |    391.048 us |   7.6554 us |   8.1912 us |    377.069 us |    404.002 us |  9.2773 | 4.3945 |      - |   57.4 KB |
+| Realm                | 1000 | 25,942.719 us | 516.0005 us | 614.2618 us | 25,371.772 us | 27,380.528 us |       - |      - |      - |   4.23 KB |
+```
+#### Array Column Filtering(Contains, All)
+```
+WHERE Integer_Array CONTAINS (1,2,3,....,N) 
+WHERE String_Array CONTAINS ('abc', 'def', .... )
+WHERE Integer_Array ALL (1,2,3,....,N)
+WHERE Integer_Array ALL (1,2,3,....,N)
+
+| Method               | N    | Mean       | Error    | StdDev   | Median   | Min      | Max        | Gen0        | Gen1       | Gen2      | Allocated |
+|--------------------- |----- |-----------:|---------:|---------:|---------:|---------:|-----------:|------------:|-----------:|----------:|----------:|
+| ReindexerNetSpanJson | 1000 |   134.1 ms |  2.59 ms |  2.66 ms | 133.6 ms | 129.9 ms |   139.3 ms |   8250.0000 |  4500.0000 | 1000.0000 |  43.95 MB |
+| ReindexerNet         | 1000 |   178.5 ms |  3.56 ms |  6.68 ms | 181.8 ms | 166.6 ms |   187.0 ms |  13000.0000 |  7000.0000 | 1000.0000 |   77.3 MB |
+| ReindexerNetSql      | 1000 |   186.7 ms |  2.89 ms |  2.71 ms | 186.9 ms | 182.4 ms |   190.5 ms |  13500.0000 |  7000.0000 | 1000.0000 |   77.3 MB |
+| Cachalot             | 1000 |   464.7 ms |  9.26 ms |  9.10 ms | 462.2 ms | 451.8 ms |   489.3 ms |  58000.0000 |  9000.0000 |         - |  383.3 MB |
+| CachalotMemory       | 1000 |   475.2 ms |  5.93 ms |  4.63 ms | 475.5 ms | 468.9 ms |   481.5 ms |  58000.0000 |  9000.0000 |         - |  383.3 MB |
+| LiteDbMemory         | 1000 |   832.3 ms |  8.96 ms |  7.48 ms | 834.3 ms | 816.2 ms |   841.8 ms | 122000.0000 | 20000.0000 | 1000.0000 | 728.39 MB |
+| LiteDb               | 1000 |   868.9 ms |  7.69 ms |  6.82 ms | 870.3 ms | 855.7 ms |   878.2 ms | 123000.0000 | 29000.0000 | 2000.0000 | 728.39 MB |
+| Realm                | 1000 |   945.7 ms |  9.82 ms |  9.19 ms | 946.8 ms | 923.2 ms |   958.6 ms |   7000.0000 |  3000.0000 |         - |   44.5 MB |
+| CachalotCompressed   | 1000 | 1,000.4 ms | 11.46 ms | 10.16 ms | 998.4 ms | 982.3 ms | 1,021.5 ms | 129000.0000 | 19000.0000 |         - | 806.47 MB |
+```
 
 
 ## To Do List

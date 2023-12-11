@@ -17,20 +17,20 @@ namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 //[Config(typeof(AntiVirusFriendlyConfig))]
 [SimpleJob(launchCount: 0, warmupCount: 0, iterationCount: 1)]
 [MemoryDiagnoser()]
-[CategoriesColumn]
 [CustomCategoryDiscoverer]
-[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory, BenchmarkLogicalGroupRule.ByParams)]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams, BenchmarkLogicalGroupRule.ByCategory)]
 [PlainExporter]
+[Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
 public class InsertBenchmark
 {
-    private class CustomCategoryDiscoverer : DefaultCategoryDiscoverer
+    protected class CustomCategoryDiscoverer : DefaultCategoryDiscoverer
     {
         public override string[] GetCategories(MethodInfo method) =>
             method.Name.Split('_').Reverse().ToArray();
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    private class CustomCategoryDiscovererAttribute : Attribute, IConfigSource
+    protected class CustomCategoryDiscovererAttribute : Attribute, IConfigSource
     {
         public CustomCategoryDiscovererAttribute()
         {
@@ -41,23 +41,23 @@ public class InsertBenchmark
         public IConfig Config { get; }
     }
 
-    private string _dataPath;
-    private BenchmarkEntity[] _data;
+    protected string _dataPath;
+    protected BenchmarkEntity[] _data;
 
     [Params(10_000, 100_000)]
     public int N;
 
-    private ReindexerEmbedded? _rxClient;
-    private ReindexerEmbedded? _rxClientDense;
-    private LiteDatabase _liteDb;
-    private LiteDatabase _liteDbMemory;
-    private ILiteCollection<BenchmarkEntity> _liteColl;
-    private ILiteCollection<BenchmarkEntity> _liteCollMemory;
-    private Server.Server _caServer;
-    private Connector? _caConnector;
-    private Connector? _caConnectorCompressed;
-    private Connector _caMemoryConnector;
-    private Realm _realm;
+    protected ReindexerEmbedded? _rxClient;
+    protected ReindexerEmbedded? _rxClientDense;
+    protected LiteDatabase _liteDb;
+    protected LiteDatabase _liteDbMemory;
+    protected ILiteCollection<BenchmarkEntity> _liteColl;
+    protected ILiteCollection<BenchmarkEntity> _liteCollMemory;
+    protected Server.Server _caServer;
+    protected Connector? _caConnector;
+    protected Connector? _caConnectorCompressed;
+    protected Connector _caMemoryConnector;
+    protected Realm _realm;
 
     public void Setup()
     {
@@ -71,8 +71,8 @@ public class InsertBenchmark
                 IntProperty = i,
                 StringProperty = "ÇŞĞÜÖİöçşğüı",
                 CreateDate = DateTime.UtcNow,
-                IntArray = new[] { 123, 124, 456, 456, 6777, 3123, 123123, 333 },
-                StrArray = new[] { "", "Abc", "Def", "FFF", "GGG", "HHH", "HGFDF", "asd" }
+                IntArray = [ 123, 124, 456, 456, 6777, 3123, 123123, 333 ],
+                StrArray = [ "", "Abc", "Def", "FFF", "GGG", "HHH", "HGFDF", "asd" ]
             };
         }
         Console.WriteLine(_dataPath);
@@ -83,19 +83,8 @@ public class InsertBenchmark
         Directory.Delete(_dataPath, true);
     }
 
-    [IterationSetup(Targets = new[] { nameof(ReindexerNet_Insert) })]
-    public void ReindexerNetInsertSetup()
-    {
-        ReindexerNetSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(ReindexerNet_Upsert) })]
-    public void ReindexerNetUpsertSetup()
-    {
-        ReindexerNetSetup();
-        ReindexerNet_Insert();
-    }
-
-    public void ReindexerNetSetup()
+    [IterationSetup(Targets = new[] { nameof(ReindexerNet) })]
+    public virtual void ReindexerNetSetup()
     {
         Setup();
         var rxDbPath = Path.Combine(_dataPath, "ReindexerEmbedded");
@@ -114,26 +103,15 @@ public class InsertBenchmark
 
     }
 
-    [IterationCleanup(Targets = new[] { nameof(ReindexerNet_Insert), nameof(ReindexerNet_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNet) })]
     public void ReindexerNetClean()
     {
         _rxClient!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(ReindexerNetDense_Insert) })]
-    public void ReindexerNetDenseInsertSetup()
-    {
-        ReindexerNetDenseSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(ReindexerNetDense_Upsert) })]
-    public void ReindexerNetDenseUpsertSetup()
-    {
-        ReindexerNetDenseSetup();
-        ReindexerNetDense_Insert();
-    }
-
-    public void ReindexerNetDenseSetup()
+    [IterationSetup(Targets = new[] { nameof(ReindexerNetDense) })]    
+    public virtual void ReindexerNetDenseSetup()
     {
         Setup();
         var rxDensedbPath = Path.Combine(_dataPath, "ReindexerEmbeddedDense");
@@ -151,26 +129,15 @@ public class InsertBenchmark
         _rxClientDense.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true, IsArray = true });
     }
 
-    [IterationCleanup(Targets = new[] { nameof(ReindexerNetDense_Insert), nameof(ReindexerNetDense_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNetDense) })]
     public void ReindexerNetDenseClean()
     {
         _rxClientDense!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(Cachalot_Insert) })]
-    public void CachalotInsertSetup()
-    {
-        CachalotSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(Cachalot_Upsert) })]
-    public void CachalotUpsertSetup()
-    {
-        CachalotSetup();
-        Cachalot_Insert();
-    }
-
-    public void CachalotSetup()
+    [IterationSetup(Targets = new[] { nameof(Cachalot) })]    
+    public virtual void CachalotSetup()
     {
         Setup();
         Directory.CreateDirectory(Path.Combine(_dataPath, "Cachalot"));
@@ -181,7 +148,7 @@ public class InsertBenchmark
         _caConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
     }
 
-    [IterationCleanup(Targets = new[] { nameof(Cachalot_Insert), nameof(Cachalot_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(Cachalot) })]
     public void CachalotClean()
     {
         _caConnector!.Dispose();
@@ -189,19 +156,8 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(CachalotCompressed_Insert) })]
-    public void CachalotCompressedInsertSetup()
-    {
-        CachalotCompressedSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(CachalotCompressed_Upsert) })]
-    public void CachalotCompressedUpsertSetup()
-    {
-        CachalotCompressedSetup();
-        CachalotCompressed_Insert();
-    }
-
-    public void CachalotCompressedSetup()
+    [IterationSetup(Targets = new[] { nameof(CachalotCompressed) })]    
+    public virtual void CachalotCompressedSetup()
     {
         Setup();
         Directory.CreateDirectory(Path.Combine(_dataPath, "CachalotCompressed"));
@@ -212,7 +168,7 @@ public class InsertBenchmark
         _caConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
     }
 
-    [IterationCleanup(Targets = new[] { nameof(CachalotCompressed_Insert), nameof(CachalotCompressed_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(CachalotCompressed) })]
     public void CachalotCompressedClean()
     {
         _caConnectorCompressed!.Dispose();
@@ -220,19 +176,8 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory_Insert) })]
-    public void CachalotOnlyMemoryInsertSetup()
-    {
-        CachalotOnlyMemorySetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory_Upsert) })]
-    public void CachalotOnlyMemoryUpsertSetup()
-    {
-        CachalotOnlyMemorySetup();
-        CachalotOnlyMemory_Insert();
-    }
-
-    public void CachalotOnlyMemorySetup()
+    [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory) })]    
+    public virtual void CachalotOnlyMemorySetup()
     {
         Setup();
         _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "CachalotOnlyMemory"), IsPersistent = false, ClusterName = "CachalotOnlyMemory" });
@@ -240,7 +185,7 @@ public class InsertBenchmark
         _caMemoryConnector.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
     }
 
-    [IterationCleanup(Targets = new[] { nameof(CachalotOnlyMemory_Insert), nameof(CachalotOnlyMemory_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(CachalotOnlyMemory) })]
     public void CachalotOnlyMemoryClean()
     {
         _caMemoryConnector!.Dispose();
@@ -248,18 +193,8 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(LiteDb_Insert) })]
-    public void LiteDbInsertSetup()
-    {
-        LiteDbSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(LiteDb_Upsert) })]
-    public void LiteDbUpsertSetup()
-    {
-        LiteDbSetup();
-        LiteDb_Insert();
-    }
-    public void LiteDbSetup()
+    [IterationSetup(Targets = new[] { nameof(LiteDb) })]    
+    public virtual void LiteDbSetup()
     {
         Setup();
         _liteDb = new LiteDatabase(Path.Combine(_dataPath, "LiteDB"));
@@ -272,25 +207,15 @@ public class InsertBenchmark
         _liteColl.EnsureIndex(e => e.StrArray);
     }
 
-    [IterationCleanup(Targets = new[] { nameof(LiteDb_Insert), nameof(LiteDb_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(LiteDb) })]
     public void LiteDbClean()
     {
         _liteDb!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(LiteDbMemory_Insert) })]
-    public void LiteDbMemoryInsertSetup()
-    {
-        LiteDbMemorySetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(LiteDbMemory_Upsert) })]
-    public void LiteDbMemoryUpsertSetup()
-    {
-        LiteDbMemorySetup();
-        LiteDbMemory_Insert();
-    }
-    public void LiteDbMemorySetup()
+    [IterationSetup(Targets = new[] { nameof(LiteDbMemory) })]    
+    public virtual void LiteDbMemorySetup()
     {
         Setup();
         _liteDbMemory = new LiteDatabase(":memory:");
@@ -303,159 +228,79 @@ public class InsertBenchmark
         _liteCollMemory.EnsureIndex(e => e.StrArray);
     }
 
-    [IterationCleanup(Targets = new[] { nameof(LiteDbMemory_Insert), nameof(LiteDbMemory_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(LiteDbMemory) })]
     public void LiteDbMemoryClean()
     {
         _liteDbMemory!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(Realm_Insert) })]
-    public void RealmInsertSetup()
-    {
-        RealmSetup();
-    }
-    [IterationSetup(Targets = new[] { nameof(Realm_Upsert) })]
-    public void RealmUpsertSetup()
-    {
-        RealmSetup();
-        Realm_Insert();
-    }
-    public void RealmSetup()
+    [IterationSetup(Targets = new[] { nameof(Realm) })]    
+    public virtual void RealmSetup()
     {
         Setup();
-        _realm = Realm.GetInstance(new RealmConfiguration(Path.Combine(_dataPath, "Realm")));
+        _realm = Realms.Realm.GetInstance(new RealmConfiguration(Path.Combine(_dataPath, "Realm")));
     }
 
-    [IterationCleanup(Targets = new[] { nameof(Realm_Insert), nameof(Realm_Upsert) })]
+    [IterationCleanup(Targets = new[] { nameof(Realm) })]
     public void RealmClean()
     {
         _realm.Dispose();
-        Realm.DeleteRealm(new RealmConfiguration(Path.Combine(_dataPath, "Realm")));
+        Realms.Realm.DeleteRealm(new RealmConfiguration(Path.Combine(_dataPath, "Realm")));
         Cleanup();
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void ReindexerNet_Insert()
+    public virtual void ReindexerNet()
     {
         _rxClient!.Insert("Entities", _data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void ReindexerNetDense_Insert()
+    public virtual void ReindexerNetDense()
     {
         _rxClientDense!.Insert("Entities", _data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void Cachalot_Insert()
+    public virtual void Cachalot()
     {
         var entities = _caConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         entities.PutMany(_data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void CachalotCompressed_Insert()
+    public virtual void CachalotCompressed()
     {
         var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         entities.PutMany(_data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void CachalotOnlyMemory_Insert()
+    public virtual void CachalotOnlyMemory()
     {
         var entities = _caMemoryConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         entities.PutMany(_data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void LiteDb_Insert()
+    public virtual void LiteDb()
     {
         _liteColl.InsertBulk(_data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void LiteDbMemory_Insert()
+    public virtual void LiteDbMemory()
     {
         _liteCollMemory.InsertBulk(_data);
     }
 
-    [BenchmarkCategory("Insert")]
     [Benchmark]
-    public void Realm_Insert()
+    public virtual void Realm()
     {
         _realm.Write(() =>
         {
             _realm.Add(_data.Select(e => (BenchmarkRealmEntity)e), update: false);
-        });
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void ReindexerNet_Upsert()
-    {
-        _rxClient!.Upsert("Entities", _data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void ReindexerNetDense_Upsert()
-    {
-        _rxClientDense!.Upsert("Entities", _data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void Cachalot_Upsert()
-    {
-        var entities = _caConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        entities.PutMany(_data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void CachalotCompressed_Upsert()
-    {
-        var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        entities.PutMany(_data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void CachalotOnlyMemory_Upsert()
-    {
-        var entities = _caMemoryConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        entities.PutMany(_data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void LiteDb_Upsert()
-    {
-        _liteColl.Upsert(_data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void LiteDbMemory_Upsert()
-    {
-        _liteCollMemory.Upsert(_data);
-    }
-
-    [BenchmarkCategory("Upsert")]
-    [Benchmark]
-    public void Realm_Upsert()
-    {
-        _realm.Write(() =>
-        {
-            _realm.Add(_data.Select(e => (BenchmarkRealmEntity)e), update: true);
         });
     }
 }
