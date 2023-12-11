@@ -227,7 +227,7 @@ public class ReindexerBindingTest
             var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
 
             Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
+            Assert.AreNotEqual(0, offsets.Length);
         }
         finally
         {
@@ -252,7 +252,7 @@ public class ReindexerBindingTest
             var (json, offsets, explain) = BindingHelpers.RawResultToJson(rsp.@out, "items", "total_count");
 
             Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
+            Assert.AreNotEqual(0, offsets.Length);
             Assert.AreNotEqual(0, explain.Length);
 
             var explainDef = JsonSerializer.Deserialize<ExplainDef>(explain);
@@ -284,7 +284,7 @@ public class ReindexerBindingTest
 
             var (json, offsets, explain) = BindingHelpers.RawResultToJson(delRsp.@out, "items", "total_count");
             Assert.AreNotEqual(0, json.Length);
-            Assert.AreNotEqual(0, offsets.Count);
+            Assert.AreNotEqual(0, offsets.Length);
 
             var selRsp = ReindexerBinding.reindexer_select(_rx,
                 $"SELECT * FROM {DataTestNamespace} WHERE Id=2".GetStringHandle(),
@@ -295,7 +295,7 @@ public class ReindexerBindingTest
 
             (json, offsets, explain) = BindingHelpers.RawResultToJson(selRsp.@out, "items", "total_count");
             Assert.AreNotEqual(0, json.Length);
-            Assert.AreEqual(0, offsets.Count);
+            Assert.AreEqual(0, offsets.Length);
         }
         finally
         {

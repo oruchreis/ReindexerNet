@@ -7,9 +7,9 @@
 		<Title>ReindexerNet.Remote.Grpc</Title>
 		<Description>Reindexer Grpc library to connect to a standalone reindexer server.</Description>
 		<PackageTags>reindexer remote grpc standalone document-db in-memory</PackageTags>
-		<Version>0.4.0.3032</Version>
-		<AssemblyVersion>0.4.0</AssemblyVersion>
-		<FileVersion>0.4.0</FileVersion>
+		<Version>0.4.1.3032</Version>
+		<AssemblyVersion>0.4.1</AssemblyVersion>
+		<FileVersion>0.4.1</FileVersion>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition="'$(TargetFramework)'=='net472' or '$(TargetFramework)'=='netstandard2.0'">

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -87,6 +88,12 @@ public abstract class BaseTest<TClient>
                 Name = "UpdateTime",
                 FieldType = FieldType.Int64,
                 IndexType = IndexType.Tree
+            },
+            new Index
+            {
+                Name = "Utf8String",
+                FieldType = FieldType.String,
+                IndexType = IndexType.Hash
             }
             })
         {
@@ -114,6 +121,7 @@ public abstract class BaseTest<TClient>
         public long UpdateTime { get; set; } //precepts cant be null
         public string NullablePayload { get; set; }
         public int? NullableIntPayload { get; set; }
+        public string? Utf8String { get; set; }
     }
 
     private async Task AddItemsAsync(int idStart, int idEnd)
@@ -127,7 +135,8 @@ public abstract class BaseTest<TClient>
                       RangeIndex = i * 0.125,
                       Payload = Enumerable.Range(0, i).Select(r => (byte)(r % 255)).ToArray(),
                       NullablePayload = i % 2 == 0 ? i.ToString() : null,
-                      NullableIntPayload = i % 2 == 0 ? i : (int?)null
+                      NullableIntPayload = i % 2 == 0 ? i : (int?)null,
+                      Utf8String = "ÇŞĞÜÖİöçşğüı" + i
                   }));
 
 
@@ -304,21 +313,23 @@ public abstract class BaseTest<TClient>
         Assert.AreEqual(2 * 0.125, item.RangeIndex);
         CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
 
+        var arrayItems = Enumerable.Range(0,500).Select(i => $"..{i}..").ToArray();
         var arrayContainsDocs = await Client.ExecuteAsync<TestDocument>(NsName,
-            q => q.WhereString("ArrayIndex", Condition.SET, "..997..","..998.."));
-        Assert.AreEqual(2, arrayContainsDocs.QueryTotalItems);
+            q => q.WhereString("ArrayIndex", Condition.ALLSET, arrayItems));
+        Assert.AreEqual(1000-arrayItems.Length, arrayContainsDocs.QueryTotalItems);
 
         var rangeQueryDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereDouble("RangeIndex", Condition.RANGE, 5.1d, 6d));
         Assert.AreEqual(5.125, rangeQueryDocs.Items.FirstOrDefault()?.RangeIndex);
+
+        var props = Enumerable.Range(0,1000).Select(i => "ÇŞĞÜÖİöçşğüı" + i).ToArray();
+        var utf8SearrchResult = await Client.ExecuteAsync<TestDocument>(NsName, q => q.WhereString(nameof(TestDocument.Utf8String), Condition.SET, props));
+        CollectionAssert.AreEqual(props, utf8SearrchResult.Items.Select(i => i.Utf8String).ToList());
 
         var deletedCount = await Client.DeleteAsync(NsName, new[] { new TestDocument { Id = 500 } });
         Assert.AreEqual(1, deletedCount);
         var deletedQ = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereInt("Id", Condition.EQ, 500));
         Assert.AreEqual(0, deletedQ.QueryTotalItems);
-
-
-
     }
 }

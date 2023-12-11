@@ -8,13 +8,39 @@ using Server;
 using ReindexerNet;
 using Index = ReindexerNet.Index;
 using IndexType = ReindexerNet.IndexType;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Running;
+using System.Reflection;
 
 namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 
+//[Config(typeof(AntiVirusFriendlyConfig))]
 [SimpleJob(launchCount: 0, warmupCount: 0, iterationCount: 1)]
 [MemoryDiagnoser()]
+[CategoriesColumn]
+[CustomCategoryDiscoverer]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory, BenchmarkLogicalGroupRule.ByParams)]
+[PlainExporter]
 public class InsertBenchmark
 {
+    private class CustomCategoryDiscoverer : DefaultCategoryDiscoverer
+    {
+        public override string[] GetCategories(MethodInfo method) =>
+            method.Name.Split('_').Reverse().ToArray();
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    private class CustomCategoryDiscovererAttribute : Attribute, IConfigSource
+    {
+        public CustomCategoryDiscovererAttribute()
+        {
+            Config = ManualConfig.CreateEmpty()
+                .WithCategoryDiscoverer(new CustomCategoryDiscoverer());
+        }
+
+        public IConfig Config { get; }
+    }
+
     private string _dataPath;
     private BenchmarkEntity[] _data;
 

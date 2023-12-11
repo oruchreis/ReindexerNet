@@ -2,21 +2,23 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using static ReindexerNet.Internal.Bindings;
 
-[assembly: InternalsVisibleTo("ReindexerNet.Embedded")]
+[assembly: InternalsVisibleTo("ReindexerNet.Embedded"), InternalsVisibleTo("ReindexerNet.EmbeddedBenchmarks")]
 
 namespace ReindexerNet.Internal;
 
+//TODO: Will be public when ensure stability.
 internal sealed class CJsonWriter : IDisposable
 {
     private readonly ArrayPool<byte> _pool;
     private byte[] _buffer;
     private int _pos;
-    public CJsonWriter()
+    public CJsonWriter(int bufferSize = 100)
     {
         _pool = ArrayPool<byte>.Shared;
-        _buffer = _pool.Rent(100);
+        _buffer = _pool.Rent(bufferSize);
     }
 
     public ReadOnlySpan<byte> CurrentBuffer => _buffer.AsSpan().Slice(0, _pos);
@@ -26,8 +28,20 @@ internal sealed class CJsonWriter : IDisposable
         if (_pos + length > _buffer.Length)
         {
             var oldBufferRef = _buffer;
-            _buffer = _pool.Rent(_buffer.Length * 2);
-            _pool.Return(oldBufferRef);
+            _buffer = _pool.Rent(
+                Math.Max(
+                    _buffer.Length + (_buffer.Length >> 1),  // increase 50%
+                    _buffer.Length + length) // if 50% is not enough
+                );
+            try
+            {
+                Memory<byte> oldBufferMemory = oldBufferRef.AsMemory(0, oldBufferRef.Length);
+                oldBufferMemory.Span.CopyTo(_buffer.AsSpan());
+            }
+            finally
+            {
+                _pool.Return(oldBufferRef);
+            }
         }
     }
 
@@ -55,14 +69,14 @@ internal sealed class CJsonWriter : IDisposable
     public void PutVarInt(long v)
     {
         EnsureRemainingSize(10);
-        var len = sint64_pack(v, _buffer.AsSpan().Slice(_pos));
+        var len = Sint64_pack(v, _buffer.AsSpan().Slice(_pos));
         _pos += (int)len;
     }
 
     public void PutVarUInt(ulong v)
     {
         EnsureRemainingSize(10);
-        var len = uint64_pack(v, _buffer.AsSpan().Slice(_pos));
+        var len = Uint64_pack(v, _buffer.AsSpan().Slice(_pos));
         _pos += (int)len;
     }
 
@@ -79,16 +93,22 @@ internal sealed class CJsonWriter : IDisposable
             return;
         }
 
-        var strArr = v.AsSpan();
-        EnsureRemainingSize(10 + strArr.Length);
-        var currentPos = _buffer.AsSpan().Slice(_pos);
-        var lenSize = (int)uint32_pack((uint)strArr.Length, currentPos);
-        currentPos = currentPos.Slice(lenSize);
-        for (int i = 0; i < strArr.Length; i++)
-        {
-            currentPos[i] = (byte)strArr[i];
-        }
-        _pos += lenSize + strArr.Length;
+
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+        Span<byte> strArr = stackalloc byte[v.Length * 2];
+        var strByteLength = Encoding.UTF8.GetBytes(v, strArr);
+        strArr = strArr[..strByteLength];
+#else
+        var strArrArr = new byte[v.Length*2];
+        var strByteLength = Encoding.UTF8.GetBytes(v, 0, v.Length, strArrArr, 0);
+        var strArr = strArrArr.AsSpan(0, strByteLength);
+#endif
+        EnsureRemainingSize(10 + strByteLength);
+        var currentPos = _buffer.AsSpan()[_pos..];
+        var lenSize = (int)Uint32_pack((uint)strByteLength, currentPos);
+        currentPos = currentPos[lenSize..];
+        strArr.CopyTo(currentPos);
+        _pos += lenSize + strByteLength;
     }
 
     public void PutUuid(Guid uuid)
@@ -100,30 +120,33 @@ internal sealed class CJsonWriter : IDisposable
 
     public void Append(CJsonWriter other)
     {
-        #if NETSTANDARD2_0 || NET472
+#if NETSTANDARD2_0 || NET472
         var otherSpan = other._buffer.AsSpan().Slice(other._pos);
-        #else 
+#else
         var otherSpan = other._buffer.AsSpan()[..other._pos];
-        #endif
-	    EnsureRemainingSize(otherSpan.Length);
+#endif
+        EnsureRemainingSize(otherSpan.Length);
         otherSpan.CopyTo(_buffer.AsSpan(_pos));
         _pos += otherSpan.Length;
     }
 
-    private static ulong zigzag64(long v)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong Zigzag64(long v)
     {
-	    if (v < 0)
+        if (v < 0)
             return (ulong)(-v) * 2 - 1;
         else
             return (ulong)v * 2;
     }
 
-    private static uint sint64_pack(long value, Span<byte> @out)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint Sint64_pack(long value, Span<byte> @out)
     {
-        return uint64_pack(zigzag64(value), @out);
+        return Uint64_pack(Zigzag64(value), @out);
     }
 
-    private static uint uint32_pack(uint value, Span<byte> @out)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint Uint32_pack(uint value, Span<byte> @out)
     {
         uint rv = 0;
         if (value >= 128U)
@@ -154,14 +177,15 @@ internal sealed class CJsonWriter : IDisposable
         return rv + 1U;
     }
 
-    private static uint uint64_pack(ulong value, Span<byte> @out)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint Uint64_pack(ulong value, Span<byte> @out)
     {
         uint hi = (uint)(value >> 32);
         uint lo = (uint)value;
         uint rv;
         if (hi == 0U)
         {
-            rv = uint32_pack(lo, @out);
+            rv = Uint32_pack(lo, @out);
         }
         else
         {

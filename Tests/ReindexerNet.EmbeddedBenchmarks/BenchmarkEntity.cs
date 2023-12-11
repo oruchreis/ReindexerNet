@@ -3,11 +3,12 @@ using Realms;
 using Realms.Schema;
 using Realms.Weaving;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 
 [DataContract]
-internal class BenchmarkEntity
+public sealed class BenchmarkEntity
 {
     [ServerSideValue(Client.Core.IndexType.Primary)]
     [DataMember(Order = 0)]
@@ -34,8 +35,7 @@ internal class BenchmarkEntity
     public string[] StrArray { get; set; }   
 }
 
-
-internal partial class BenchmarkRealmEntity: IRealmObject
+public sealed partial class BenchmarkRealmEntity: IRealmObject
 {   
     [PrimaryKey]    
     public Guid Id { get; set; }

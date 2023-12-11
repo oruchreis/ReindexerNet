@@ -168,7 +168,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder DWithin(string index, (double start, double end) point, double distance)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = Condition.DWITHIN.ToString("g"), Value = distance, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -403,7 +403,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereBetweenFields(string firstField, Condition condition, string secondField)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = firstField, Cond = condition.ToString("g"), Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -412,7 +412,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereBool(string index, Condition condition, params bool[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -421,7 +421,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereComposite(string index, Condition condition, params object[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -430,7 +430,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereDouble(string index, Condition condition, params double[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -439,7 +439,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereInt(string index, Condition condition, params int[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -448,7 +448,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereInt32(string index, Condition condition, params int[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -457,7 +457,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereInt64(string index, Condition condition, params long[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
@@ -466,22 +466,31 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder WhereString(string index, Condition condition, params string[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
     }
-    /// <inheritdoc/>
 
+    /// <inheritdoc/>
     public IQueryBuilder WhereUuid(string index, Condition condition, params string[] keys)
     {
-        _query.Filters ??= new();
+        _query.Filters ??= [];
         _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
         _nextOp = Bindings.Op.And;
         return this;
     }
-    /// <inheritdoc/>
 
+    /// <inheritdoc/>
+    public IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys)
+    {
+        _query.Filters ??= [];
+        _query.Filters.Add(new FilterDef { Field = index, Cond = condition.ToString("g"), Value = keys, Op = _nextOp?.ToString("g") });
+        _nextOp = Bindings.Op.And;
+        return this;
+    }
+
+    /// <inheritdoc/>
     public IQueryBuilder WithRank()
     {
         _query.SelectWithRank = true;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ReindexerNet.Internal;
@@ -180,13 +181,14 @@ ref struct CJsonReader
 #pragma warning restore S125 // Sections of code should not be commented out
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private
 #if !NETSTANDARD2_0 && !NET472
         readonly
 #else
         static
 #endif
-        void checkbound(int pos, int need, int len)
+        void Checkbound(int pos, int need, int len)
     {
         if (pos + need > len)
         {
@@ -194,6 +196,7 @@ ref struct CJsonReader
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private
 #if !NETSTANDARD2_0 && !NET472
         readonly
@@ -210,6 +213,7 @@ ref struct CJsonReader
         return i + 1;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private
 #if !NETSTANDARD2_0 && !NET472
         readonly
@@ -236,6 +240,7 @@ ref struct CJsonReader
         return rv;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private
 #if !NETSTANDARD2_0 && !NET472
         readonly
@@ -270,7 +275,7 @@ ref struct CJsonReader
         {
             throw new InvalidDataException($"Binary buffer broken - scan_varint failed: pos={_pos},len={_buffer.Length}");
         }
-        checkbound(_pos, l, _buffer.Length);
+        Checkbound(_pos, l, _buffer.Length);
         _pos += l;
         return parse_uint64((uint)l, _buffer.Slice(_pos - l));
     }
@@ -299,13 +304,13 @@ ref struct CJsonReader
 
     private uint GetUInt32()
     {
-        checkbound(_pos, sizeof(uint), _buffer.Length);
+        Checkbound(_pos, sizeof(uint), _buffer.Length);
         return (uint)ReadIntBits(sizeof(uint));
     }
 
     private ulong GetUInt64()
     {
-        checkbound(_pos, sizeof(ulong), _buffer.Length);
+        Checkbound(_pos, sizeof(ulong), _buffer.Length);
         return ReadUIntBits(sizeof(ulong));
     }
 

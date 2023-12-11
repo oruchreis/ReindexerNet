@@ -215,6 +215,8 @@ public interface IQueryBuilder: IFilterQueryBuilder, IDisposable
     /// <param name="filterQuery"></param>
     /// <returns></returns>
     IQueryBuilder Where(Action<IFilterQueryBuilder> filterQuery);
+    IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys);
+
     /// <summary>
     /// Output fulltext rank.
     /// Allowed only with fulltext query

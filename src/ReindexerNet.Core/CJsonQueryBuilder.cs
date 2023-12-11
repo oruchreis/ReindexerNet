@@ -48,7 +48,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         _jsonSerializer = jsonSerializer;
         _ser.PutVString(@namespace);
     }
-    
+
     /// <inheritdoc/>
     public IQueryBuilder Where(string index, Condition condition, object keys)
     {
@@ -268,6 +268,24 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
                 _ser.PutVarCUInt((int)Bindings.Value.String);
                 _ser.PutVString(key);
             }
+        }
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys)
+    {
+        _ser.PutVarCUInt((int)Bindings.Query.Condition);
+        _ser.PutVString(index);
+        _ser.PutVarCUInt((int)_nextOp);
+        _ser.PutVarCUInt((int)condition);
+        _nextOp = Bindings.Op.And;
+        _queriesCount++;
+        _ser.PutVarCUInt(keys.Length);
+        foreach (var uuid in keys)
+        {
+            _ser.PutVarCUInt((int)Bindings.Value.Uuid);
+            _ser.PutUuid(uuid);
         }
         return this;
     }

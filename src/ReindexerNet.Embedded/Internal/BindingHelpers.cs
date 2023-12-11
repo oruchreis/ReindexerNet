@@ -7,7 +7,7 @@ namespace ReindexerNet.Embedded.Internal;
 
 internal static class BindingHelpers
 {
-    public static (string json, List<int> offsets, byte[] explain) RawResultToJson(ReadOnlySpan<byte> rawResult, string jsonName, string totalName)
+    public static (string json, int[] offsets, byte[] explain) RawResultToJson(ReadOnlySpan<byte> rawResult, string jsonName, string totalName)
     {
         var ser = new CJsonReader(rawResult);
         var rawQueryParams = ser.ReadRawQueryParams();
@@ -16,7 +16,7 @@ internal static class BindingHelpers
         var jsonReserveLen = rawResult.Length + totalName.Length + jsonName.Length + 20;
         var jsonBuf = new StringBuilder(jsonReserveLen);
 
-        var offsets = new List<int>(rawQueryParams.count);
+        var offsets = new int[rawQueryParams.count];
 
         jsonBuf.Append("{\"");
 
@@ -38,7 +38,7 @@ internal static class BindingHelpers
             {
                 jsonBuf.Append(",");
             }
-            offsets.Add(jsonBuf.Length);
+            offsets[i] = jsonBuf.Length;
             jsonBuf.Append(Encoding.UTF8.GetString(item.data
 #if NETSTANDARD2_0 || NET472
                 .ToArray()
