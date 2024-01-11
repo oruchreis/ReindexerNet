@@ -164,7 +164,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     }
 
     /// <inheritdoc/>
-    public IQueryBuilder Where(Action<IFilterQueryBuilder> filterQuery)
+    public IQueryBuilder Where(Action<IQueryBuilder> filterQuery)
     {
         OpenBracket();
 

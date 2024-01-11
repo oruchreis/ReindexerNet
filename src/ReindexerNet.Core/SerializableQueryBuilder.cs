@@ -374,7 +374,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     }
     /// <inheritdoc/>
 
-    public IQueryBuilder Where(Action<IFilterQueryBuilder> filterQuery)
+    public IQueryBuilder Where(Action<IQueryBuilder> filterQuery)
     {
         _query.Filters ??= [];
         var subQueryBuilder = new SerializableQueryBuilder(_serializer, _namespace);
