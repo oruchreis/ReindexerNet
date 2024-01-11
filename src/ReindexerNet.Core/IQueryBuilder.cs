@@ -5,7 +5,7 @@ namespace ReindexerNet;
 /// <summary>
 /// Represents generic query builder.
 /// </summary>
-public interface IQueryBuilder: IFilterQueryBuilder, IDisposable
+public interface IQueryBuilder : IFilterQueryBuilder, IDisposable
 {
     /// <summary>
     /// sets the number of items that will be fetched by one operation
@@ -14,7 +14,7 @@ public interface IQueryBuilder: IFilterQueryBuilder, IDisposable
     /// <summary>
     /// 
     /// </summary>
-    string TotalName { get; set; }    
+    string TotalName { get; set; }
     /// <summary>
     /// Adds Avarage Aggregate
     /// </summary>
@@ -58,13 +58,13 @@ public interface IQueryBuilder: IFilterQueryBuilder, IDisposable
     /// <param name="totalNames"></param>
     /// <returns></returns>
     IQueryBuilder CachedTotal(params string[] totalNames);
-    
+
     /// <summary>
     /// Return only items with uniq value of field
     /// </summary>
     /// <param name="distinctIndex"></param>
     /// <returns></returns>
-    IQueryBuilder Distinct(string distinctIndex);    
+    IQueryBuilder Distinct(string distinctIndex);
     /// <summary>
     /// Add DWithin condition to DB query
     /// </summary>
@@ -209,13 +209,6 @@ public interface IQueryBuilder: IFilterQueryBuilder, IDisposable
     /// <param name="mode"></param>
     /// <returns></returns>
     IQueryBuilder Strict(QueryStrictMode mode);
-    /// <summary>
-    /// Creates sub filter query. Equals to Brackets () in an SQL query in the whre condition.
-    /// </summary>
-    /// <param name="filterQuery"></param>
-    /// <returns></returns>
-    IQueryBuilder Where(Action<IFilterQueryBuilder> filterQuery);
-    IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys);
 
     /// <summary>
     /// Output fulltext rank.

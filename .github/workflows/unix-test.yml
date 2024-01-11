@@ -46,10 +46,11 @@ jobs:
         echo "$PWD" >> $GITHUB_PATH
     - name: Setup Alpine OS
       if: startsWith(matrix.target.name,'alpine')
-      uses: jirutka/setup-alpine@v1
+      uses: jirutka/setup-alpine@v1            
       id: alpine-target
       with:
         arch: x86_64
+        branch: v3.18
         packages: >
           sudo
           bash

@@ -12,6 +12,13 @@ namespace ReindexerNet;
 public interface IFilterQueryBuilder
 {
     /// <summary>
+    /// Creates sub filter query. Equals to Brackets () in an SQL query in the whre condition.
+    /// </summary>
+    /// <param name="filterQuery"></param>
+    /// <returns></returns>
+    IQueryBuilder Where(Action<IFilterQueryBuilder> filterQuery);
+
+    /// <summary>
     /// Add where condition to DB query
     /// </summary>
     /// <param name="index"></param>
@@ -92,4 +99,12 @@ public interface IFilterQueryBuilder
     /// <param name="keys"></param>
     /// <returns></returns>
     IQueryBuilder WhereUuid(string index, Condition condition, params string[] keys);
+    /// <summary>
+    /// Add where condition to DB query with guid args
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="condition"></param>
+    /// <param name="keys"></param>
+    /// <returns></returns>
+    IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys);
 }
