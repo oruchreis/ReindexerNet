@@ -437,7 +437,9 @@ After:
                 hasResultOptSet = true;
             }
             if (queryItems.Items?.Count > 0)
-                result.Items.AddRange(queryItems.Items);
+                result.Items = queryItems.Items;
+            if (queryItems.Aggregations?.Count > 0)
+                result.Aggregations = queryItems.Aggregations;
         }
 
         return result;
@@ -474,7 +476,9 @@ After:
                 hasResultOptSet = true;
             }
             if (queryItems.Items?.Count > 0)
-                result.Items.AddRange(queryItems.Items);
+                result.Items = queryItems.Items;
+            if (queryItems.Aggregations?.Count > 0)
+                result.Aggregations = queryItems.Aggregations;
         }
 
         return result;

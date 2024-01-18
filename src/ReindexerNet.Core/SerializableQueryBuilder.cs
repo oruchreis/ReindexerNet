@@ -1,14 +1,17 @@
 ﻿using ReindexerNet.Internal;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using static ReindexerNet.Internal.Bindings;
 
 namespace ReindexerNet;
 
 /// <summary>
 /// Builds <see cref="Query"/> object from given query, and serialize with target serializer.
 /// </summary>
+[DebuggerTypeProxy(typeof(SerializableQueryBuilderDebugTypeProxy))]
 public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQueryBuilder
 {
     private readonly IReindexerSerializer _serializer;
@@ -47,6 +50,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     /// <inheritdoc />
     public IQueryBuilder AggregateAvg(string field)
     {
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(new AggregationsDef
         {
             Fields = [field],
@@ -92,6 +96,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
             Fields = new(fields),
             Type = GetAggregateType(Bindings.Agg.Facet)
         };
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(agg);
         aggFacetQuery(new AggregateFacetRequest(agg));
         return this;
@@ -100,6 +105,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     /// <inheritdoc/>
     public IQueryBuilder AggregateMax(string field)
     {
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(new AggregationsDef
         {
             Fields = [field],
@@ -111,6 +117,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder AggregateMin(string field)
     {
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(new AggregationsDef
         {
             Fields = [field],
@@ -122,6 +129,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder AggregateSum(string field)
     {
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(new AggregationsDef
         {
             Fields = [field],
@@ -157,6 +165,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
 
     public IQueryBuilder Distinct(string distinctIndex)
     {
+        _query.Aggregations ??= [];
         _query.Aggregations.Add(new AggregationsDef
         {
             Fields = [distinctIndex],
@@ -495,5 +504,10 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     {
         _query.SelectWithRank = true;
         return this;
+    }
+
+    private class SerializableQueryBuilderDebugTypeProxy(SerializableQueryBuilder serializableQueryBuilder)
+    {
+        public Query Query => serializableQueryBuilder._query;
     }
 }

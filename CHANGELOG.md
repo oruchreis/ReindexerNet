@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2024-01-18
+### Added
+- DebugTypeProxy to query builders.
+- More Tests
+### Fixed
+- Lack of aggregation results.
+
 ## [0.4.3 Core] - 2024-01-11
 ### Changed
 - Merged IFilterQueryBuilder into IQueryBuilder

@@ -94,11 +94,17 @@ public abstract class BaseTest<TClient>
                 Name = "Utf8String",
                 FieldType = FieldType.String,
                 IndexType = IndexType.Hash
-            }
+            },
+            new Index
+            {
+                Name = "Group",
+                FieldType = FieldType.Int64,
+                IndexType = IndexType.Hash
+            },
             })
         {
             await Client.AddIndexAsync(NsName, index);
-        }            
+        }
 
         var nsInfo = (await Client.ExecuteSqlAsync<Namespace>($"SELECT * FROM #namespaces WHERE name='{NsName}' LIMIT 1")).Items.FirstOrDefault();
         Assert.IsNotNull(nsInfo);
@@ -122,11 +128,12 @@ public abstract class BaseTest<TClient>
         public string NullablePayload { get; set; }
         public int? NullableIntPayload { get; set; }
         public string? Utf8String { get; set; }
+        public int Group { get; set; }
     }
 
-    private async Task AddItemsAsync(int idStart, int idEnd)
+    private async Task<List<TestDocument>> AddItemsAsync(int idStart, int idEnd)
     {
-        var insertedItemCount = await Client.UpsertAsync(NsName, Enumerable.Range(idStart, idEnd - idStart).Select(i =>
+        var entities = Enumerable.Range(idStart, idEnd - idStart).Select(i =>
                   new TestDocument
                   {
                       Id = i,
@@ -136,11 +143,15 @@ public abstract class BaseTest<TClient>
                       Payload = Enumerable.Range(0, i).Select(r => (byte)(r % 255)).ToArray(),
                       NullablePayload = i % 2 == 0 ? i.ToString() : null,
                       NullableIntPayload = i % 2 == 0 ? i : (int?)null,
-                      Utf8String = "ÇŞĞÜÖİöçşğüı" + i
-                  }));
+                      Utf8String = "ÇŞĞÜÖİöçşğüı" + i,
+                      Group = i % 3
+                  }).ToList();
+        var insertedItemCount = await Client.UpsertAsync(NsName, entities);
 
 
         Assert.AreEqual(idEnd - idStart, insertedItemCount);
+
+        return entities;
     }
 
     [TestMethod]
@@ -249,7 +260,7 @@ public abstract class BaseTest<TClient>
 
         using (var tran = await Client.StartTransactionAsync(NsName))
         {
-            await tran.ModifyItemsAsync(ItemModifyMode.Insert, new[] { new TestDocument { Id = 10500 } } );
+            await tran.ModifyItemsAsync(ItemModifyMode.Insert, new[] { new TestDocument { Id = 10500 } });
             Assert.AreEqual(0, (await Client.ExecuteSqlAsync<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10500")).QueryTotalItems);
             tran.Commit();
         }
@@ -257,7 +268,7 @@ public abstract class BaseTest<TClient>
 
         using (var tran = await Client.StartTransactionAsync(NsName))
         {
-            await tran.ModifyItemsAsync(ItemModifyMode.Insert, new[] { new TestDocument { Id = 10501 } } );
+            await tran.ModifyItemsAsync(ItemModifyMode.Insert, new[] { new TestDocument { Id = 10501 } });
             await tran.RollbackAsync();
         }
         Assert.AreEqual(0, (await Client.ExecuteSqlAsync<TestDocument>($"SELECT * FROM {NsName} WHERE Id=10501")).QueryTotalItems);
@@ -302,10 +313,10 @@ public abstract class BaseTest<TClient>
     {
         await AddIndexesAsync();
 
-        await AddItemsAsync(0, 1000);
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var docs = await Client.ExecuteAsync<TestDocument>(NsName,
-            q => q.Where("Id", Condition.LT ,1000));
+            q => q.Where("Id", Condition.LT, 1000));
         Assert.AreEqual(1000, docs.QueryTotalItems);
         var item = docs.Items.FirstOrDefault(i => i.Id == 2);
         Assert.AreEqual($"Name of 2", item.Name);
@@ -313,16 +324,16 @@ public abstract class BaseTest<TClient>
         Assert.AreEqual(2 * 0.125, item.RangeIndex);
         CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
 
-        var arrayItems = Enumerable.Range(0,500).Select(i => $"..{i}..").ToArray();
+        var arrayItems = Enumerable.Range(0, 500).Select(i => $"..{i}..").ToArray();
         var arrayContainsDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereString("ArrayIndex", Condition.ALLSET, arrayItems));
-        Assert.AreEqual(1000-arrayItems.Length, arrayContainsDocs.QueryTotalItems);
+        Assert.AreEqual(1000 - arrayItems.Length, arrayContainsDocs.QueryTotalItems);
 
         var rangeQueryDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereDouble("RangeIndex", Condition.RANGE, 5.1d, 6d));
         Assert.AreEqual(5.125, rangeQueryDocs.Items.FirstOrDefault()?.RangeIndex);
 
-        var props = Enumerable.Range(0,1000).Select(i => "ÇŞĞÜÖİöçşğüı" + i).ToArray();
+        var props = Enumerable.Range(0, 1000).Select(i => "ÇŞĞÜÖİöçşğüı" + i).ToArray();
         var utf8SearrchResult = await Client.ExecuteAsync<TestDocument>(NsName, q => q.WhereString(nameof(TestDocument.Utf8String), Condition.SET, props));
         CollectionAssert.AreEqual(props, utf8SearrchResult.Items.Select(i => i.Utf8String).ToList());
 
@@ -331,5 +342,48 @@ public abstract class BaseTest<TClient>
         var deletedQ = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereInt("Id", Condition.EQ, 500));
         Assert.AreEqual(0, deletedQ.QueryTotalItems);
+
+        //we've deleted some items, so..
+        docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
+
+        var selectMultipleItemsContains = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q
+                .Explain()
+                .Select("Id", "Group")
+                .Where("Group", Condition.SET, new object[] { 1 }));
+        Assert.AreEqual(333, selectMultipleItemsContains.QueryTotalItems);
+
+
+        var aggregateMinQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.AggregateMin("Group"));
+        Assert.AreEqual(1, aggregateMinQuery.Aggregations.Count(ag => ag.Type == "min"));
+        Assert.AreEqual(0, aggregateMinQuery.Aggregations.First(ag => ag.Type == "min").Value);
+
+        var aggregateMaxQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.AggregateMax("Group"));
+        Assert.AreEqual(1, aggregateMaxQuery.Aggregations.Count(ag => ag.Type == "max"));
+        Assert.AreEqual(2, aggregateMaxQuery.Aggregations.First(ag => ag.Type == "max").Value);
+
+        var aggregateSumAvgQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.AggregateSum("Group").AggregateAvg("Group"));
+        Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "sum"));
+        Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "avg"));
+        Assert.AreEqual(docs.Items.Select(e => e.Group).Sum(), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "sum").Value);
+        Assert.AreEqual(((decimal)docs.Items.Select(e => e.Group).Sum()/docs.Items.Count).ToString("0.####"), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "avg").Value.Value.ToString("0.####"));
+
+        var aggregateDistictQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Distinct("Group"));
+        Assert.AreEqual(1, aggregateDistictQuery.Aggregations.Count(ag => ag.Type == "distinct"));
+        CollectionAssert.AreEquivalent(new string[]{ "0", "1", "2" }, aggregateDistictQuery.Aggregations.First(ag => ag.Type == "distinct").Distincts);
+
+
+        var aggregateFacetQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.AggregateFacet(fq => 
+                fq.Sort("Group", true).Limit(2),
+                "Group"));
+        Assert.AreEqual(1, aggregateFacetQuery.Aggregations.Count(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])));
+        Assert.AreEqual(2, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.Count);
+        CollectionAssert.AreEquivalent(new string[]{ "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
     }
 }

@@ -22,6 +22,7 @@ internal sealed class CJsonWriter : IDisposable
     }
 
     public ReadOnlySpan<byte> CurrentBuffer => _buffer.AsSpan().Slice(0, _pos);
+    public int Position => _pos;
 
     private void EnsureRemainingSize(int length)
     {
@@ -43,6 +44,17 @@ internal sealed class CJsonWriter : IDisposable
                 _pool.Return(oldBufferRef);
             }
         }
+    }
+
+    public void Truncate(int pos)
+    {
+        _buffer = _buffer[..pos];
+    }
+
+    public void TruncateStart(int pos)
+    {
+        _buffer = _buffer[pos..];
+        _pos = 0;//?
     }
 
     public void PutUInt32(uint v)
@@ -116,6 +128,16 @@ internal sealed class CJsonWriter : IDisposable
         byte[] bytes = uuid.ToByteArray();
         PutUInt64(BitConverter.ToUInt64(bytes, 0));  // First 8 bytes
         PutUInt64(BitConverter.ToUInt64(bytes, 8));  // Next 8 bytes
+    }
+
+    public void PutCTag(CTag cTag)
+    {
+        PutVarUInt(cTag.Value);
+    }
+
+    public void PutCArrayTag(CArrayTag cArrayTag)
+    {
+        PutUInt32(cArrayTag.Value);
     }
 
     public void Append(CJsonWriter other)
@@ -249,6 +271,7 @@ internal sealed class CJsonWriter : IDisposable
         // TODO: uncomment the following line if the finalizer is overridden above.
         // GC.SuppressFinalize(this);
     }
+
     #endregion
 
 }

@@ -280,7 +280,7 @@ ref struct CJsonReader
         return parse_uint64((uint)l, _buffer.Slice(_pos - l));
     }
 
-    private long ReadIntBits(int size)
+    public long ReadIntBits(int size)
     {
         long v = 0;
         for (var i = size - 1; i >= 0; i--)
@@ -291,7 +291,7 @@ ref struct CJsonReader
         return v;
     }
 
-    private ulong ReadUIntBits(int size)
+    public ulong ReadUIntBits(int size)
     {
         ulong v = 0;
         for (var i = size - 1; i >= 0; i--)
@@ -302,19 +302,19 @@ ref struct CJsonReader
         return v;
     }
 
-    private uint GetUInt32()
+    public uint GetUInt32()
     {
         Checkbound(_pos, sizeof(uint), _buffer.Length);
         return (uint)ReadIntBits(sizeof(uint));
     }
 
-    private ulong GetUInt64()
+    public ulong GetUInt64()
     {
         Checkbound(_pos, sizeof(ulong), _buffer.Length);
         return ReadUIntBits(sizeof(ulong));
     }
 
-    private ReadOnlySpan<byte> GetBytes()
+    public ReadOnlySpan<byte> GetBytes()
     {
         var l = (int)GetUInt32();
         if (_pos + l > _buffer.Length)
@@ -327,7 +327,7 @@ ref struct CJsonReader
         return v;
     }
 
-    private string GetVString()
+    public string GetVString()
     {
         var l = (int)GetVarUInt();
         if (_pos + l > _buffer.Length)
@@ -342,6 +342,26 @@ ref struct CJsonReader
             );
         _pos += l;
         return v;
+    }
+
+    public CTag GetCTag()
+    {
+        return new CTag((uint)GetVarUInt());
+    }
+
+    public Guid GetUuid()
+    {
+        var guidSize = sizeof(ulong)*2;
+        Checkbound(_pos, guidSize, _buffer.Length);
+        //var v0 = GetUInt64();
+        //var v1 = GetUInt64();
+        var guidBytes = _buffer.Slice(_pos, guidSize);
+        _pos += guidSize;
+        return new Guid(guidBytes
+            #if NET472 || NETSTANDARD2_0
+            .ToArray()
+            #endif
+            );
     }
 }
 

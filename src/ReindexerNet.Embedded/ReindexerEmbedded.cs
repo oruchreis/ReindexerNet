@@ -460,6 +460,12 @@ public partial class ReindexerEmbedded : IReindexerClient
                 result.Items.Add(Serializer.Deserialize<T>(item.data));
         }
 
+        result.Aggregations = [];
+        foreach (var aggResult in rawQueryParams.aggResults)
+        {
+            result.Aggregations.Add(JsonSerializer.Deserialize<AggregationResDef>(aggResult));
+        }
+
         if ((rawQueryParams.flags & CJsonReader.ResultsWithJoined) != 0 && reader.GetVarUInt() != 0)
         {
             throw new NotImplementedException("Sorry, not implemented: Can't return join query results as json");

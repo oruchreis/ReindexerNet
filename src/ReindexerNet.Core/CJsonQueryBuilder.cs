@@ -3,7 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using static ReindexerNet.Internal.Bindings;
 
 namespace ReindexerNet;
 
@@ -18,6 +22,9 @@ public enum QueryStrictMode
 /// <summary>
 /// Builds CJson query from given query.
 /// </summary>
+#if NET5_0_OR_GREATER
+[DebuggerTypeProxy(typeof(CJsonQueryBuilderDebugTypeProxy))]
+#endif
 public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISerializableQueryBuilder
 {
     private readonly ReindexerJsonSerializer _jsonSerializer;
@@ -45,6 +52,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <param name="namespace"></param>
     public CJsonQueryBuilder(ReindexerJsonSerializer jsonSerializer, string @namespace)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([@namespace], "namespace");
+        }
+
         _jsonSerializer = jsonSerializer;
         _ser.PutVString(@namespace);
     }
@@ -52,6 +64,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Where(string index, Condition condition, object keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         Type t = keys.GetType();
         List<object> keysList = [];
         if (t.IsArray)
@@ -85,6 +102,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereBetweenFields(string firstField, Condition condition, string secondField)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([firstField, condition, secondField]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.BetweenFieldsCondition);
         _ser.PutVarCUInt((int)_nextOp);
         _ser.PutVString(firstField);
@@ -97,6 +119,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     public IQueryBuilder OpenBracket()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
         _ser.PutVarCUInt((int)Bindings.Query.OpenBracket);
         _ser.PutVarCUInt((int)_nextOp);
         _nextOp = Bindings.Op.And;
@@ -107,6 +133,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     public IQueryBuilder CloseBracket()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         if (_nextOp != Bindings.Op.And)
         {
             throw new ReindexerNetException("Operation before close bracket");
@@ -166,6 +197,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Where(Action<IQueryBuilder> filterQuery)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([filterQuery]);
+        }
+
         OpenBracket();
 
         filterQuery(this);
@@ -177,6 +213,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereInt(string index, Condition condition, params int[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -195,6 +236,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereInt32(string index, Condition condition, params int[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -213,6 +259,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereInt64(string index, Condition condition, params long[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -231,6 +282,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereString(string index, Condition condition, params string[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -249,6 +305,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereUuid(string index, Condition condition, params string[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -275,6 +336,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -305,6 +371,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereBool(string index, Condition condition, params bool[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -323,6 +394,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WhereDouble(string index, Condition condition, params double[] keys)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, keys]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -341,6 +417,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder DWithin(string index, (double start, double end) point, double distance)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, point, distance]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Condition);
         _ser.PutVString(index);
         _ser.PutVarCUInt((int)_nextOp);
@@ -360,6 +441,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder AggregateSum(string field)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Sum);
         _ser.PutVarCUInt(1);
@@ -370,6 +456,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder AggregateAvg(string field)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Avg);
         _ser.PutVarCUInt(1);
@@ -380,6 +471,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder AggregateMin(string field)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Min);
         _ser.PutVarCUInt(1);
@@ -390,6 +486,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder AggregateMax(string field)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Max);
         _ser.PutVarCUInt(1);
@@ -408,6 +509,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
         public IAggregateFacetRequest Limit(int limit)
         {
+            if (Debugger.IsAttached)
+            {
+                query.AddToDebugView([limit], action: "Facet.Limit");
+            }
             query._ser.PutVarCUInt((int)Bindings.Query.AggregationLimit);
             query._ser.PutVarCUInt(limit);
             return this;
@@ -415,6 +520,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
         public IAggregateFacetRequest Offset(int offset)
         {
+            if (Debugger.IsAttached)
+            {
+                query.AddToDebugView([offset], action: "Facet.Offset");
+            }
             query._ser.PutVarCUInt((int)Bindings.Query.AggregationOffset);
             query._ser.PutVarCUInt(offset);
             return this;
@@ -422,6 +531,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
         public IAggregateFacetRequest Sort(string field, bool desc)
         {
+            if (Debugger.IsAttached)
+            {
+                query.AddToDebugView([field, desc], action: "Facet.Sort");
+            }
             query._ser.PutVarCUInt((int)Bindings.Query.AggregationSort);
             query._ser.PutVString(field);
             if (desc)
@@ -439,6 +552,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder AggregateFacet(Action<IAggregateFacetRequest> aggFacetQuery, params string[] fields)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([fields]);
+        }
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Facet);
         _ser.PutVarCUInt(fields.Length);
@@ -453,6 +570,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Sort(string sortIndex, bool desc, params object[] values)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([sortIndex, desc, values]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.SortIndex);
         _ser.PutVString(sortIndex);
         if (desc)
@@ -474,6 +596,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder SortStPointDistance(string field, (double X, double Y) p, bool desc)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field, p, desc]);
+        }
+
         var sb = new StringBuilder();
         sb.Append("ST_Distance(")
           .Append(field)
@@ -490,6 +617,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder SortStFieldDistance(string field1, string field2, bool desc)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([field1, field2, desc]);
+        }
+
         var sb = new StringBuilder();
         sb.Append("ST_Distance(")
           .Append(field1)
@@ -502,6 +634,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder And()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         _nextOp = Bindings.Op.And;
         return this;
     }
@@ -509,6 +646,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Or()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         _nextOp = Bindings.Op.Or;
         return this;
     }
@@ -516,6 +658,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Not()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         _nextOp = Bindings.Op.Not;
         return this;
     }
@@ -523,6 +670,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Distinct(string distinctIndex)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([distinctIndex]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Aggregation);
         _ser.PutVarCUInt((int)Bindings.Agg.Distinct);
         _ser.PutVarCUInt(1);
@@ -533,6 +685,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder ReqTotal(params string[] totalNames)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([totalNames]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.ReqTotal);
         _ser.PutVarCUInt((int)Bindings.TotalMode.AccurateTotal);
         if (totalNames.Length != 0)
@@ -545,6 +702,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder CachedTotal(params string[] totalNames)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([totalNames]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.ReqTotal);
         _ser.PutVarCUInt((int)Bindings.TotalMode.CachedTotal);
         if (totalNames.Length != 0)
@@ -557,6 +719,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Limit(int limitItems)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([limitItems]);
+        }
+
         if (limitItems > Bindings.CInt32Max)
         {
             limitItems = Bindings.CInt32Max;
@@ -569,6 +736,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Offset(int startOffset)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([startOffset]);
+        }
+
         if (startOffset > Bindings.CInt32Max)
         {
             startOffset = Bindings.CInt32Max;
@@ -580,6 +752,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     public IQueryBuilder Debug(int level)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([level]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.DebugLevel);
         _ser.PutVarCUInt(level);
         return this;
@@ -588,6 +765,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Strict(QueryStrictMode mode)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([mode]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.StrictMode);
         _ser.PutVarCUInt((int)mode);
         return this;
@@ -596,6 +778,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Explain()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.Explain);
         return this;
     }
@@ -603,6 +790,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder WithRank()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.WithRank);
         return this;
     }
@@ -807,6 +999,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder InnerJoin(string otherNamespace, Action<IQueryBuilder> otherQuery, string field)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([otherNamespace, otherQuery, field]);
+        }
+
         var otherQueryBuilder = new CJsonQueryBuilder(_jsonSerializer, otherNamespace);
         otherQuery(otherQueryBuilder);
         if (_nextOp == Bindings.Op.Or)
@@ -825,7 +1022,12 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     /// <inheritdoc/>
     public IQueryBuilder LeftJoin(string otherNamespace, Action<IQueryBuilder> otherQuery, string field)
-    {
+    {        
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([otherNamespace, otherQuery, field]);
+        }
+
         var otherQueryBuilder = new CJsonQueryBuilder(_jsonSerializer, otherNamespace);
         otherQuery(otherQueryBuilder);
         return join(otherQueryBuilder, field, Bindings.JoinType.LeftJoin);
@@ -833,7 +1035,12 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     /// <inheritdoc/>
     public IQueryBuilder Merge(string otherNamespace, Action<IQueryBuilder> otherQuery)
-    {
+    {       
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([otherNamespace, otherQuery]);
+        }
+
         var otherQueryBuilder = new CJsonQueryBuilder(_jsonSerializer, otherNamespace);
         otherQuery(otherQueryBuilder);
         var query = this;
@@ -852,7 +1059,12 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
 
     /// <inheritdoc/>
     public IQueryBuilder On(string index, Condition condition, string joinIndex)
-    {
+    {   
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([index, condition, joinIndex]);
+        }
+
         if (_closed)
         {
             panicTrace("this.On call on already closed this. You should create new Query");
@@ -873,6 +1085,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Select(params string[] fields)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([fields]);
+        }
+
         foreach (string field in fields)
         {
             _ser.PutVarCUInt((int)Bindings.Query.SelectFilter);
@@ -884,6 +1101,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder Functions(params string[] fields)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([fields]);
+        }
+
         foreach (string field in fields)
         {
             _ser.PutVarCUInt((int)Bindings.Query.SelectFunction);
@@ -895,6 +1117,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public IQueryBuilder EqualPosition(params string[] fields)
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([fields]);
+        }
+
         _ser.PutVarCUInt((int)Bindings.Query.EqualPosition);
         if (_opennedBrackets.Count == 0)
         {
@@ -915,6 +1142,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <inheritdoc/>
     public ReadOnlySpan<byte> CloseQuery()
     {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([]);
+        }
+
         //var ns = db.GetNS(q.Namespace);
         //if (ns != null)
         //{
@@ -1009,5 +1241,27 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     {
         _ser.Dispose();
     }
+
+    private List<(string Action, Dictionary<string, object> Parameters)> _debugView = [];
+#if NET5_0_OR_GREATER
+    private void AddToDebugView(object[] parameters, [CallerMemberName] string action = null, [CallerArgumentExpression(nameof(parameters))] string parameterExpression = null)
+    {
+        _debugView.Add((action, parameterExpression.TrimStart('[').TrimEnd(']').Split(",").Zip(parameters).ToDictionary(z => z.First, z => z.Second)));
+    }
+
+#else
+    private void AddToDebugView(object[] parameters, [CallerMemberName]string action = null)
+    {
+        _debugView.Add((action, parameters.Select((p,i) => (p,i)).ToDictionary(kv => kv.i.ToString(), kv => kv.p)));
+    }
+#endif
+
+    private sealed class CJsonQueryBuilderDebugTypeProxy(CJsonQueryBuilder cJsonQueryBuilder)
+    {
+        private readonly CJsonQueryBuilder cJsonQueryBuilder = cJsonQueryBuilder;
+
+        public List<(string Action, Dictionary<string, object> Parameters)> QueryAfterDebuggerAttached => cJsonQueryBuilder._debugView;
+    }
 }
+
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
