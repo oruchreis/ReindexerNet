@@ -993,7 +993,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         q2._joinType = joinType;
         q2._root = query;
         _joinQueries.Add(q2);
-        return this;
+        return q2;
     }
 
     /// <inheritdoc/>
