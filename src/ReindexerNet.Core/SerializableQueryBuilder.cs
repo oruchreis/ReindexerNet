@@ -236,7 +236,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
                 Filters = otherQueryBuilder._query.Filters,
                 Limit = otherQueryBuilder._query.Limit,
                 Offset = otherQueryBuilder._query.Offset,
-                Sort = otherQueryBuilder._query.Sort.FirstOrDefault(),
+                Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
                 Type = GetJsonJoinType(joinType),
                 On = otherQueryBuilder._onDefs
             }
@@ -266,7 +266,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
                 Filters = otherQueryBuilder._query.Filters,
                 Limit = otherQueryBuilder._query.Limit,
                 Offset = otherQueryBuilder._query.Offset,
-                Sort = otherQueryBuilder._query.Sort.FirstOrDefault(),
+                Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
                 Type = GetJsonJoinType(Bindings.JoinType.LeftJoin),
                 On = otherQueryBuilder._onDefs
             }

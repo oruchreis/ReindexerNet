@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace ReindexerNet.CoreTest;
@@ -385,5 +386,11 @@ public abstract class BaseTest<TClient>
         Assert.AreEqual(1, aggregateFacetQuery.Aggregations.Count(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])));
         Assert.AreEqual(2, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.Count);
         CollectionAssert.AreEquivalent(new string[]{ "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
+
+        var joinQuery = await Client.ExecuteAsync<TestDocument>(NsName, 
+            q => q.Limit(10).LeftJoin(NsName, j => j.Limit(1), "JoinedByGroup").On(nameof(TestDocument.Group), Condition.EQ, nameof(TestDocument.Group))
+            );
+        Assert.AreEqual(10, joinQuery.QueryTotalItems);
+
     }
 }
