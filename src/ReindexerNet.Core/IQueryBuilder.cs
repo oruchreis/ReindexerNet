@@ -190,6 +190,13 @@ public interface IQueryBuilder : IDisposable
     /// <returns></returns>
     IQueryBuilder Sort(string sortIndex, bool desc, params object[] values);
     /// <summary>
+    /// Apply sort order to returned from query items.
+    /// </summary>
+    /// <param name="sortIndex"></param>
+    /// <param name="desc"></param>
+    /// <returns></returns>
+    IQueryBuilder Sort(string sortIndex, bool desc);
+    /// <summary>
     /// wrapper for geometry sorting by shortes distance between 2 geometry fields (ST_Distance)
     /// </summary>
     /// <param name="field1"></param>

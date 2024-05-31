@@ -353,6 +353,15 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
         _query.Sort.Add(new SortDef { Field = sortIndex, Desc = desc, Values = new(values) });
         return this;
     }
+    
+    /// <inheritdoc/>
+    public IQueryBuilder Sort(string sortIndex, bool desc)
+    {
+        _query.Sort ??= [];
+        _query.Sort.Add(new SortDef { Field = sortIndex, Desc = desc });
+        return this;
+    }
+    
     /// <inheritdoc/>
 
     public IQueryBuilder SortStFieldDistance(string field1, string field2, bool desc)

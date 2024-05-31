@@ -592,6 +592,27 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         }
         return this;
     }
+    
+    /// <inheritdoc/>
+    public IQueryBuilder Sort(string sortIndex, bool desc)
+    {
+        if (Debugger.IsAttached)
+        {
+            AddToDebugView([sortIndex, desc]);
+        }
+
+        _ser.PutVarCUInt((int)Bindings.Query.SortIndex);
+        _ser.PutVString(sortIndex);
+        if (desc)
+        {
+            _ser.PutVarUInt(1);
+        }
+        else
+        {
+            _ser.PutVarUInt(0);
+        }
+        return this;
+    }
 
     /// <inheritdoc/>
     public IQueryBuilder SortStPointDistance(string field, (double X, double Y) p, bool desc)
