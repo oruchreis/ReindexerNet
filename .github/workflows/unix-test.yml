@@ -32,7 +32,7 @@ jobs:
             shell: alpine.sh --root
             rid: linux-musl-x64
           - name: osx
-            runs-on: 'macos-latest'
+            runs-on: 'macos-13'
             shell: bash -e
             rid: osx-x64
     steps:
