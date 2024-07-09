@@ -20,7 +20,7 @@
 		<PackageReference Include="System.Text.Json" Version="8.0.0" Condition="'$(TargetFramework)'=='net8.0'" />
 		<PackageReference Include="System.Text.Json" Version="7.0.0" Condition="'$(TargetFramework)'=='net7.0'" />
 		<PackageReference Include="System.Text.Json" Version="6.0.0" Condition="'$(TargetFramework)'=='net6.0'" />
-		<PackageReference Include="System.Text.Json" Version="5.0.0" Condition="'$(TargetFramework)'!='net8.0' and '$(TargetFramework)'!='net7.0' and '$(TargetFramework)'!='net6.0'" />
+		<PackageReference Include="System.Text.Json" Version="8.0.4" Condition="'$(TargetFramework)'!='net8.0' and '$(TargetFramework)'!='net7.0' and '$(TargetFramework)'!='net6.0'" />
 	</ItemGroup>
   
 </Project>
