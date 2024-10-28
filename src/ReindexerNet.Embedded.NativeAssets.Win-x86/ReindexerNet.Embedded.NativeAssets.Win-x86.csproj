@@ -7,13 +7,17 @@
     <Title>ReindexerNet.Embedded</Title>
     <Description>Reindexer Embedded library to embed and run in .net projects.</Description>
     <PackageTags>reindexer embedded document-db in-memory</PackageTags>
-    <Version>0.4.5.3200</Version>
-    <AssemblyVersion>0.4.5</AssemblyVersion>
-    <FileVersion>0.4.5</FileVersion>
+    <Version>0.4.7.3290</Version>
+    <AssemblyVersion>0.4.7</AssemblyVersion>
+    <FileVersion>0.4.7</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="runtimes\**\*" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

@@ -325,6 +325,14 @@ public abstract class BaseTest<TClient>
         Assert.AreEqual(2 * 0.125, item.RangeIndex);
         CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
 
+        var singleSortedDocs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000).Sort("Id", false));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.Id < 1000).OrderByDescending(i => i.Id).Select(i => i.Id).ToList(), singleSortedDocs.Items.Select(i => i.Id).ToList());
+
+        var multiSortedDocs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000).Sort("Group", false).Sort("Id", false));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.Id < 1000).OrderByDescending(i => i.Group).ThenByDescending(i => i.Id).Select(i => i.Id).ToList(), multiSortedDocs.Items.Select(i => i.Id).ToList());
+
         var arrayItems = Enumerable.Range(0, 500).Select(i => $"..{i}..").ToArray();
         var arrayContainsDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereString("ArrayIndex", Condition.ALLSET, arrayItems));
@@ -371,28 +379,37 @@ public abstract class BaseTest<TClient>
         Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "sum"));
         Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "avg"));
         Assert.AreEqual(docs.Items.Select(e => e.Group).Sum(), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "sum").Value);
-        Assert.AreEqual(((decimal)docs.Items.Select(e => e.Group).Sum()/docs.Items.Count).ToString("0.####"), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "avg").Value.Value.ToString("0.####"));
+        Assert.AreEqual(((decimal)docs.Items.Select(e => e.Group).Sum() / docs.Items.Count).ToString("0.####"), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "avg").Value.Value.ToString("0.####"));
 
         var aggregateDistictQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.Distinct("Group"));
         Assert.AreEqual(1, aggregateDistictQuery.Aggregations.Count(ag => ag.Type == "distinct"));
-        CollectionAssert.AreEquivalent(new string[]{ "0", "1", "2" }, aggregateDistictQuery.Aggregations.First(ag => ag.Type == "distinct").Distincts);
+        CollectionAssert.AreEquivalent(new string[] { "0", "1", "2" }, aggregateDistictQuery.Aggregations.First(ag => ag.Type == "distinct").Distincts);
 
 
         var aggregateFacetQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q
-                .WhereString("ArrayIndex", Condition.SET, Enumerable.Range(1,100).Select(i => $"..{i}..").ToArray())
-                .AggregateFacet(fq => 
+                .WhereString("ArrayIndex", Condition.SET, Enumerable.Range(1, 100).Select(i => $"..{i}..").ToArray())
+                .AggregateFacet(fq =>
                 fq.Sort("Group", true).Limit(2),
                 "Group"));
         Assert.AreEqual(1, aggregateFacetQuery.Aggregations.Count(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])));
         Assert.AreEqual(2, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.Count);
-        CollectionAssert.AreEquivalent(new string[]{ "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
+        CollectionAssert.AreEquivalent(new string[] { "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
 
-        var joinQuery = await Client.ExecuteAsync<TestDocument>(NsName, 
+        var joinQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.Limit(10).LeftJoin(NsName, j => j.Limit(1), "JoinedByGroup").On(nameof(TestDocument.Group), Condition.EQ, nameof(TestDocument.Group))
             );
         Assert.AreEqual(10, joinQuery.QueryTotalItems);
 
+
+        var aggregateMultipleWhereQuery = await Client.ExecuteAsync<TestDocument>(NsName, 
+            q => q
+                .Where(q1 => q1.WhereString("ArrayIndex", Condition.SET, Enumerable.Range(1, 100).Select(i => $"..{i}..").ToArray()))
+                .Where(q2 => q2.WhereDouble("RangeIndex", Condition.GT, 50))
+                .AggregateFacet(fq =>
+                    fq.Sort("Group", true).Limit(2),
+                    "Group"));
+        
     }
 }
