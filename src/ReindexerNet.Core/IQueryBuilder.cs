@@ -181,7 +181,7 @@ public interface IQueryBuilder : IDisposable
     /// <summary>
     /// Apply sort order to returned from query items.
     /// If values argument specified, then items equal to values, if found will be placed in the top positions.
-    /// For composite indexes values must be []interface{}, with value of each subindex.
+    /// For composite indexes values must be object[], with value of each subindex.
     /// Forced sort is support for the first sorting field only
     /// </summary>
     /// <param name="sortIndex"></param>
@@ -189,13 +189,6 @@ public interface IQueryBuilder : IDisposable
     /// <param name="values"></param>
     /// <returns></returns>
     IQueryBuilder Sort(string sortIndex, bool desc, params object[] values);
-    /// <summary>
-    /// Apply sort order to returned from query items.
-    /// </summary>
-    /// <param name="sortIndex"></param>
-    /// <param name="desc"></param>
-    /// <returns></returns>
-    IQueryBuilder Sort(string sortIndex, bool desc);
     /// <summary>
     /// wrapper for geometry sorting by shortes distance between 2 geometry fields (ST_Distance)
     /// </summary>

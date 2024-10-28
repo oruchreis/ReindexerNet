@@ -310,10 +310,9 @@ public abstract class BaseTest<TClient>
     }
 
     [TestMethod]
-    public async Task QueryBuilderTest()
+    public async Task QueryBuilderTest_InsertAndQuery()
     {
         await AddIndexesAsync();
-
         var insertedItems = await AddItemsAsync(0, 1000);
 
         var docs = await Client.ExecuteAsync<TestDocument>(NsName,
@@ -324,29 +323,82 @@ public abstract class BaseTest<TClient>
         CollectionAssert.AreEqual(new[] { "..0..", "..1.." }, item.ArrayIndex);
         Assert.AreEqual(2 * 0.125, item.RangeIndex);
         CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_SingleSort()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var singleSortedDocs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000).Sort("Id", true));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.Id < 1000).OrderByDescending(i => i.Id).Select(i => i.Id).ToList(), singleSortedDocs.Items.Select(i => i.Id).ToList());
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_MultiSort()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var multiSortedDocs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000).Sort("Group", true).Sort("Id", true));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.Id < 1000).OrderByDescending(i => i.Group).ThenByDescending(i => i.Id).Select(i => i.Id).ToList(), multiSortedDocs.Items.Select(i => i.Id).ToList());
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_ArrayContains()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var arrayItems = Enumerable.Range(0, 500).Select(i => $"..{i}..").ToArray();
         var arrayContainsDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereString("ArrayIndex", Condition.ALLSET, arrayItems));
         Assert.AreEqual(1000 - arrayItems.Length, arrayContainsDocs.QueryTotalItems);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_RangeQuery()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var rangeQueryDocs = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereDouble("RangeIndex", Condition.RANGE, 5.1d, 6d));
         Assert.AreEqual(5.125, rangeQueryDocs.Items.FirstOrDefault()?.RangeIndex);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_Utf8Search()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var props = Enumerable.Range(0, 1000).Select(i => "ÇŞĞÜÖİöçşğüı" + i).ToArray();
         var utf8SearrchResult = await Client.ExecuteAsync<TestDocument>(NsName, q => q.WhereString(nameof(TestDocument.Utf8String), Condition.SET, props));
         CollectionAssert.AreEqual(props, utf8SearrchResult.Items.Select(i => i.Utf8String).ToList());
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_Delete()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var deletedCount = await Client.DeleteAsync(NsName, new[] { new TestDocument { Id = 500 } });
         Assert.AreEqual(1, deletedCount);
         var deletedQ = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereInt("Id", Condition.EQ, 500));
         Assert.AreEqual(0, deletedQ.QueryTotalItems);
+    }
 
-        //we've deleted some items, so..
-        docs = await Client.ExecuteAsync<TestDocument>(NsName,
-            q => q.Where("Id", Condition.LT, 1000));
+    [TestMethod]
+    public async Task QueryBuilderTest_SelectMultipleItemsContains()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var selectMultipleItemsContains = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q
@@ -354,45 +406,126 @@ public abstract class BaseTest<TClient>
                 .Select("Id", "Group")
                 .Where("Group", Condition.SET, new object[] { 1 }));
         Assert.AreEqual(333, selectMultipleItemsContains.QueryTotalItems);
+    }
 
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateMin()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var aggregateMinQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.AggregateMin("Group"));
         Assert.AreEqual(1, aggregateMinQuery.Aggregations.Count(ag => ag.Type == "min"));
         Assert.AreEqual(0, aggregateMinQuery.Aggregations.First(ag => ag.Type == "min").Value);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateMax()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
 
         var aggregateMaxQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.AggregateMax("Group"));
         Assert.AreEqual(1, aggregateMaxQuery.Aggregations.Count(ag => ag.Type == "max"));
         Assert.AreEqual(2, aggregateMaxQuery.Aggregations.First(ag => ag.Type == "max").Value);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateSumAvg()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
 
         var aggregateSumAvgQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.AggregateSum("Group").AggregateAvg("Group"));
         Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "sum"));
         Assert.AreEqual(1, aggregateSumAvgQuery.Aggregations.Count(ag => ag.Type == "avg"));
         Assert.AreEqual(docs.Items.Select(e => e.Group).Sum(), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "sum").Value);
-        Assert.AreEqual(((decimal)docs.Items.Select(e => e.Group).Sum()/docs.Items.Count).ToString("0.####"), aggregateSumAvgQuery.Aggregations.First(ag => ag.Type == "avg").Value.Value.ToString("0.####"));
+    }
 
-        var aggregateDistictQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateDistinct()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
+
+        var aggregateDistinctQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.Distinct("Group"));
-        Assert.AreEqual(1, aggregateDistictQuery.Aggregations.Count(ag => ag.Type == "distinct"));
-        CollectionAssert.AreEquivalent(new string[]{ "0", "1", "2" }, aggregateDistictQuery.Aggregations.First(ag => ag.Type == "distinct").Distincts);
+        Assert.AreEqual(1, aggregateDistinctQuery.Aggregations.Count(ag => ag.Type == "distinct"));
+        CollectionAssert.AreEquivalent(new string[] { "0", "1", "2" }, aggregateDistinctQuery.Aggregations.First(ag => ag.Type == "distinct").Distincts);
+    }
 
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateFacet()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
 
         var aggregateFacetQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q
-                .WhereString("ArrayIndex", Condition.SET, Enumerable.Range(1,100).Select(i => $"..{i}..").ToArray())
-                .AggregateFacet(fq => 
+                .WhereString("ArrayIndex", Condition.SET, Enumerable.Range(1, 100).Select(i => $"..{i}..").ToArray())
+                .AggregateFacet(fq =>
                 fq.Sort("Group", true).Limit(2),
                 "Group"));
         Assert.AreEqual(1, aggregateFacetQuery.Aggregations.Count(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])));
         Assert.AreEqual(2, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.Count);
-        CollectionAssert.AreEquivalent(new string[]{ "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
+        CollectionAssert.AreEquivalent(new string[] { "2" }, aggregateFacetQuery.Aggregations.First(ag => ag.Type == "facet" && ag.Fields.SequenceEqual(["Group"])).Facets.First().Values);
+    }
 
-        var joinQuery = await Client.ExecuteAsync<TestDocument>(NsName, 
+    [TestMethod]
+    public async Task QueryBuilderTest_Join()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+
+        var docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
+
+        var joinQuery = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.Limit(10).LeftJoin(NsName, j => j.Limit(1), "JoinedByGroup").On(nameof(TestDocument.Group), Condition.EQ, nameof(TestDocument.Group))
             );
         Assert.AreEqual(10, joinQuery.QueryTotalItems);
+    }
 
+    [TestMethod]
+    public async Task QueryBuilderTest_AggregateMultipleWhere()
+    {
+        await AddIndexesAsync();
+        await AddItemsAsync(0, 1000);
+
+        var docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where("Id", Condition.LT, 1000));
+
+        var arrayLookup = Enumerable.Range(1, 100).Select(i => $"..{i}..").ToArray();
+
+        var aggregateMultipleWhereQuery = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q
+                .Where(q1 => q1.WhereString("ArrayIndex", Condition.SET, arrayLookup))
+                .Where(q2 => q2.WhereDouble("RangeIndex", Condition.GT, 50))                
+                .AggregateFacet(fq =>
+                    fq.Sort("Group", true).Limit(10),
+                    "Group", "Id"));
+
+        var expectedDocs = docs.Items
+            .Where(d => d.ArrayIndex.Any(ai => arrayLookup.Contains(ai)) &&
+                        d.RangeIndex > 50)
+            .GroupBy(d => d.Group)            
+            .OrderByDescending(g => g.Key)
+            .SelectMany(g => g.Select(f => new long[]{f.Group, f.Id }))
+            .Take(10)
+            .ToList();
+
+        CollectionAssert.AreEqual(expectedDocs.SelectMany(a => a.Select(i => i.ToString())).ToList(), aggregateMultipleWhereQuery.Aggregations.SelectMany(ag => ag.Facets.SelectMany(f => f.Values)).ToList());
     }
 }

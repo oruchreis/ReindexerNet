@@ -350,15 +350,7 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     public IQueryBuilder Sort(string sortIndex, bool desc, params object[] values)
     {
         _query.Sort ??= [];
-        _query.Sort.Add(new SortDef { Field = sortIndex, Desc = desc, Values = new(values) });
-        return this;
-    }
-    
-    /// <inheritdoc/>
-    public IQueryBuilder Sort(string sortIndex, bool desc)
-    {
-        _query.Sort ??= [];
-        _query.Sort.Add(new SortDef { Field = sortIndex, Desc = desc });
+        _query.Sort.Add(new SortDef { Field = sortIndex, Desc = desc, Values = values.Length > 0 ? [.. values] : null });
         return this;
     }
     
