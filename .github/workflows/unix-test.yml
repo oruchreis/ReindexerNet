@@ -1,14 +1,8 @@
 name: Unix Test
 
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - 'src/**.csproj'
-      - 'src/**.cs'
-      - 'src/**.so'
-      - 'src/**.dylib'
-      - '.github/workflows/unix-test.yml'
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   ubuntu-test:

@@ -5,18 +5,22 @@ on:
     branches: [ master ]
     paths:
       - 'src/**.csproj'
-      - '.github/workflows/build.yml'
-  workflow_run:
-    workflows: 
-      - 'Windows Test'
-      - 'Unix Test'
-    branches: [ master ]
-    types: 
-      - completed
+      - 'src/**.cs'
+      - 'src/**.dll'      
+      - 'src/**.so'
+      - 'src/**.dylib'
+      - '.github/workflows/windows-test.yml'
+      - '.github/workflows/unix-test.yml'
 
 jobs:  
+  windows-test:
+    uses: ./.github/workflows/windows-test.yml
+
+  unix-test:
+    uses: ./.github/workflows/unix-test.yml
+
   upload-packages:  
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: [windows-test, unix-test]
     runs-on: windows-2022
     strategy:
       matrix:
@@ -31,6 +35,8 @@ jobs:
         - 'Embedded.NativeAssets.AlpineLinux-x64'
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.workflow_run.head_branch }}
     - name: Caching
       uses: actions/cache@v2
       with:
