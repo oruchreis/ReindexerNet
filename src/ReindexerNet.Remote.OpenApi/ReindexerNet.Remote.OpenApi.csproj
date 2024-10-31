@@ -7,9 +7,9 @@
 		<Title>ReindexerNet.Remote.OpenApi</Title>
 		<Description>Reindexer open api library to connect to a standalone reindexer server.</Description>
 		<PackageTags>reindexer openapi embedded document-db in-memory</PackageTags>
-		<Version>0.4.7.3032</Version>
-		<AssemblyVersion>0.4.7</AssemblyVersion>
-		<FileVersion>0.4.7</FileVersion>
+		<Version>0.4.8.3032</Version>
+		<AssemblyVersion>0.4.8</AssemblyVersion>
+		<FileVersion>0.4.8</FileVersion>
 		
 		<!-- Persist the source generator (and other) files to disk-->
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>

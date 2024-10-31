@@ -47,13 +47,13 @@ public class SelectMultiplePK : SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var result = new List<object?>();
-        result.Add(CaDSCompressed.Where(e => SearchIds.Contains(e.Id)).AsEnumerable().CaptureResult());
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var result = new List<object?>();
+    //    result.Add(CaDSCompressed.Where(e => SearchIds.Contains(e.Id)).AsEnumerable().CaptureResult());
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

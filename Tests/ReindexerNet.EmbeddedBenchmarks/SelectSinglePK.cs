@@ -67,17 +67,17 @@ public class SelectSinglePK: SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var result = new List<object?>();
-        for (int i = 0; i < N; i++)
-        {
-            var id = Data[i].Id;
-            result.Add(CaDSCompressed[id].CaptureResult());
-        }
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var result = new List<object?>();
+    //    for (int i = 0; i < N; i++)
+    //    {
+    //        var id = Data[i].Id;
+    //        result.Add(CaDSCompressed[id].CaptureResult());
+    //    }
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

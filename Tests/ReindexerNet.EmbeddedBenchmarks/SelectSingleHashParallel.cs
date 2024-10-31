@@ -67,17 +67,17 @@ public class SelectSingleHashParallel : SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public ConcurrentBag<object?> CachalotCompressed()
-    {
-        var result = new ConcurrentBag<object?>();
-        Parallel.For(0, N, i =>
-        {
-            var str = Data[i].StringProperty;
-            result.Add(CaDSCompressed.FirstOrDefault(e => e.StringProperty == str).CaptureResult());
-        });
-        return result;
-    }
+    //[Benchmark]
+    //public ConcurrentBag<object?> CachalotCompressed()
+    //{
+    //    var result = new ConcurrentBag<object?>();
+    //    Parallel.For(0, N, i =>
+    //    {
+    //        var str = Data[i].StringProperty;
+    //        result.Add(CaDSCompressed.FirstOrDefault(e => e.StringProperty == str).CaptureResult());
+    //    });
+    //    return result;
+    //}
 
     [Benchmark]
     public ConcurrentBag<object?> LiteDb()

@@ -26,22 +26,27 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
         DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbedded", TestContext.TestName, Storage.ToString());
         if (Directory.Exists(DbPath))
             Directory.Delete(DbPath, true);
+        DebugHelper.Log("Initializing RX..");
         Client = new ReindexerEmbedded(DbPath);
         ReindexerEmbedded.EnableLogger(Log);
+        DebugHelper.Log("Connecting RX..");
         await Client.ConnectAsync(new ConnectionOptions { Engine = Storage });
+        DebugHelper.Log($"Opening {NsName} namespace..");
         await Client.OpenNamespaceAsync(NsName);
+        DebugHelper.Log($"Truncating {NsName} namespace..");
         await Client.TruncateNamespaceAsync(NsName);
     }
 
     protected void Log(LogLevel level, string msg)
     {
         if (level <= LogLevel.Info)
-            DebugHelper.Log($"[{level}] {msg}");
+            DebugHelper.Log($"[RX {level}] {msg}");
     }
 
     [TestCleanup]
     public virtual void Cleanup()
     {
+        DebugHelper.Log($"Disposing RX..");
         Client?.Dispose();
         if (Directory.Exists(DbPath))
             Directory.Delete(DbPath, true);

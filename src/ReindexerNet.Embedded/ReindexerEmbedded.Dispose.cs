@@ -1,4 +1,5 @@
 ﻿using ReindexerNet.Embedded.Internal;
+using ReindexerNet.Embedded.Internal.Helpers;
 using System;
 using System.Threading.Tasks;
 
@@ -13,16 +14,20 @@ namespace ReindexerNet.Embedded
         protected internal const string GetNamespacesQuery = "select name FROM #namespaces where storage.enabled = true and not name like '#%'";
         /// <inheritdoc/>
         protected virtual void Dispose(bool disposing)
-        {
+        {            
             if (!disposedValue)
             {
                 if (disposing && Rx != default)
                 {
-                    foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
+                    DebugHelper.Log("Stopping reindexer...");
+                    Parallel.ForEach(ExecuteSql<Namespace>(GetNamespacesQuery).Items, ns =>
+                    {
                         CloseNamespace(ns.Name);
+                    });
 
                     if (Rx != default)
                         ReindexerBinding.destroy_reindexer(Rx);
+                    DebugHelper.Log("Reindexer stopped...");
                 }
 
                 Rx = default;

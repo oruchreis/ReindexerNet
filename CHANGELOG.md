@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2024-10-31
+### Changed
+- Optimized Reindexer Embedded native libraries for performance.
+- Default values of AutoRepair and DisableReplication (ConnectionOptions) are now true for embedded client.
+- Namespace closure in Dispose and Stop methods converted to parallel operation.
+- Updated benchmark tests.
+
 ## [0.4.7] - 2024-10-29
 ### Added
 - More tests

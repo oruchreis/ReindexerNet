@@ -64,17 +64,17 @@ public class SelectArraySingle: SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var nstr = N.ToString();
-        var result = new List<object?>
-        {
-            CaDSCompressed.Where(e => e.IntArray.Contains(N)).AsEnumerable().CaptureResult(),
-            CaDSCompressed.Where(e => e.StrArray.Contains(nstr)).AsEnumerable().CaptureResult(),
-        };
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var nstr = N.ToString();
+    //    var result = new List<object?>
+    //    {
+    //        CaDSCompressed.Where(e => e.IntArray.Contains(N)).AsEnumerable().CaptureResult(),
+    //        CaDSCompressed.Where(e => e.StrArray.Contains(nstr)).AsEnumerable().CaptureResult(),
+    //    };
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()
@@ -82,8 +82,8 @@ public class SelectArraySingle: SelectBenchmarkBase
         var nstr = N.ToString();
         var result = new List<object?>
         {
-            LiteColl.Query().Where(e => e.IntArray.Contains(N)).ToEnumerable().CaptureResult(),
-            LiteColl.Query().Where(e => e.StrArray.Contains(nstr)).ToEnumerable().CaptureResult(),
+            LiteColl.Query().Where(e => e.IntArray.Contains(N)).CaptureResult(),
+            LiteColl.Query().Where(e => e.StrArray.Contains(nstr)).CaptureResult(),
         };
         return result;
     }
@@ -94,8 +94,8 @@ public class SelectArraySingle: SelectBenchmarkBase
         var nstr = N.ToString();
         var result = new List<object?>
         {
-            LiteCollMemory.Query().Where(e => e.IntArray.Contains(N)).ToEnumerable().CaptureResult(),
-            LiteCollMemory.Query().Where(e => e.StrArray.Contains(nstr)).ToEnumerable().CaptureResult(),
+            LiteCollMemory.Query().Where(e => e.IntArray.Contains(N)).CaptureResult(),
+            LiteCollMemory.Query().Where(e => e.StrArray.Contains(nstr)).CaptureResult(),
         };
         return result;
     }
@@ -103,10 +103,11 @@ public class SelectArraySingle: SelectBenchmarkBase
     [Benchmark]
     public IList<object?> Realm()
     {
+        var nstr = N.ToString();
         var result = new List<object?>
         {
-            RealmCli.All<BenchmarkRealmEntity>().Filter("ANY IntArray.@values == $0", N).CaptureResult(),
-            RealmCli.All<BenchmarkRealmEntity>().Filter("ANY StrArray.@values == $0", N.ToString()).CaptureResult()
+            RealmCli.All<BenchmarkRealmEntity>().Filter("ANY IntArray == $0", N).CaptureResult(),
+            RealmCli.All<BenchmarkRealmEntity>().Filter("ANY StrArray == $0", N.ToString()).CaptureResult()
         };
        
         return result;

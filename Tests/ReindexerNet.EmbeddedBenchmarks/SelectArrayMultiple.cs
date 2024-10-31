@@ -72,28 +72,28 @@ public class SelectArrayMultiple : SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var result = new List<object?>
-        {
-            CaDSCompressed.Where(IntAnyQuery).AsEnumerable().CaptureResult(),
-            CaDSCompressed.Where(StrAnyQuery).AsEnumerable().CaptureResult(),
-            CaDSCompressed.Where(IntAllQuery).AsEnumerable().CaptureResult(),
-            CaDSCompressed.Where(StrAllQuery).AsEnumerable().CaptureResult()
-        };
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var result = new List<object?>
+    //    {
+    //        CaDSCompressed.Where(IntAnyQuery).AsEnumerable().CaptureResult(),
+    //        CaDSCompressed.Where(StrAnyQuery).AsEnumerable().CaptureResult(),
+    //        CaDSCompressed.Where(IntAllQuery).AsEnumerable().CaptureResult(),
+    //        CaDSCompressed.Where(StrAllQuery).AsEnumerable().CaptureResult()
+    //    };
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()
     {
         var result = new List<object?>
         {
-            LiteColl.Query().Where(IntAnyQuery).ToEnumerable().CaptureResult(),
-            LiteColl.Query().Where(StrAnyQuery).ToEnumerable().CaptureResult(),
-            LiteColl.Query().Where(IntAllQuery).ToEnumerable().CaptureResult(),
-            LiteColl.Query().Where(StrAllQuery).ToEnumerable().CaptureResult()
+            LiteColl.Query().Where(IntAnyQuery).CaptureResult(),
+            LiteColl.Query().Where(StrAnyQuery).CaptureResult(),
+            LiteColl.Query().Where(IntAllQuery).CaptureResult(),
+            LiteColl.Query().Where(StrAllQuery).CaptureResult()
         };
         return result;
     }
@@ -103,10 +103,10 @@ public class SelectArrayMultiple : SelectBenchmarkBase
     {
         var result = new List<object?>
         {
-            LiteCollMemory.Query().Where(IntAnyQuery).ToEnumerable().CaptureResult(),
-            LiteCollMemory.Query().Where(StrAnyQuery).ToEnumerable().CaptureResult(),
-            LiteCollMemory.Query().Where(IntAllQuery).ToEnumerable().CaptureResult(),
-            LiteCollMemory.Query().Where(StrAllQuery).ToEnumerable().CaptureResult()
+            LiteCollMemory.Query().Where(IntAnyQuery).CaptureResult(),
+            LiteCollMemory.Query().Where(StrAnyQuery).CaptureResult(),
+            LiteCollMemory.Query().Where(IntAllQuery).CaptureResult(),
+            LiteCollMemory.Query().Where(StrAllQuery).CaptureResult()
         };
         return result;
     }
@@ -114,15 +114,12 @@ public class SelectArrayMultiple : SelectBenchmarkBase
     [Benchmark]
     public IList<object?> Realm()
     {
-        
-     
-
         var result = new List<object?>
         {
-            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY IntArray.@values IN {{ {SearchItemsIntJoined} }}").CaptureResult(),
-            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY StrArray.@values IN {{ {SearchItemsStrJoined} }}").CaptureResult(),
-            RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL IntArray.@values IN {{ {SearchItemsIntJoined} }}").CaptureResult(),
-            RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL StrArray.@values IN {{ {SearchItemsStrJoined} }}").CaptureResult()
+            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY IntArray IN {{ {SearchItemsIntJoined} }}").CaptureResult(), //.@values
+            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY StrArray IN {{ {SearchItemsStrJoined} }}").CaptureResult(),
+            RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL IntArray IN {{ {SearchItemsIntJoined} }}").CaptureResult(),
+            RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL StrArray IN {{ {SearchItemsStrJoined} }}").CaptureResult()
         };
        
         return result;

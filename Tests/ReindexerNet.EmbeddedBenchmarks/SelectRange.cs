@@ -56,15 +56,15 @@ public class SelectRange: SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var result = new List<object?>();
-        var entity = Data[N / 2];
-        result.Add(CaDSCompressed.Where(e => e.IntProperty < entity.IntProperty).AsEnumerable().CaptureResult());
-        result.Add(CaDSCompressed.Where(e => e.IntProperty >= entity.IntProperty).AsEnumerable().CaptureResult());
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var result = new List<object?>();
+    //    var entity = Data[N / 2];
+    //    result.Add(CaDSCompressed.Where(e => e.IntProperty < entity.IntProperty).AsEnumerable().CaptureResult());
+    //    result.Add(CaDSCompressed.Where(e => e.IntProperty >= entity.IntProperty).AsEnumerable().CaptureResult());
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

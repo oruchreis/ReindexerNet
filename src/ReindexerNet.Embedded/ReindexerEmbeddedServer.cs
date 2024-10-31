@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ReindexerNet.Embedded
 {
@@ -28,7 +29,7 @@ namespace ReindexerNet.Embedded
             _pServer = ReindexerBinding.init_reindexer_server();
         }
 
-        
+
         /// <summary>
         /// Starts Reindexer Embedded Server
         /// </summary>
@@ -50,7 +51,7 @@ namespace ReindexerNet.Embedded
             if (_serverOptions.GrpcAddress == null)
                 _serverOptions.GrpcAddress = "0.0.0.0:16534";
             if (_serverOptions.Storage.Path == null)
-                _serverOptions.Storage.Path = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer");            
+                _serverOptions.Storage.Path = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer");
 
             var dbPath = Path.Combine(_serverOptions.Storage.Path, _serverOptions.DatabaseName);
             if (!Directory.Exists(dbPath))
@@ -135,8 +136,10 @@ namespace ReindexerNet.Embedded
             DebugHelper.Log("Stopping reindexer server...");
             try
             {
-                foreach (var ns in ExecuteSql<Namespace>(GetNamespacesQuery).Items)
+                Parallel.ForEach(ExecuteSql<Namespace>(GetNamespacesQuery).Items, ns =>
+                {
                     CloseNamespace(ns.Name);
+                });
             }
             catch
             { //sometimes server had been stopped before this stop method because of ctrl+c on console or any sigterm signal.

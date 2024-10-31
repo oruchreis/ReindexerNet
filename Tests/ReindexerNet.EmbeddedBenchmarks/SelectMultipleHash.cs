@@ -53,13 +53,13 @@ public class SelectMultipleHash : SelectBenchmarkBase
         return result;
     }
 
-    [Benchmark]
-    public IList<object?> CachalotCompressed()
-    {
-        var result = new List<object?>();
-        result.Add(CaDSCompressed.Where(e => SearchStringProperties.Contains(e.StringProperty)).AsEnumerable().CaptureResult());
-        return result;
-    }
+    //[Benchmark]
+    //public IList<object?> CachalotCompressed()
+    //{
+    //    var result = new List<object?>();
+    //    result.Add(CaDSCompressed.Where(e => SearchStringProperties.Contains(e.StringProperty)).AsEnumerable().CaptureResult());
+    //    return result;
+    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

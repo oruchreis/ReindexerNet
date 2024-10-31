@@ -41,11 +41,11 @@ public class UpsertBenchmark: InsertBenchmark
         base.Cachalot();
     }
     
-    public override void CachalotCompressedSetup()
-    {
-        base.CachalotCompressedSetup();
-        base.CachalotCompressed();
-    }
+    //public override void CachalotCompressedSetup()
+    //{
+    //    base.CachalotCompressedSetup();
+    //    base.CachalotCompressed();
+    //}
 
     public override void CachalotOnlyMemorySetup()
     {
@@ -90,12 +90,12 @@ public class UpsertBenchmark: InsertBenchmark
         entities.PutMany(_data);
     }
 
-    [Benchmark]
-    public override void CachalotCompressed()
-    {
-        var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        entities.PutMany(_data);
-    }
+    //[Benchmark]
+    //public override void CachalotCompressed()
+    //{
+    //    var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
+    //    entities.PutMany(_data);
+    //}
 
     [Benchmark]
     public override void CachalotOnlyMemory()

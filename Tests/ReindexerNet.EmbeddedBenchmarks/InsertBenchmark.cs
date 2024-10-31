@@ -55,7 +55,7 @@ public class InsertBenchmark
     protected ILiteCollection<BenchmarkEntity> _liteCollMemory;
     protected Server.Server _caServer;
     protected Connector? _caConnector;
-    protected Connector? _caConnectorCompressed;
+    //protected Connector? _caConnectorCompressed;
     protected Connector _caMemoryConnector;
     protected Realm _realm;
 
@@ -145,7 +145,7 @@ public class InsertBenchmark
         _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "Cachalot"), IsPersistent = true, ClusterName = "Cachalot" });
         _caConnector = new Connector(new ClientConfig { IsPersistent = true });
         _caConnector.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        _caConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
+        //_caConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
     }
 
     [IterationCleanup(Targets = new[] { nameof(Cachalot) })]
@@ -156,25 +156,25 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(CachalotCompressed) })]    
-    public virtual void CachalotCompressedSetup()
-    {
-        Setup();
-        Directory.CreateDirectory(Path.Combine(_dataPath, "CachalotCompressed"));
-        _caServer?.Stop();
-        _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "CachalotCompressed"), IsPersistent = true, ClusterName = "CachalotCompressed" });
-        _caConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
-        _caConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        _caConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
-    }
+    //[IterationSetup(Targets = new[] { nameof(CachalotCompressed) })]    
+    //public virtual void CachalotCompressedSetup()
+    //{
+    //    Setup();
+    //    Directory.CreateDirectory(Path.Combine(_dataPath, "CachalotCompressed"));
+    //    _caServer?.Stop();
+    //    _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "CachalotCompressed"), IsPersistent = true, ClusterName = "CachalotCompressed" });
+    //    _caConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
+    //    _caConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
+    //    _caConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
+    //}
 
-    [IterationCleanup(Targets = new[] { nameof(CachalotCompressed) })]
-    public void CachalotCompressedClean()
-    {
-        _caConnectorCompressed!.Dispose();
-        _caServer.Stop();
-        Cleanup();
-    }
+    //[IterationCleanup(Targets = new[] { nameof(CachalotCompressed) })]
+    //public void CachalotCompressedClean()
+    //{
+    //    _caConnectorCompressed!.Dispose();
+    //    _caServer.Stop();
+    //    Cleanup();
+    //}
 
     [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory) })]    
     public virtual void CachalotOnlyMemorySetup()
@@ -269,12 +269,12 @@ public class InsertBenchmark
         entities.PutMany(_data);
     }
 
-    [Benchmark]
-    public virtual void CachalotCompressed()
-    {
-        var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        entities.PutMany(_data);
-    }
+    //[Benchmark]
+    //public virtual void CachalotCompressed()
+    //{
+    //    var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
+    //    entities.PutMany(_data);
+    //}
 
     [Benchmark]
     public virtual void CachalotOnlyMemory()

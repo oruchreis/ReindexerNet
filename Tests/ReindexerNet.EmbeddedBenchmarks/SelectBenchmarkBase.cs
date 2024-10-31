@@ -30,6 +30,7 @@ public abstract class SelectBenchmarkBase
             AddJob(Job.Default);
             AddDiagnoser(new MemoryDiagnoser(new MemoryDiagnoserConfig(displayGenColumns: true)));
             AddColumn(StatisticColumn.Min, StatisticColumn.Max);
+            AddLogicalGroupRules(BenchmarkLogicalGroupRule.ByParams);
             CategoryDiscoverer = new CustomCategoryDiscoverer();
             Orderer = new DefaultOrderer(SummaryOrderPolicy.FastestToSlowest);
         }
@@ -44,7 +45,7 @@ public abstract class SelectBenchmarkBase
     protected string DataPath;
     protected BenchmarkEntity[] Data;
 
-    [Params(1_000)]
+    [Params(500,2_000)]
     public int N;
 
     #region Setups
@@ -54,10 +55,10 @@ public abstract class SelectBenchmarkBase
     protected ReindexerEmbedded? RxClientSql;
     protected Connector? CaConnector;
     protected Connector? CaConnectorMemory;
-    protected Connector? CaConnectorCompressed;
+    //protected Connector? CaConnectorCompressed;
     protected DataSource<BenchmarkEntity> CaDS;
     protected DataSource<BenchmarkEntity> CaDSMemory;
-    protected DataSource<BenchmarkEntity> CaDSCompressed;
+    //protected DataSource<BenchmarkEntity> CaDSCompressed;
     private LiteDatabase _liteDb;
     protected ILiteCollection<BenchmarkEntity> LiteColl;
     private LiteDatabase _liteDbMemory;
@@ -103,6 +104,7 @@ public abstract class SelectBenchmarkBase
     public void Setup()
     {
         DataPath = Directory.CreateTempSubdirectory().FullName;
+        Console.WriteLine(DataPath);
         Data = new BenchmarkEntity[N];
         for (int i = 0; i < N; i++)
         {
@@ -246,13 +248,13 @@ public abstract class SelectBenchmarkBase
     public void CachalotSetup()
     {
         Setup();
-        var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
-        CaConnector = new Connector(new ClientConfig { IsPersistent = true });
+        //var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
+        Directory.SetCurrentDirectory(DataPath);
+        CaConnector = new Connector(new ClientConfig { IsPersistent = true, ConnectionPoolCapacity=500, PreloadedConnections = 500  });
         CaConnector.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        CaConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
+        //CaConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
         CaDS = CaConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         CaDS.PutMany(Data);
-
         //_caDS.Where(e => e.IntArray.Any(i => searchItemsInt.Contains(i))).ToList(),
         //Doesn't support .Any or All methods right now, so combining queries with OR
         GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
@@ -263,35 +265,37 @@ public abstract class SelectBenchmarkBase
         })]
     public void CachalotClean()
     {
+        Directory.SetCurrentDirectory(Directory.GetParent(DataPath).FullName);
+        CaDS = null;
         CaConnector!.Dispose();
         Cleanup();
     }
 
-    [GlobalSetup(Targets = new[] {
-        "CachalotCompressed"
-        })]
-    public void CachalotCompressedSetup()
-    {
-        Setup();
-        var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
-        CaConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
-        CaConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        CaConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
-        CaDSCompressed = CaConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-        CaDSCompressed.PutMany(Data);
+    //[GlobalSetup(Targets = new[] {
+    //    "CachalotCompressed"
+    //    })]
+    //public void CachalotCompressedSetup()
+    //{
+    //    Setup();
+    //    var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
+    //    CaConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
+    //    CaConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
+    //    CaConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
+    //    CaDSCompressed = CaConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
+    //    CaDSCompressed.PutMany(Data);
 
-        //Doesn't support .Any or All methods right now, so combining queries with OR
-        GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
-    }
+    //    //Doesn't support .Any or All methods right now, so combining queries with OR
+    //    GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
+    //}
 
-    [GlobalCleanup(Targets = new[] {
-        "CachalotCompressed"
-        })]
-    public void CachalotCompressedClean()
-    {
-        CaConnectorCompressed!.Dispose();
-        Cleanup();
-    }
+    //[GlobalCleanup(Targets = new[] {
+    //    "CachalotCompressed"
+    //    })]
+    //public void CachalotCompressedClean()
+    //{
+    //    CaConnectorCompressed!.Dispose();
+    //    Cleanup();
+    //}
 
     [GlobalSetup(Targets = new[] {
         "CachalotMemory"
@@ -299,13 +303,13 @@ public abstract class SelectBenchmarkBase
     public void CachalotMemorySetup()
     {
         Setup();
-        var server = new Server.Server(new NodeConfig { DataPath = Path.Combine(DataPath, "CachalotMemory"), IsPersistent = false, ClusterName = "embedded" });
-        CaConnectorMemory = new Connector(new ClientConfig { IsPersistent = false });
-        CaConnectorMemory.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        CaConnectorMemory.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
-        CaDSMemory = CaConnectorMemory!.DataSource<BenchmarkEntity>("BenchmarkEntity");
+        //var server = new Server.Server(new NodeConfig { DataPath = Path.Combine(DataPath, "CachalotMemory"), IsPersistent = false, ClusterName = "embeddedMemory" });
+        Directory.SetCurrentDirectory(DataPath);
+        CaConnectorMemory = new Connector(new ClientConfig { IsPersistent = false, ConnectionPoolCapacity=500, PreloadedConnections = 500 });
+        CaConnectorMemory.DeclareCollection<BenchmarkEntity>("BenchmarkEntityMemory");
+        //CaConnectorMemory.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
+        CaDSMemory = CaConnectorMemory!.DataSource<BenchmarkEntity>("BenchmarkEntityMemory");
         CaDSMemory.PutMany(Data);
-
         //Doesn't support .Any or All methods right now, so combining queries with OR
         GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
     }
@@ -315,6 +319,8 @@ public abstract class SelectBenchmarkBase
         })]
     public void CachalotMemoryClean()
     {
+        Directory.SetCurrentDirectory(Directory.GetParent(DataPath).FullName);
+        CaDSMemory = null;
         CaConnectorMemory!.Dispose();
         Cleanup();
     }
@@ -380,11 +386,11 @@ public abstract class SelectBenchmarkBase
     [GlobalSetup(Targets = new[] {
         "Realm"
         })]
-    public void RealmSetup()
+    public async Task RealmSetupAsync()
     {
         Setup();
-        RealmCli = Realm.GetInstance(new RealmConfiguration(Path.Combine(DataPath, "Realms")));
-        RealmCli.Write(() =>
+        RealmCli = await Realm.GetInstanceAsync(new RealmConfiguration(Path.Combine(DataPath, "Realms")));
+        await RealmCli.WriteAsync(() =>
         {
             RealmCli.Add(Data.Select(e => (BenchmarkRealmEntity)e), update: false);
         });

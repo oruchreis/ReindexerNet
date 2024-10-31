@@ -16,7 +16,7 @@ public class ConnectionOptions
     /// <summary>
     /// Auto repair db.
     /// </summary>
-    public bool AutoRepair { get; set; }
+    public bool AutoRepair { get; set; } = true;
     /// <summary>
     /// Expected cluster id for replication.
     /// </summary>
@@ -38,7 +38,7 @@ public class ConnectionOptions
     /// <summary>
     /// Disable replication
     /// </summary>
-    public bool DisableReplication { get; set; }
+    public bool DisableReplication { get; set; } = true;
 }
 
 /// <summary>
