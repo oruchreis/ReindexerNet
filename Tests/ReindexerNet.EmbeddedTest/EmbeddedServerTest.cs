@@ -3,6 +3,7 @@ using ReindexerNet.Embedded;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,11 +21,11 @@ namespace ReindexerNet.EmbeddedTest
         protected override string NsName { get; set; } = nameof(EmbeddedServerTest);
 
         private string _logFile;
+        private long _currentIndex = Interlocked.Increment(ref _testIndex)*2;
 
         [TestInitialize]
         public override async Task InitAsync()
         {
-            var index = Interlocked.Increment(ref _testIndex)*2;
             DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbeddedServer", TestContext.TestName, Storage.ToString());
             if (Directory.Exists(DbPath))
                 Directory.Delete(DbPath, true);
@@ -32,7 +33,7 @@ namespace ReindexerNet.EmbeddedTest
             if (File.Exists(_logFile))
                 File.Delete(_logFile);
             var storage = Storage == StorageEngine.RocksDb ? "rocksdb": "leveldb";
-            Client = new ReindexerEmbeddedServer($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + index};rpcAddr=127.0.0.1:{6354 + index};logFile={_logFile};engine={storage}");
+            Client = new ReindexerEmbeddedServer($"dbname=ServerTest;storagepath={DbPath};httpAddr=127.0.0.1:{9088 + _currentIndex};rpcAddr=127.0.0.1:{6354 + _currentIndex};logFile={_logFile};engine={storage}");
             Client.Connect();
 
             Client.OpenNamespace(NsName);
@@ -51,13 +52,20 @@ namespace ReindexerNet.EmbeddedTest
                 Directory.Delete(DbPath, true);
         }
 
-#pragma warning disable S125 // Sections of code should not be commented out
-        //[TestMethod]
-        //public void WaitInfinite() //for testing face and swagger.
-        //{
-        //    while (true)
-        //        Thread.Sleep(5000);
-        //}
+        [TestMethod]
+        public async Task FaceTestAsync()
+        {
+            var httpClient = new HttpClient();
+            var rsp = await httpClient.GetAsync($"http://127.0.0.1:{9088+_currentIndex}/face");
+            Assert.AreEqual(200, (int)rsp.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task SwaggerTestAsync()
+        {
+            var httpClient = new HttpClient();
+            var rsp = await httpClient.GetAsync($"http://127.0.0.1:{9088+_currentIndex}/swagger");
+            Assert.AreEqual(200, (int)rsp.StatusCode);
+        }
     }
-#pragma warning restore S125 // Sections of code should not be commented out
 }

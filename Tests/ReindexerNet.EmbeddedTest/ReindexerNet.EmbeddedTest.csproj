@@ -22,19 +22,15 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="System.Net.Http" Version="4.3.4"  Condition="'$(TargetFramework)' == 'net472'" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" 
-						  Include="..\..\src\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.csproj"/>
-		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" 
-						  Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Linux-x64\ReindexerNet.Embedded.NativeAssets.Linux-x64.csproj"/>
-		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('osx'))" 
-						  Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Osx-x64\ReindexerNet.Embedded.NativeAssets.Osx-x64.csproj"/>
-		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) == 'x64'" 
-						  Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x64\ReindexerNet.Embedded.NativeAssets.Win-x64.csproj"/>
-		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) != 'x64'" 
-						  Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x86\ReindexerNet.Embedded.NativeAssets.Win-x86.csproj"/>
+		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64\ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.csproj" />
+		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Linux-x64\ReindexerNet.Embedded.NativeAssets.Linux-x64.csproj" />
+		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('osx'))" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Osx-x64\ReindexerNet.Embedded.NativeAssets.Osx-x64.csproj" />
+		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) == 'x64'" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x64\ReindexerNet.Embedded.NativeAssets.Win-x64.csproj" />
+		<ProjectReference Condition="$([MSBuild]::IsOSPlatform('windows')) and $(PlatformTarget) != 'x64'" Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x86\ReindexerNet.Embedded.NativeAssets.Win-x86.csproj" />
 		
 		<ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
 		<ProjectReference Include="..\ReindexerNet.CoreTest\ReindexerNet.CoreTest.csproj" />
