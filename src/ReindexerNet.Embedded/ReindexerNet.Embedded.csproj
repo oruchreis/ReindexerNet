@@ -7,9 +7,9 @@
     <Title>ReindexerNet.Embedded</Title>
     <Description>Reindexer Embedded library to embed and run in .net projects.</Description>
     <PackageTags>reindexer embedded document-db in-memory</PackageTags>
-    <Version>0.4.9.3290</Version>
-    <AssemblyVersion>0.4.9</AssemblyVersion>
-    <FileVersion>0.4.9</FileVersion>    
+    <Version>0.4.10.3290</Version>
+    <AssemblyVersion>0.4.10</AssemblyVersion>
+    <FileVersion>0.4.10</FileVersion>    
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,10 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ReindexerNet.Core\ReindexerNet.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

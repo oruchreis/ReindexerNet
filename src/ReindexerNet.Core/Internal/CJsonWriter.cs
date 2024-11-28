@@ -143,7 +143,7 @@ internal sealed class CJsonWriter : IDisposable
     public void Append(CJsonWriter other)
     {
 #if NETSTANDARD2_0 || NET472
-        var otherSpan = other._buffer.AsSpan().Slice(other._pos);
+        var otherSpan = other._buffer.AsSpan().Slice(0, other._pos);
 #else
         var otherSpan = other._buffer.AsSpan()[..other._pos];
 #endif

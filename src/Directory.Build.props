@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net8.0;net7.0;net6.0;net5.0;netstandard2.0;net472;netstandard2.1</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net8.0;net7.0;net6.0;net5.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0;net5.0;netstandard2.0;net472;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0;net5.0;netstandard2.0;netstandard2.1</TargetFrameworks>
     <Authors>oruchreis</Authors>
     <Copyright>oruchreis</Copyright>
     <PackageIcon>icon.png</PackageIcon>
@@ -10,15 +10,15 @@
     <PackageProjectUrl>https://github.com/oruchreis/ReindexerNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/oruchreis/ReindexerNet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-	<PublishRepositoryUrl>true</PublishRepositoryUrl>
-	<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	  <PublishRepositoryUrl>true</PublishRepositoryUrl>
+	  <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <LangVersion>preview</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

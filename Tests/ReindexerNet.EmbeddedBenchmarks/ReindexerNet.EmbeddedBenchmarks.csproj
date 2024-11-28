@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RootNamespace>ReindexerNetBenchmark</RootNamespace>
@@ -12,7 +12,7 @@
 		<PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
 		<PackageReference Include="Cachalot.Client" Version="2.5.13" />
 		<PackageReference Include="LiteDB" Version="5.0.21" />
-		<PackageReference Include="MessagePack" Version="2.5.187" />
+		<PackageReference Include="MessagePack" Version="2.5.192" />
 		<PackageReference Include="Realm" Version="20.0.0" />
 		<PackageReference Include="SpanJson" Version="4.2.1" />
 	</ItemGroup>

@@ -102,6 +102,37 @@ public abstract class BaseTest<TClient>
                 FieldType = FieldType.Int64,
                 IndexType = IndexType.Hash
             },
+            new Index
+            {
+                Name = "NullableInt64",
+                FieldType = FieldType.Int64,
+                IndexType = IndexType.Hash,
+                IsSparse = true
+            },
+            new Index
+            {
+                Name = "NullableArray",
+                FieldType = FieldType.String,
+                IndexType = IndexType.Hash,
+                IsSparse = true,
+                IsArray = true
+            },
+            new Index
+            {
+                Name = "NullableSortable",
+                FieldType = FieldType.Double,
+                IndexType = IndexType.Tree,
+                IsSparse = true
+            },
+            new Index
+            {
+                Name = "NullableColumnIndex",
+                FieldType = FieldType.Bool,
+                IndexType = IndexType.ColumnIndex,
+                IsSparse = true,
+                IsDense = true
+            }
+
             })
         {
             await Client.AddIndexAsync(NsName, index);
@@ -130,6 +161,10 @@ public abstract class BaseTest<TClient>
         public int? NullableIntPayload { get; set; }
         public string? Utf8String { get; set; }
         public int Group { get; set; }
+        public long? NullableInt64 { get; set; }
+        public string?[]? NullableArray { get; set; }
+        public double? NullableSortable { get; set; }
+        public bool? NullableColumnIndex { get; set; }
     }
 
     private async Task<List<TestDocument>> AddItemsAsync(int idStart, int idEnd)
@@ -145,7 +180,11 @@ public abstract class BaseTest<TClient>
                       NullablePayload = i % 2 == 0 ? i.ToString() : null,
                       NullableIntPayload = i % 2 == 0 ? i : (int?)null,
                       Utf8String = "ÇŞĞÜÖİöçşğüı" + i,
-                      Group = i % 3
+                      Group = i % 3,
+                      NullableInt64 = i % 3 == 0 ? i : (long?)null,
+                      NullableArray = i % 3 == 0 ? Enumerable.Range(0, i).Select(r => i % 2 == 0 && r == 0 ? null : $"..{r}..").ToArray() : null,
+                      NullableSortable = i % 3 == 0 ? i * 0.125 : (double?)null,
+                      NullableColumnIndex = i % 3 == 0 ? i % 2 == 0 : (bool?)null
                   }).ToList();
         var insertedItemCount = await Client.UpsertAsync(NsName, entities);
 
@@ -323,6 +362,32 @@ public abstract class BaseTest<TClient>
         CollectionAssert.AreEqual(new[] { "..0..", "..1.." }, item.ArrayIndex);
         Assert.AreEqual(2 * 0.125, item.RangeIndex);
         CollectionAssert.AreEqual(Enumerable.Range(0, 2).Select(r => (byte)(r % 255)).ToArray(), item.Payload);
+    }
+
+    [TestMethod]
+    public async Task QueryBuilderTest_NullableSearch()
+    {
+        await AddIndexesAsync();
+        var insertedItems = await AddItemsAsync(0, 1000);
+        var nullableInt64s = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereInt64("NullableInt64", Condition.EMPTY));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableInt64 == null).Select(i => i.Id).ToList(), nullableInt64s.Items.Select(i => i.Id).ToList());
+
+        var nullableArrays = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Not().WhereString("NullableArray", Condition.ANY));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray == null || i.NullableArray.Length == 0).Select(i => i.Id).ToList(), nullableArrays.Items.Select(i => i.Id).ToList());
+        //var all = await Client.ExecuteAsync<TestDocument>(NsName,q => { });
+        var nullableArrayContainsNulls = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereString("NullableArray", Condition.EMPTY).And().WhereString("NullableArray", Condition.ANY));//WHERE NullableArray IS NULL AND NullableArray IS NOT EMPTY
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray != null && i.NullableArray.Contains(null)).Select(i => i.Id).ToList(), nullableArrayContainsNulls.Items.Select(i => i.Id).ToList());
+
+        var nullableSortable = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereDouble("NullableSortable", Condition.EMPTY));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableSortable == null).Select(i => i.Id).ToList(), nullableSortable.Items.Select(i => i.Id).ToList());
+
+        var nullableColumnIndex = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereBool("NullableColumnIndex", Condition.EMPTY));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableColumnIndex == null).Select(i => i.Id).ToList(), nullableColumnIndex.Items.Select(i => i.Id).ToList());
     }
 
     [TestMethod]

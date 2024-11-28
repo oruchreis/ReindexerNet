@@ -7,9 +7,9 @@
 		<Title>ReindexerNet.Core</Title>
 		<Description>ReindexerNet.Core includes rest api models for Reindexer and includes base interfaces for ReindexerNet.</Description>
 		<PackageTags>reindexer embedded document-db in-memory</PackageTags>
-		<Version>0.4.8</Version>
-		<AssemblyVersion>0.4.8</AssemblyVersion>
-		<FileVersion>0.4.8</FileVersion>
+		<Version>0.4.10</Version>
+		<AssemblyVersion>0.4.10</AssemblyVersion>
+		<FileVersion>0.4.10</FileVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -18,10 +18,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
 	</ItemGroup>
   
 </Project>

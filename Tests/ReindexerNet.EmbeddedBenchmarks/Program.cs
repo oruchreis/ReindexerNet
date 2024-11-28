@@ -12,17 +12,21 @@ namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 
 public class Program
 {
-    public static void Main(string[] args)
-    {
+
 #if DEBUG
-        var b = new SelectSinglePK{ N = 1000 };
-        b.RealmSetup();
+    public static async Task Main(string[] args)
+    {
+        var b = new SelectSinglePK { N = 1000 };
+        await b.RealmSetupAsync();
         b.Realm();
         b.RealmClean();
-#else
-        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-#endif
     }
+#else
+    public static void Main(string[] args)
+    {
+        BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+    }
+#endif
 }
 
 public class AntiVirusFriendlyConfig : ManualConfig

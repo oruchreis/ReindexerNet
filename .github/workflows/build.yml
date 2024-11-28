@@ -47,10 +47,11 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.x'
+        dotnet-version: '9.x'
     - name: Publish Nuget Package
       uses: alirezanet/publish-nuget@v3.0.4
       with:
         PROJECT_FILE_PATH: src/ReindexerNet.${{ matrix.project }}/ReindexerNet.${{ matrix.project }}.csproj
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
         TAG_FORMAT: v*
+        INCLUDE_SYMBOLS: true

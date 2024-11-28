@@ -73,6 +73,7 @@ jobs:
         ./dotnet-install.sh --channel 6.0 --install-dir ~/.dotnet
         ./dotnet-install.sh --channel 7.0 --install-dir ~/.dotnet
         ./dotnet-install.sh --channel 8.0 --install-dir ~/.dotnet
+        ./dotnet-install.sh --channel 9.0 --install-dir ~/.dotnet
         echo "DOTNET_ROOT=~/.dotnet" >> $GITHUB_ENV
         echo "$DOTNET_ROOT" >> $GITHUB_PATH
         echo "$DOTNET_ROOT/tools" >> $GITHUB_PATH
@@ -100,6 +101,9 @@ jobs:
     #         8.x
     - name: List SDKs
       run: ~/.dotnet/dotnet --list-sdks
+      shell: shell.sh {0}
+    - name: Test .NET 9
+      run: ~/.dotnet/dotnet test -v quiet -f net9.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET 8
       run: ~/.dotnet/dotnet test -v quiet -f net8.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo

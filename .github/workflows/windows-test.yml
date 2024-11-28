@@ -35,6 +35,7 @@ jobs:
         ./dotnet-install.ps1 -Channel 6.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         ./dotnet-install.ps1 -Channel 7.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         ./dotnet-install.ps1 -Channel 8.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
+        ./dotnet-install.ps1 -Channel 9.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         dotnet --list-sdks
     #- name: Setup .NET Sdk
     #  uses: actions/setup-dotnet@v3
@@ -45,6 +46,8 @@ jobs:
     #        6.x
     #        7.x
     #        8.x    
+    - name: Test .NET 8 ${{ matrix.target.arch }}
+      run: dotnet test -v quiet -f net9.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
     - name: Test .NET 8 ${{ matrix.target.arch }}
       run: dotnet test -v quiet -f net8.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
     - name: Test .NET 7 ${{ matrix.target.arch }}                                                      

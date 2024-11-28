@@ -13,7 +13,7 @@ public class ReindexerJsonSerializer : IReindexerSerializer
 {
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new DoubleConverter() }
     };
 
