@@ -40,19 +40,19 @@ If you have any questions about Reindexer, please use [main page](https://github
 ```xml
 <ItemGroup>
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.4.8.3290"
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.4.10.3300"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference
-    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.4.8.3290"
+    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.4.10.3300"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.4.8.3290"
+    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.4.10.3300"
     Condition="$([MSBuild]::IsOSPlatform('OSX'))"  />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.4.8.3290"
+    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.4.10.3300"
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.4.8.3290" 
+    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.4.10.3300" 
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
 </ItemGroup>
 ```
@@ -135,10 +135,10 @@ You can find Reindexer Documentation at [their github page](https://github.com/R
 The first three parts of the package versions refer to ReindexerNet's own version. If the version has a fourth part, this refers to the Reindexer version it supports or defines.
 For example:
 ```
-v 0.4.8. 3290
+v 0.4.10. 3300
   ╚══╦══╝ ╚═╦═╝
-     ╚══════╬═══ ReindexerNET version 0.4.8
-            ╚═══ Reindexer version 3.29.0
+     ╚══════╬═══ ReindexerNET version 0.4.10
+            ╚═══ Reindexer version 3.30.0
 ```
 
 ### ReindexerNet.Embedded [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)

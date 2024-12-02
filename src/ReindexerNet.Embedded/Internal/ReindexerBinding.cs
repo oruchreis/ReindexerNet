@@ -21,13 +21,24 @@ using ReindexerNet.Embedded.Internal.Helpers;
 [assembly: InternalsVisibleTo("ReindexerNet.EmbeddedTest")]
 namespace ReindexerNet.Embedded.Internal;
 
-internal static class ReindexerBinding
+internal static partial class ReindexerBinding
 {
-    public const string ReindexerVersion = "v3.29.0";
+    public const string ReindexerVersion = "v3.30.0";
 
     private const string BindingLibrary = "reindexer_embedded_server";
-    private static class Windows
+    private static partial class Windows
     {
+#if NET7_0_OR_GREATER
+        [LibraryImport("kernel32.dll", EntryPoint = "LoadLibraryW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        internal static partial IntPtr LoadLibrary(string filename);
+
+        [LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static partial bool FreeLibrary(IntPtr hModule);
+#else
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern IntPtr LoadLibrary(string filename);
 
@@ -36,6 +47,7 @@ internal static class ReindexerBinding
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern bool FreeLibrary(IntPtr hModule);
+#endif
     }
 
 #pragma warning disable IDE1006 // Naming Styles
@@ -50,13 +62,26 @@ internal static class ReindexerBinding
         int dlclose(IntPtr handle);
     }
 
-    private sealed class LinuxNew : IPosixLib
+    private sealed partial class LinuxNew : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
         nint IPosixLib.dlopen(string filename, int flags) => dlopen(filename, flags);
         nint IPosixLib.dlsym(nint handle, string symbol) => dlsym(handle, symbol);
 
+#if NET7_0_OR_GREATER
+        [LibraryImport("libdl.so.2", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlopen(string filename, int flags);
+
+        [LibraryImport("libdl.so.2", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlerror();
+
+        [LibraryImport("libdl.so.2", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlsym(IntPtr handle, string symbol);
+
+        [LibraryImport("libdl.so.2", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial int dlclose(IntPtr handle);
+#else
         [DllImport("libdl.so.2")]
         public static extern IntPtr dlopen(string filename, int flags);
 
@@ -68,15 +93,29 @@ internal static class ReindexerBinding
 
         [DllImport("libdl.so.2")]
         public static extern int dlclose(IntPtr handle);
+#endif
     }
 
-    private sealed class LinuxOld : IPosixLib
+    private sealed partial class LinuxOld : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
         nint IPosixLib.dlopen(string filename, int flags) => dlopen(filename, flags);
         nint IPosixLib.dlsym(nint handle, string symbol) => dlsym(handle, symbol);
 
+#if NET7_0_OR_GREATER
+        [LibraryImport("libdl.so", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlopen(string filename, int flags);
+
+        [LibraryImport("libdl.so", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlerror();
+
+        [LibraryImport("libdl.so", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial IntPtr dlsym(IntPtr handle, string symbol);
+
+        [LibraryImport("libdl.so", StringMarshalling = StringMarshalling.Utf8)]
+        public static partial int dlclose(IntPtr handle);
+#else
         [DllImport("libdl.so")]
         public static extern IntPtr dlopen(string filename, int flags);
 
@@ -88,15 +127,29 @@ internal static class ReindexerBinding
 
         [DllImport("libdl.so")]
         public static extern int dlclose(IntPtr handle);
+#endif
     }
 
-    private sealed class MacOsx : IPosixLib
+    private sealed partial class MacOsx : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
         nint IPosixLib.dlopen(string filename, int flags) => dlopen(filename, flags);
         nint IPosixLib.dlsym(nint handle, string symbol) => dlsym(handle, symbol);
 
+#if NET7_0_OR_GREATER
+        [LibraryImport("libSystem.dylib", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlopen(string filename, int flags);
+
+        [LibraryImport("libSystem.dylib", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlerror();
+
+        [LibraryImport("libSystem.dylib", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlsym(IntPtr handle, string symbol);
+
+        [LibraryImport("libSystem.dylib", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int dlclose(IntPtr handle);
+#else
         [DllImport("libSystem.dylib")]
         internal static extern IntPtr dlopen(string filename, int flags);
 
@@ -108,15 +161,29 @@ internal static class ReindexerBinding
 
         [DllImport("libSystem.dylib")]
         internal static extern int dlclose(IntPtr handle);
+#endif
     }
 
-    private sealed class Mono : IPosixLib
+    private sealed partial class Mono : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
         nint IPosixLib.dlopen(string filename, int flags) => dlopen(filename, flags);
         nint IPosixLib.dlsym(nint handle, string symbol) => dlsym(handle, symbol);
 
+#if NET7_0_OR_GREATER
+        [LibraryImport("__Internal", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlopen(string filename, int flags);
+
+        [LibraryImport("__Internal", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlerror();
+
+        [LibraryImport("__Internal", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlsym(IntPtr handle, string symbol);
+
+        [LibraryImport("__Internal", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int dlclose(IntPtr handle);
+#else
         [DllImport("__Internal")]
         internal static extern IntPtr dlopen(string filename, int flags);
 
@@ -128,15 +195,29 @@ internal static class ReindexerBinding
 
         [DllImport("__Internal")]
         internal static extern int dlclose(IntPtr handle);
+#endif
     }
 
-    private sealed class CoreClr : IPosixLib
+    private sealed partial class CoreClr : IPosixLib
     {
         int IPosixLib.dlclose(nint handle) => dlclose(handle);
         nint IPosixLib.dlerror() => dlerror();
         nint IPosixLib.dlopen(string filename, int flags) => dlopen(filename, flags);
         nint IPosixLib.dlsym(nint handle, string symbol) => dlsym(handle, symbol);
 
+#if NET7_0_OR_GREATER
+        [LibraryImport("libcoreclr.so", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlopen(string filename, int flags);
+
+        [LibraryImport("libcoreclr.so", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlerror();
+
+        [LibraryImport("libcoreclr.so", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial IntPtr dlsym(IntPtr handle, string symbol);
+
+        [LibraryImport("libcoreclr.so", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial int dlclose(IntPtr handle);
+#else
         [DllImport("libcoreclr.so")]
         internal static extern IntPtr dlopen(string filename, int flags);
 
@@ -148,6 +229,7 @@ internal static class ReindexerBinding
 
         [DllImport("libcoreclr.so")]
         internal static extern int dlclose(IntPtr handle);
+#endif
     }
 
 

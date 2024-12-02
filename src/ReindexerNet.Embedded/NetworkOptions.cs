@@ -8,7 +8,6 @@ namespace ReindexerNet.Embedded
 {
     public class NetworkOptions
     {
-
         public bool EnableSecurity { get; set; } = false;
         public ThreadingOptions RpcThreading { get; set; } = ThreadingOptions.Shared;
         public ThreadingOptions HttpThreading { get; set; } = ThreadingOptions.Shared;
