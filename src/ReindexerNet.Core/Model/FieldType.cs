@@ -41,7 +41,12 @@ namespace ReindexerNet
         /// Composite object
         /// </summary>
         [EnumMember(Value = FieldTypeConverter.ComposieValueStr)]
-        Composite
+        Composite,
+        /// <summary>
+        /// Uuid
+        /// </summary>
+        [EnumMember(Value = FieldTypeConverter.ComposieValueStr)]
+        Uuid
     }
 
     /// <summary>
@@ -54,7 +59,8 @@ namespace ReindexerNet
         internal const string DoubleValueStr = "double";
         internal const string StringValueStr = "string";
         internal const string BoolValueStr = "bool";
-        internal const string ComposieValueStr = "composite";
+        internal const string ComposieValueStr = "composite";        
+        internal const string UuidValueStr = "uuid";
 
         /// <inheritdoc/>
         public override FieldType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -73,6 +79,8 @@ namespace ReindexerNet
                     return FieldType.Bool;
                 case ComposieValueStr:
                     return FieldType.Composite;
+                case UuidValueStr:
+                    return FieldType.Uuid;
                 default:
                     throw new JsonException("Unknown FieldType value");
             }
@@ -100,6 +108,9 @@ namespace ReindexerNet
                     break;
                 case FieldType.Composite:
                     writer.WriteStringValue(ComposieValueStr);
+                    break;
+                case FieldType.Uuid:
+                    writer.WriteStringValue(UuidValueStr);
                     break;
                 default:
                     writer.WriteNullValue();
