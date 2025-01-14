@@ -45,7 +45,7 @@ namespace ReindexerNet
         /// <summary>
         /// Uuid
         /// </summary>
-        [EnumMember(Value = FieldTypeConverter.ComposieValueStr)]
+        [EnumMember(Value = FieldTypeConverter.UuidValueStr)]
         Uuid
     }
 
