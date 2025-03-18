@@ -58,7 +58,7 @@ jobs:
           grpc-plugins
         shell-name: alpine.sh
     - name: Caching
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ matrix.target.name }}-${{ hashFiles('**/*.csproj') }} #hash of project files

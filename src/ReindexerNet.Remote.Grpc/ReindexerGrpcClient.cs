@@ -560,6 +560,7 @@ After:
                     "composite" => FieldType.Composite,
                     "string" => FieldType.String,
                     "bool" => FieldType.Bool,
+                    "uuid" => FieldType.Uuid,
                     _ => throw new NotImplementedException(),
                 },
                 Config = !string.IsNullOrWhiteSpace(id.Options.Config) ? id.Options.Config.AsSpan().DeserializeJson<FulltextConfig>() : null
