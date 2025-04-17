@@ -43,10 +43,15 @@ class DoubleConverter : JsonConverter<double>
 
     public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
     {
-        Span<byte> buffer = stackalloc byte[30];
+        Span<byte> buffer = stackalloc byte[32];
         var format = value % 1 == 0 ? f : g;
-        Utf8Formatter.TryFormat(value, buffer, out var written, format);        
-        writer.WriteRawValue(buffer[..written]);
+        if (Utf8Formatter.TryFormat(value, buffer, out var written, format))
+            writer.WriteRawValue(buffer[..written]);
+        else
+        {
+            // Fallback to the default behavior if formatting fails
+            writer.WriteNumberValue(value);
+        }
     }
 #else
     public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)

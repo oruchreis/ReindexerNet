@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -111,6 +112,14 @@ public abstract class BaseTest<TClient>
             },
             new Index
             {
+                Name = "NullableInt32",
+                FieldType = FieldType.Int,
+                IndexType = IndexType.Hash,
+                IsSparse = true,
+                IsDense = true
+            },
+            new Index
+            {
                 Name = "NullableArray",
                 FieldType = FieldType.String,
                 IndexType = IndexType.Hash,
@@ -148,23 +157,41 @@ public abstract class BaseTest<TClient>
         CollectionAssert.Contains(indexNames, "RangeIndex");
     }
 
+    [DataContract]
     public class TestDocument
     {
+        [DataMember(Order = 0)]
         public long Id { get; set; }
+        [DataMember(Order = 1)]
         public string Name { get; set; }
+        [DataMember(Order = 2)]
         public string[] ArrayIndex { get; set; }
+        [DataMember(Order = 3)]
         public double RangeIndex { get; set; }
+        [DataMember(Order = 4)]
         public byte[] Payload { get; set; }
+        [DataMember(Order = 5)]
         public int SerialPrecept { get; set; } //precepts cant be null
+        [DataMember(Order = 6)]
         public long UpdateTime { get; set; } //precepts cant be null
+        [DataMember(Order = 7)]
         public string NullablePayload { get; set; }
+        [DataMember(Order = 8)]
         public int? NullableIntPayload { get; set; }
+        [DataMember(Order = 9)]
         public string? Utf8String { get; set; }
+        [DataMember(Order = 10)]
         public int Group { get; set; }
+        [DataMember(Order = 11)]
         public long? NullableInt64 { get; set; }
+        [DataMember(Order = 12)]
         public string?[]? NullableArray { get; set; }
+        [DataMember(Order = 13)]
         public double? NullableSortable { get; set; }
+        [DataMember(Order = 14)]
         public bool? NullableColumnIndex { get; set; }
+        [DataMember(Order = 15)]
+        public int? NullableInt32 { get; set; }
     }
 
     private async Task<List<TestDocument>> AddItemsAsync(int idStart, int idEnd)
@@ -182,6 +209,7 @@ public abstract class BaseTest<TClient>
                       Utf8String = "ÇŞĞÜÖİöçşğüı" + i,
                       Group = i % 3,
                       NullableInt64 = i % 3 == 0 ? i : (long?)null,
+                      NullableInt32 = i % 3 == 0 ? i : (int?)null,
                       NullableArray = i % 3 == 0 ? Enumerable.Range(0, i).Select(r => i % 2 == 0 && r == 0 ? null : $"..{r}..").ToArray() : null,
                       NullableSortable = i % 3 == 0 ? i * 0.125 : (double?)null,
                       NullableColumnIndex = i % 3 == 0 ? i % 2 == 0 : (bool?)null
@@ -372,14 +400,29 @@ public abstract class BaseTest<TClient>
         var nullableInt64s = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereInt64("NullableInt64", Condition.EMPTY));
         CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableInt64 == null).Select(i => i.Id).ToList(), nullableInt64s.Items.Select(i => i.Id).ToList());
+        var nullableInt32s = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereInt32("NullableInt32", Condition.EMPTY));
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableInt32 == null).Select(i => i.Id).ToList(), nullableInt32s.Items.Select(i => i.Id).ToList());
 
         var nullableArrays = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.Not().WhereString("NullableArray", Condition.ANY));
         CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray == null || i.NullableArray.Length == 0).Select(i => i.Id).ToList(), nullableArrays.Items.Select(i => i.Id).ToList());
         //var all = await Client.ExecuteAsync<TestDocument>(NsName,q => { });
+
         var nullableArrayContainsNulls = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereString("NullableArray", Condition.EMPTY).And().WhereString("NullableArray", Condition.ANY));//WHERE NullableArray IS NULL AND NullableArray IS NOT EMPTY
         CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray != null && i.NullableArray.Contains(null)).Select(i => i.Id).ToList(), nullableArrayContainsNulls.Items.Select(i => i.Id).ToList());
+
+        var nullableArrayContainsNullsAndOtherValues = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.Where(qq => qq.WhereString("NullableArray", Condition.EMPTY).Or().WhereString("NullableArray", Condition.SET, "..3..", "..4..")).And().WhereString("NullableArray", Condition.ANY));//WHERE (NullableArray IS NULL OR NullableArray IN (3,4)) AND NullableArray IS NOT EMPTY
+        HashSet<string> expectedValuesSet = [null, "..3..", "..4.."];
+        CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray != null && i.NullableArray.Any(a => expectedValuesSet.Contains(a))).Select(i => i.Id).ToList(), nullableArrayContainsNullsAndOtherValues.Items.Select(i => i.Id).ToList());
+
+        
+        //var nullableArrayContainsNullsAndAllOtherValues = await Client.ExecuteAsync<TestDocument>(NsName,
+        //    q => q.Where(qq => qq.WhereString("NullableArray", Condition.EMPTY).And().WhereString("NullableArray", Condition.ALLSET, "..1..", "..2..")).And().WhereString("NullableArray", Condition.ANY));//WHERE (NullableArray IS NULL OR NullableArray ALLSET (1,2)) AND NullableArray IS NOT EMPTY
+        //HashSet<string> expectedValuesAllSet = [null, "..1..", "..2.."];
+        //CollectionAssert.AreEqual(insertedItems.Where(i => i.NullableArray != null && i.NullableArray.All(a => expectedValuesAllSet.Contains(a))).Select(i => i.Id).ToList(), nullableArrayContainsNullsAndAllOtherValues.Items.Select(i => i.Id).ToList());
 
         var nullableSortable = await Client.ExecuteAsync<TestDocument>(NsName,
             q => q.WhereDouble("NullableSortable", Condition.EMPTY));
@@ -592,5 +635,64 @@ public abstract class BaseTest<TClient>
             .ToList();
 
         CollectionAssert.AreEqual(expectedDocs.SelectMany(a => a.Select(i => i.ToString())).ToList(), aggregateMultipleWhereQuery.Aggregations.SelectMany(ag => ag.Facets.SelectMany(f => f.Values)).ToList());
+    }
+
+    [TestMethod]
+    public async Task LargeNumericTypes()
+    {
+        await AddIndexesAsync();
+        await Client.UpsertAsync(NsName, [
+            new TestDocument
+            {
+                Id = 1,
+                Name = "1",
+                ArrayIndex = new[] { "1" },
+                RangeIndex = double.MaxValue,
+                Payload = new byte[] { 1 },
+                SerialPrecept = 1,
+                UpdateTime = 1,
+                Utf8String = "1",
+                Group = 1,
+                NullableInt64 = long.MaxValue,
+                NullableInt32 = int.MaxValue,
+                NullableArray = new[] { "1" },
+                NullableSortable = 1,
+                NullableColumnIndex = true
+            },
+            new TestDocument
+            {
+                Id = 2,
+                Name = "1",
+                ArrayIndex = new[] { "1" },
+                RangeIndex = 18014398499999998d,
+                Payload = new byte[] { 1 },
+                SerialPrecept = 1,
+                UpdateTime = 1,
+                Utf8String = "1",
+                Group = 1,
+                NullableInt64 = long.MaxValue - 1,
+                NullableInt32 = int.MaxValue - 1,
+                NullableArray = new[] { "1" },
+                NullableSortable = 1,
+                NullableColumnIndex = true
+            },
+            ]);
+        
+        var docs = await Client.ExecuteSqlAsync<TestDocument>($"SELECT * FROM {NsName} WHERE Id IN (1,2)");
+        Assert.AreEqual(double.MaxValue.ToString("F"), docs.Items.First(i => i.Id == 1).RangeIndex.ToString("F"));//delta didin't work so we need to compare as string
+        Assert.AreEqual(long.MaxValue, docs.Items.First(i => i.Id == 1).NullableInt64);
+        Assert.AreEqual(int.MaxValue, docs.Items.First(i => i.Id == 1).NullableInt32);
+        Assert.AreEqual(18014398499999998d.ToString("F"), docs.Items.First(i => i.Id == 2).RangeIndex.ToString("F"));
+        Assert.AreEqual(long.MaxValue-1, docs.Items.First(i => i.Id == 2).NullableInt64);
+        Assert.AreEqual(int.MaxValue-1, docs.Items.First(i => i.Id == 2).NullableInt32);
+
+        docs = await Client.ExecuteAsync<TestDocument>(NsName,
+            q => q.WhereInt64("Id", Condition.SET, 1,2));
+        Assert.AreEqual(double.MaxValue.ToString("F"), docs.Items.First(i => i.Id == 1).RangeIndex.ToString("F"));
+        Assert.AreEqual(long.MaxValue, docs.Items.First(i => i.Id == 1).NullableInt64);
+        Assert.AreEqual(int.MaxValue, docs.Items.First(i => i.Id == 1).NullableInt32);
+        Assert.AreEqual(18014398499999998d.ToString("F"), docs.Items.First(i => i.Id == 2).RangeIndex.ToString("F"));
+        Assert.AreEqual(long.MaxValue-1, docs.Items.First(i => i.Id == 2).NullableInt64);
+        Assert.AreEqual(int.MaxValue-1, docs.Items.First(i => i.Id == 2).NullableInt32);
     }
 }
