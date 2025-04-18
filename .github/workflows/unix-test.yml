@@ -10,6 +10,7 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
+      VSTEST_DUMP_FORCEPROCDUMP: 1
     strategy:
       matrix:
         target:
@@ -94,6 +95,11 @@ jobs:
         echo 'PROTOBUF_PROTOC=/usr/bin/protoc' >> $GITHUB_ENV
         echo 'GRPC_PROTOC_PLUGIN=/usr/bin/grpc_csharp_plugin' >> $GITHUB_ENV
       shell: shell.sh {0}
+    - name: Osx Setup
+      if: matrix.target.name == 'osx'
+      run: |
+        brew tap Microsoft/sysinternalstap
+        brew install procdump
     # - name: Setup .NET Sdk
     #   if: startsWith(matrix.target.name,'alpine') == 'false'
     #   uses: actions/setup-dotnet@v3
@@ -108,20 +114,27 @@ jobs:
       run: ~/.dotnet/dotnet --list-sdks
       shell: shell.sh {0}
     - name: Test .NET 9
-      run: ~/.dotnet/dotnet test -v quiet -f net9.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net9.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET 8
-      run: ~/.dotnet/dotnet test -v quiet -f net8.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net8.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET 7
-      run: ~/.dotnet/dotnet test -v quiet -f net7.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net7.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET 6
-      run: ~/.dotnet/dotnet test -v quiet -f net6.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net6.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET 5
-      run: ~/.dotnet/dotnet test -v quiet -f net5.0 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net5.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
     - name: Test .NET Core 3.1
-      run: ~/.dotnet/dotnet test -v quiet -f netcoreapp3.1 -r ${{ matrix.target.rid }} --logger "console;verbosity=detailed" --nologo /nologo
+      run: ~/.dotnet/dotnet test -v quiet -f netcoreapp3.1 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
+    - name: Test Results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.target.name }}-test-results
+        path: |
+            **/TestResults/**

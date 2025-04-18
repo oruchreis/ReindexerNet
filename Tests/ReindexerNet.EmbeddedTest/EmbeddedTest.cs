@@ -15,7 +15,8 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
     {
     }
 
-    protected override IReindexerClient Client { get; set; }
+    protected override IReindexerClient Client { get; set; }    
+    //protected virtual IReindexerSerializer Serializer { get; } = null;
     protected override string NsName { get; set; } = nameof(EmbeddedTest);
     protected override string DbPath { get; set; }
     protected override StorageEngine Storage => StorageEngine.LevelDb;
@@ -26,27 +27,28 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
         DbPath = Path.Combine(Path.GetTempPath(), "ReindexerEmbedded", TestContext.TestName, Storage.ToString());
         if (Directory.Exists(DbPath))
             Directory.Delete(DbPath, true);
-        DebugHelper.Log("Initializing RX..");
-        Client = new ReindexerEmbedded(DbPath);
+        TestContext.WriteLine("Initializing RX..");
+        Client = new ReindexerEmbedded(DbPath/*, Serializer*/);
         ReindexerEmbedded.EnableLogger(Log);
-        DebugHelper.Log("Connecting RX..");
+        TestContext.WriteLine("Connecting RX..");
         await Client.ConnectAsync(new ConnectionOptions { Engine = Storage });
-        DebugHelper.Log($"Opening {NsName} namespace..");
+        TestContext.WriteLine($"Opening {NsName} namespace..");
         await Client.OpenNamespaceAsync(NsName);
-        DebugHelper.Log($"Truncating {NsName} namespace..");
+        TestContext.WriteLine($"Truncating {NsName} namespace..");
         await Client.TruncateNamespaceAsync(NsName);
     }
 
+
     protected void Log(LogLevel level, string msg)
     {
-        if (level <= LogLevel.Info)
-            DebugHelper.Log($"[RX {level}] {msg}");
+        //if (level <= LogLevel.Info)
+            TestContext.WriteLine($"[RX {level}] {msg}");
     }
 
     [TestCleanup]
     public virtual void Cleanup()
     {
-        DebugHelper.Log($"Disposing RX..");
+        TestContext.WriteLine($"Disposing RX..");
         Client?.Dispose();
         if (Directory.Exists(DbPath))
             Directory.Delete(DbPath, true);
@@ -55,7 +57,7 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
     [TestMethod]
     public override async Task ExecuteQueryJson()
     {
-        await Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowsExceptionAsync<ReindexerException>(base.ExecuteQueryJson, 
+        await Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowsExceptionAsync<ReindexerException>(base.ExecuteQueryJson,
             "Reindexer returned an error response, ErrCode: 8, Msg:Unknown type 34 while parsing binary buffer");
     }
 }
