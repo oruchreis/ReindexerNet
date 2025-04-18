@@ -7,8 +7,7 @@ namespace ReindexerNet.Internal;
 internal static class Bindings
 {
     public const int CInt32Max = int.MaxValue;
-    public const string ReindexerVersion = "v3.20.0";
-    
+    public const string ReindexerVersion = "v3.20.0";//Api version that supports. increase with grpc and openapi version    
 
     internal enum LogLevel
     {

@@ -43,7 +43,7 @@ class DoubleConverter : JsonConverter<double>
 
     public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
     {
-        Span<byte> buffer = stackalloc byte[32];
+        Span<byte> buffer = stackalloc byte[30];
         var format = value % 1 == 0 ? f : g;
         if (Utf8Formatter.TryFormat(value, buffer, out var written, format))
             writer.WriteRawValue(buffer[..written]);
