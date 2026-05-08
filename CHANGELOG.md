@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-08
+### Added
+- Added configurable bounded native worker scheduling for Embedded async operations to avoid filling the .NET ThreadPool under high parallel native call load.
+- Added embedded options for native concurrency, queue capacity, and queue-full behavior.
+
+### Changed
+- Updated package versions to `0.5.0`, `0.5.0.3310` for Embedded/native packages, and `0.5.0.3032` for gRPC.
+- gRPC item modification now explicitly throws `NotSupportedException` when precepts are supplied because the Reindexer gRPC protocol does not expose precepts.
+
+### Fixed
+- Fixed CJson query/writer edge cases affecting UTF-8 values, primitive update values, and enumerable query keys.
+- Improved gRPC query result chunk aggregation.
 
 ## [0.4.11.3310 Embedded] - 2025-04-18
 ### Added

@@ -14,18 +14,25 @@ internal class EmbeddedTransactionInvoker : ITransactionInvoker
     private readonly UIntPtr _tr;
     private readonly reindexer_ctx_info _ctxInfo;
     private readonly IReindexerSerializer _serializer;
+    private readonly EmbeddedNativeScheduler _nativeScheduler;
 
-    public EmbeddedTransactionInvoker(UIntPtr rx, UIntPtr tr, reindexer_ctx_info ctxInfo, IReindexerSerializer serializer)
+    public EmbeddedTransactionInvoker(UIntPtr rx, UIntPtr tr, reindexer_ctx_info ctxInfo, IReindexerSerializer serializer, EmbeddedNativeScheduler nativeScheduler)
     {
         _rx = rx;
         _tr = tr;
         _ctxInfo = ctxInfo;
         _serializer = serializer;
+        _nativeScheduler = nativeScheduler;
     }
 
     public int Commit()
     {
-        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_commit_transaction(_rx, _tr, _ctxInfo));
+        return Commit(_ctxInfo);
+    }
+
+    private int Commit(reindexer_ctx_info ctxInfo)
+    {
+        var rsp = Assert.ThrowIfError(() => ReindexerBinding.reindexer_commit_transaction(_rx, _tr, ctxInfo));
         try
         {
             var reader = new CJsonReader(rsp.@out);
@@ -41,7 +48,7 @@ internal class EmbeddedTransactionInvoker : ITransactionInvoker
 
     public Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Commit());
+        return _nativeScheduler.Run(() => ReindexerEmbedded.ExecuteNative(Commit, cancellationToken), cancellationToken);
     }
 
     public void ModifyItem(ItemModifyMode mode, ReadOnlySpan<byte> itemBytes, SerializerType dataEncoding, string[] precepts = null)
@@ -91,12 +98,12 @@ internal class EmbeddedTransactionInvoker : ITransactionInvoker
 
     public Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(ModifyItems(mode, items, precepts));
+        return _nativeScheduler.Run(() => ModifyItems(mode, items, precepts), cancellationToken);
     }
 
     public Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(ModifyItems(mode, itemDatas, dataEncoding, precepts));
+        return _nativeScheduler.Run(() => ModifyItems(mode, itemDatas, dataEncoding, precepts), cancellationToken);
     }
 
     public void Rollback()
@@ -106,7 +113,6 @@ internal class EmbeddedTransactionInvoker : ITransactionInvoker
 
     public Task RollbackAsync(CancellationToken cancellationToken = default)
     {
-        Rollback();
-        return Task.CompletedTask;
+        return _nativeScheduler.Run(Rollback, cancellationToken);
     }
 }

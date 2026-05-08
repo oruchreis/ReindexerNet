@@ -92,24 +92,53 @@ readonly ref struct CArrayTag(uint value)
     }
 }
 
+/// <summary>
+/// Stores a decoded CJson tag cache entry for a nested structure path.
+/// </summary>
 public class CtagsCacheEntry
 {
+    /// <summary>
+    /// Gets or sets the reflected structure field indexes for the cached tag path.
+    /// </summary>
     public List<int> StructIdx { get; set; }
-    public CtagsCache SubCache { get; set; }
+    /// <summary>
+    /// Gets or sets cache entries for nested CJson tag paths.
+    /// </summary>
+    public CtagsCache SubCache { get; set; } = [];
 }
 
+/// <summary>
+/// Stores decoded CJson tag cache entries indexed by tag id.
+/// </summary>
 public class CtagsCache : List<CtagsCacheEntry> { }
 
+/// <summary>
+/// Stores decoded CJson tag caches by CLR type.
+/// </summary>
 public class StructCache : Dictionary<Type, CtagsCache> { }
 
+/// <summary>
+/// Provides helper methods for decoded CJson tag caches.
+/// </summary>
 public static class CtagsCacheExtensions
 {
+    /// <summary>
+    /// Clears all decoded tag cache entries.
+    /// </summary>
+    /// <param name="tc">The cache to clear.</param>
     public static void Reset(this CtagsCache tc)
     {
         tc.Clear();
     }
 
-    public static List<int>? Lookup(this CtagsCache tc, List<int> cachePath, bool canAdd)
+    /// <summary>
+    /// Finds the cached structure index path for a CJson tag path.
+    /// </summary>
+    /// <param name="tc">The cache to search.</param>
+    /// <param name="cachePath">The CJson tag path to look up.</param>
+    /// <param name="canAdd">Whether missing cache entries can be created.</param>
+    /// <returns>The cached structure index path, or <see langword="null"/> when it is missing and cannot be added.</returns>
+    public static List<int> Lookup(this CtagsCache tc, List<int> cachePath, bool canAdd)
     {
         var ctag = cachePath[0];
         if (tc.Count <= ctag)
@@ -141,21 +170,46 @@ public static class CtagsCacheExtensions
     }
 }
 
+/// <summary>
+/// Stores an encoded CJson tag cache entry for a nested structure path.
+/// </summary>
 public class CtagsWCacheEntry
 {
+    /// <summary>
+    /// Gets or sets the encoded CJson tag name.
+    /// </summary>
     public uint CTagName { get; set; }
-    public CtagsWCache SubCache { get; set; }
+    /// <summary>
+    /// Gets or sets cache entries for nested encoded CJson tag paths.
+    /// </summary>
+    public CtagsWCache SubCache { get; set; } = [];
 }
 
+/// <summary>
+/// Stores encoded CJson tag cache entries indexed by field position.
+/// </summary>
 public class CtagsWCache : List<CtagsWCacheEntry> { }
 
+/// <summary>
+/// Provides helper methods for encoded CJson tag caches.
+/// </summary>
 public static class CtagsWCacheExtensions
 {
+    /// <summary>
+    /// Clears all encoded tag cache entries.
+    /// </summary>
+    /// <param name="tc">The cache to clear.</param>
     public static void Reset(this CtagsWCache tc)
     {
         tc.Clear();
     }
 
+    /// <summary>
+    /// Finds or creates the encoded tag cache entry for a field index path.
+    /// </summary>
+    /// <param name="tc">The cache to search.</param>
+    /// <param name="idx">The field index path to look up.</param>
+    /// <returns>The cache entry for the requested path.</returns>
     public static CtagsWCacheEntry Lookup(this CtagsWCache tc, List<int> idx)
     {
         if (idx.Count == 0)

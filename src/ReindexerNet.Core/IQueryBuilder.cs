@@ -1,345 +1,372 @@
-﻿using System;
+using System;
 
 namespace ReindexerNet;
 
 /// <summary>
-/// Represents generic query builder.
+/// Builds Reindexer queries by using the fluent query DSL.
 /// </summary>
 public interface IQueryBuilder : IDisposable
 {
     /// <summary>
-    /// sets the number of items that will be fetched by one operation
+    /// Gets or sets the number of items fetched by one operation.
     /// </summary>
     int FetchCount { get; set; }
+
     /// <summary>
-    /// 
+    /// Gets or sets the name used for total item count calculation.
     /// </summary>
     string TotalName { get; set; }
     
     /// <summary>
-    /// next condition will added with AND.
-    /// This is the default operation for WHERE statement. Do not have to be called explicitly in user's code. Used in DSL convertion
+    /// Adds the next condition with the AND operator.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder And();
 
     /// <summary>
-    /// Adds Avarage Aggregate
+    /// Adds an average aggregation for a field.
     /// </summary>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to aggregate.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder AggregateAvg(string field);
+
     /// <summary>
-    /// 
+    /// Adds a facet aggregation for one or more fields.
     /// </summary>
-    /// <param name="aggFacetQuery"></param>
-    /// <param name="fields">fields should not be empty.</param>
-    /// <returns></returns>
+    /// <param name="aggFacetQuery">Callback used to configure the facet aggregation request.</param>
+    /// <param name="fields">Facet fields. At least one field is required.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder AggregateFacet(Action<IAggregateFacetRequest> aggFacetQuery, params string[] fields);
+
     /// <summary>
-    /// Adds Max Aggregate
+    /// Adds a maximum aggregation for a field.
     /// </summary>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to aggregate.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder AggregateMax(string field);
+
     /// <summary>
-    /// Adds Min Aggregate
+    /// Adds a minimum aggregation for a field.
     /// </summary>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to aggregate.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder AggregateMin(string field);
+
     /// <summary>
-    /// Adds Sum Aggregate
+    /// Adds a sum aggregation for a field.
     /// </summary>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to aggregate.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder AggregateSum(string field);    
+
     /// <summary>
-    /// Request cached total items calculation
+    /// Requests cached total item count calculation.
     /// </summary>
-    /// <param name="totalNames"></param>
-    /// <returns></returns>
+    /// <param name="totalNames">Names of cached total counters to request.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder CachedTotal(params string[] totalNames);
 
     /// <summary>
-    /// Return only items with uniq value of field
+    /// Returns only items with unique values for the given field.
     /// </summary>
-    /// <param name="distinctIndex"></param>
-    /// <returns></returns>
+    /// <param name="distinctIndex">Field or index name used for distinct filtering.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Distinct(string distinctIndex);
+
     /// <summary>
-    /// Add DWithin condition to DB query
+    /// Adds a spatial distance condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="point"></param>
-    /// <param name="distance"></param>
-    /// <returns></returns>
+    /// <param name="index">Spatial index or field name.</param>
+    /// <param name="point">Point coordinates used by the distance condition.</param>
+    /// <param name="distance">Maximum allowed distance.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder DWithin(string index, (double start, double end) point, double distance);
+
     /// <summary>
-    /// Adds equal position fields to arrays
+    /// Adds equal-position constraints for array fields.
     /// </summary>
-    /// <param name="fields"></param>
-    /// <returns></returns>
+    /// <param name="fields">Array fields that must match at the same positions.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder EqualPosition(params string[] fields);
+
     /// <summary>
-    /// Request explain for query
+    /// Requests query execution explanation.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Explain();
+
     /// <summary>
-    /// add optional select functions (e.g highlight or snippet ) to fields of result's objects
+    /// Adds select functions, such as highlight or snippet, to result fields.
     /// </summary>
-    /// <param name="fields"></param>
-    /// <returns></returns>
+    /// <param name="fields">Field function expressions to apply.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Functions(params string[] fields);
+
     /// <summary>
-    /// joins 2 queries
-    /// Items from the 1-st query are filtered by and expanded with the data from the 2-nd query
+    /// Adds an inner join query.
     /// </summary>
-    /// <param name="otherNamespace"></param>
-    /// <param name="otherQuery"></param>
-    /// <param name="field"> parameter serves as unique identifier for the join between `q` and `q2`</param>
-    /// <returns></returns>
+    /// <param name="otherNamespace">Joined namespace name.</param>
+    /// <param name="otherQuery">Callback used to build the joined query.</param>
+    /// <param name="field">Alias used to identify the joined result.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder InnerJoin(string otherNamespace, Action<IQueryBuilder> otherQuery, string field);
+
     /// <summary>
-    /// This method is an alias for <see cref="LeftJoin(string, Action{IQueryBuilder}, string)"/>
+    /// Adds a left join query. This method is an alias for <see cref="LeftJoin(string, Action{IQueryBuilder}, string)"/>.
     /// </summary>
-    /// <param name="otherNamespace"></param>
-    /// <param name="otherQuery"></param>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="otherNamespace">Joined namespace name.</param>
+    /// <param name="otherQuery">Callback used to build the joined query.</param>
+    /// <param name="field">Alias used to identify the joined result.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Join(string otherNamespace, Action<IQueryBuilder> otherQuery, string field);
+
     /// <summary>
-    /// joins 2 queries
-    /// Items from the 1-st query are expanded with the data from the 2-nd query
+    /// Adds a left join query.
     /// </summary>
-    /// <param name="otherNamespace"></param>
-    /// <param name="otherQuery"></param>
-    /// <param name="field">parameter serves as unique identifier for the join between `q` and `q2`</param>
-    /// <returns></returns>
+    /// <param name="otherNamespace">Joined namespace name.</param>
+    /// <param name="otherQuery">Callback used to build the joined query.</param>
+    /// <param name="field">Alias used to identify the joined result.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder LeftJoin(string otherNamespace, Action<IQueryBuilder> otherQuery, string field);
+
     /// <summary>
-    /// Set limit (count) of returned items
+    /// Sets the maximum number of returned items.
     /// </summary>
-    /// <param name="limitItems"></param>
-    /// <returns></returns>
+    /// <param name="limitItems">Maximum number of items to return.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Limit(int limitItems);
+
     /// <summary>
-    /// Add where condition to DB query with string args
+    /// Adds a full-text match condition.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Full-text index or field name.</param>
+    /// <param name="keys">Search terms to match.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Match(string index, params string[] keys);
+
     /// <summary>
-    ///  Merge 2 queries
+    /// Merges another query into this query.
     /// </summary>
-    /// <param name="otherNamespace"></param>
-    /// <param name="otherQuery"></param>
-    /// <returns></returns>
+    /// <param name="otherNamespace">Merged namespace name.</param>
+    /// <param name="otherQuery">Callback used to build the merged query.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Merge(string otherNamespace, Action<IQueryBuilder> otherQuery);
+
     /// <summary>
-    /// next condition will added with NOT AND.
-    /// Implements short-circuiting:
-    /// if the previous condition is failed the next will not be evaluated
+    /// Adds the next condition with the NOT AND operator.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Not();
+
     /// <summary>
-    /// Set start offset of returned items
+    /// Sets the start offset of returned items.
     /// </summary>
-    /// <param name="startOffset"></param>
-    /// <returns></returns>
+    /// <param name="startOffset">Number of items to skip before returning results.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Offset(int startOffset);
+
     /// <summary>
-    /// Specifies join condition
+    /// Adds a join condition for the latest join query.
     /// </summary>
-    /// <param name="index">specifies which field from `q` namespace should be used during join</param>
-    /// <param name="condition">specifies how `q` will be joined with the latest join query issued on `q` (e.g. `EQ`/`GT`/`SET`/...)</param>
-    /// <param name="joinIndex">specifies which field from namespace for the latest join query issued on `q` should be used during join</param>
-    /// <returns></returns>
+    /// <param name="index">Field from the main namespace used for the join.</param>
+    /// <param name="condition">Join comparison condition.</param>
+    /// <param name="joinIndex">Field from the joined namespace used for the join.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder On(string index, Condition condition, string joinIndex);
+
     /// <summary>
-    /// next condition will added with OR.
-    /// Implements short-circuiting:
-    /// if the previous condition is successful the next will not be evaluated, but except Join conditions
+    /// Adds the next condition with the OR operator.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Or();
+
     /// <summary>
-    /// Request total items calculation
+    /// Requests total item count calculation.
     /// </summary>
-    /// <param name="totalNames"></param>
-    /// <returns></returns>
+    /// <param name="totalNames">Names of total counters to request.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder ReqTotal(params string[] totalNames);
+
     /// <summary>
-    /// add filter to  fields of result's objects
+    /// Selects fields to include in result objects.
     /// </summary>
-    /// <param name="fields"></param>
-    /// <returns></returns>
+    /// <param name="fields">Fields to include.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Select(params string[] fields);
+
     /// <summary>
-    /// Apply sort order to returned from query items.
-    /// If values argument specified, then items equal to values, if found will be placed in the top positions.
-    /// For composite indexes values must be object[], with value of each subindex.
-    /// Forced sort is support for the first sorting field only
+    /// Applies sort order to returned items.
     /// </summary>
-    /// <param name="sortIndex"></param>
-    /// <param name="desc"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
+    /// <param name="sortIndex">Index or field name to sort by.</param>
+    /// <param name="desc">Whether to sort descending.</param>
+    /// <param name="values">Optional values that should be forced to the top positions.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Sort(string sortIndex, bool desc, params object[] values);
+
     /// <summary>
-    /// wrapper for geometry sorting by shortes distance between 2 geometry fields (ST_Distance)
+    /// Sorts by the shortest distance between two geometry fields.
     /// </summary>
-    /// <param name="field1"></param>
-    /// <param name="field2"></param>
-    /// <param name="desc"></param>
-    /// <returns></returns>
+    /// <param name="field1">First geometry field name.</param>
+    /// <param name="field2">Second geometry field name.</param>
+    /// <param name="desc">Whether to sort descending.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder SortStFieldDistance(string field1, string field2, bool desc);
+
     /// <summary>
-    ///  wrapper for geometry sorting by shortes distance between geometry field and point (ST_Distance)
+    /// Sorts by the shortest distance between a geometry field and a point.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="p"></param>
-    /// <param name="desc"></param>
-    /// <returns></returns>
+    /// <param name="field">Geometry field name.</param>
+    /// <param name="p">Point coordinates.</param>
+    /// <param name="desc">Whether to sort descending.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder SortStPointDistance(string field, (double X, double Y) p, bool desc);
+
     /// <summary>
-    /// Set query strict mode
+    /// Sets query strict mode.
     /// </summary>
-    /// <param name="mode"></param>
-    /// <returns></returns>
+    /// <param name="mode">Strict validation mode to apply.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Strict(QueryStrictMode mode);
 
     /// <summary>
-    /// Output fulltext rank.
-    /// Allowed only with fulltext query
+    /// Requests full-text rank output. This is allowed only with full-text queries.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WithRank();
 
     /// <summary>
-    /// Creates sub filter query. Equals to Brackets () in an SQL query in the whre condition.
+    /// Adds a nested filter query, equivalent to parentheses in a SQL WHERE condition.
     /// </summary>
-    /// <param name="filterQuery"></param>
-    /// <returns></returns>
+    /// <param name="filterQuery">Callback used to build the nested filter.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Where(Action<IQueryBuilder> filterQuery);
 
     /// <summary>
-    /// Add where condition to DB query
+    /// Adds a where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Value or values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder Where(string index, Condition condition, object keys);
+
     /// <summary>
-    ///  Add comparing two fields where condition to DB query
+    /// Adds a condition that compares two fields.
     /// </summary>
-    /// <param name="firstField"></param>
-    /// <param name="condition"></param>
-    /// <param name="secondField"></param>
-    /// <returns></returns>
+    /// <param name="firstField">Left-side field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="secondField">Right-side field name.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereBetweenFields(string firstField, Condition condition, string secondField);
+
     /// <summary>
-    /// Add where condition to DB query with bool args
+    /// Adds a bool where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Bool values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereBool(string index, Condition condition, params bool[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with interface args for composite indexes
+    /// Adds a composite-index where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Composite index name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Composite key values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereComposite(string index, Condition condition, params object[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with float args
+    /// Adds a double where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Double values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereDouble(string index, Condition condition, params double[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with int args
+    /// Adds an int where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Int values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereInt(string index, Condition condition, params int[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with int args
+    /// Adds an int where condition to the query.
     /// </summary>
-    /// <remarks>Same as <see cref="WhereInt(string, Condition, int[])"/></remarks>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <remarks>Same as <see cref="WhereInt(string, Condition, int[])"/>.</remarks>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Int values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereInt32(string index, Condition condition, params int[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with int64(long) args
+    /// Adds a long where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">Long values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereInt64(string index, Condition condition, params long[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with string args
+    /// Adds a string where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">String values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereString(string index, Condition condition, params string[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with guid args
+    /// Adds a UUID string where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">UUID string values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereUuid(string index, Condition condition, params string[] keys);
+
     /// <summary>
-    /// Add where condition to DB query with guid args
+    /// Adds a GUID where condition to the query.
     /// </summary>
-    /// <param name="index"></param>
-    /// <param name="condition"></param>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// <param name="index">Index or field name.</param>
+    /// <param name="condition">Comparison condition.</param>
+    /// <param name="keys">GUID values to compare.</param>
+    /// <returns>The current builder for fluent chaining.</returns>
     IQueryBuilder WhereGuid(string index, Condition condition, params Guid[] keys);
 }
 
 /// <summary>
-/// Aggregate Facet Request
+/// Configures facet aggregation paging and sorting.
 /// </summary>
 public interface IAggregateFacetRequest
 {
     /// <summary>
-    /// 
+    /// Sets the maximum number of facet rows.
     /// </summary>
-    /// <param name="limit"></param>
-    /// <returns></returns>
+    /// <param name="limit">Maximum number of facet rows to return.</param>
+    /// <returns>The current facet request for fluent chaining.</returns>
     IAggregateFacetRequest Limit(int limit);
+
     /// <summary>
-    /// 
+    /// Sets the number of facet rows to skip.
     /// </summary>
-    /// <param name="offset"></param>
-    /// <returns></returns>
+    /// <param name="offset">Number of facet rows to skip.</param>
+    /// <returns>The current facet request for fluent chaining.</returns>
     IAggregateFacetRequest Offset(int offset);
+
     /// <summary>
-    /// Use field 'count' to sort by facet's count value.
+    /// Sorts facet rows by a field. Use <c>count</c> to sort by facet count.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="desc"></param>
-    /// <returns></returns>
+    /// <param name="field">Facet field to sort by.</param>
+    /// <param name="desc">Whether to sort descending.</param>
+    /// <returns>The current facet request for fluent chaining.</returns>
     IAggregateFacetRequest Sort(string field, bool desc);
 }
 
@@ -349,9 +376,8 @@ public interface IAggregateFacetRequest
 public interface ISerializableQueryBuilder
 {
     /// <summary>
-    /// Closes query and returns query as a byte array of the serialized query. Should not call explictly inside a query call like Execute method of the client. 
-    /// And Should not do any query operations after this call. Only proper call is Dispose method of the query after this call.
+    /// Closes the query and returns the serialized query bytes.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The serialized query payload.</returns>
     ReadOnlySpan<byte> CloseQuery();
 }

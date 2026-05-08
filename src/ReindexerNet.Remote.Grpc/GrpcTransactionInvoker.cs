@@ -22,6 +22,14 @@ namespace ReindexerNet.Remote.Grpc
             _serializer = serializer;
         }
 
+        private static void ThrowIfPreceptsUnsupported(string[] precepts)
+        {
+            if (precepts?.Length > 0)
+            {
+                throw new NotSupportedException("Reindexer gRPC protocol does not support precepts for transaction item modification requests.");
+            }
+        }
+
         public int Commit()
         {
             _grpcClient.CommitTransaction(new CommitTransactionRequest
@@ -53,6 +61,7 @@ namespace ReindexerNet.Remote.Grpc
         private async Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<ByteString> itemDatas, SerializerType dataEncoding,
             string[] precepts = null, CancellationToken cancellationToken = default)
         {
+            ThrowIfPreceptsUnsupported(precepts);
             using var asyncReq = _grpcClient.AddTxItem();
 
             var handleRsp = asyncReq.ResponseStream.HandleErrorResponseAsync(cancellationToken: cancellationToken);

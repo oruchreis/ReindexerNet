@@ -6,30 +6,30 @@
 public interface IUpdateQueryBuilder
 {
     /// <summary>
-    /// Drop removes field from item within Update statement
+    /// Removes a field from matching items within an update statement.
     /// </summary>
-    /// <param name="field"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to remove.</param>
+    /// <returns>The current query builder for fluent chaining.</returns>
     IQueryBuilder Drop(string field);
     /// <summary>
-    /// Set adds update field request for update query
+    /// Sets a field value within an update statement.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to update.</param>
+    /// <param name="values">Value or values to assign.</param>
+    /// <returns>The current query builder for fluent chaining.</returns>
     IQueryBuilder Set(string field, object values);
     /// <summary>
-    /// SetExpression updates indexed field by arithmetical expression
+    /// Updates an indexed field by arithmetic expression.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="value"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to update.</param>
+    /// <param name="value">Expression to evaluate.</param>
+    /// <returns>The current query builder for fluent chaining.</returns>
     IQueryBuilder SetExpression(string field, string value);
     /// <summary>
-    /// SetObject adds update of object field request for update query
+    /// Sets an object field value within an update statement.
     /// </summary>
-    /// <param name="field"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
+    /// <param name="field">Field name to update.</param>
+    /// <param name="values">Object value to assign.</param>
+    /// <returns>The current query builder for fluent chaining.</returns>
     IQueryBuilder SetObject(string field, object values);
 }

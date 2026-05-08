@@ -98,4 +98,11 @@ public class GrpcTest: BaseTest<ReindexerGrpcClient>
         await Assert.ThrowsExceptionAsync<NotSupportedException>(async () => await Client.RenameNamespaceAsync(NsName, ".."));
     }
 
+    [TestMethod]
+    public async Task ModifyItemsAsyncWithPreceptsThrowsNotSupported()
+    {
+        await Assert.ThrowsExceptionAsync<NotSupportedException>(
+            async () => await Client.InsertAsync<object>(NsName, [], ["Id=serial()"]));
+    }
+
 }

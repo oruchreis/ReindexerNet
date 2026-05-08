@@ -27,7 +27,7 @@ jobs:
             shell: alpine.sh --root
             rid: linux-musl-x64
           - name: osx
-            runs-on: 'macos-13'
+            runs-on: 'macos-15-intel'
             shell: bash -e
             rid: osx-x64
     steps:
@@ -95,11 +95,11 @@ jobs:
         echo 'PROTOBUF_PROTOC=/usr/bin/protoc' >> $GITHUB_ENV
         echo 'GRPC_PROTOC_PLUGIN=/usr/bin/grpc_csharp_plugin' >> $GITHUB_ENV
       shell: shell.sh {0}
-    - name: Osx Setup
-      if: matrix.target.name == 'osx'
-      run: |
-        brew tap Microsoft/sysinternalstap
-        brew install procdump
+    # - name: Osx Setup
+    #   if: matrix.target.name == 'osx'
+    #   run: |
+    #     brew tap Microsoft/sysinternalstap
+    #     brew install procdump
     # - name: Setup .NET Sdk
     #   if: startsWith(matrix.target.name,'alpine') == 'false'
     #   uses: actions/setup-dotnet@v3

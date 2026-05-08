@@ -34,8 +34,17 @@
         /// </summary>
         public bool AutoRepair { get; set; }
 
+        /// <summary>
+        /// Loads namespace data into cache when the namespace is opened.
+        /// </summary>
         public bool FillCache { get; set; }
+        /// <summary>
+        /// Opens the namespace in slave mode.
+        /// </summary>
         public bool SlaveMode { get; set; }
+        /// <summary>
+        /// Forces synchronous storage operations for the namespace.
+        /// </summary>
         public bool Sync { get; set; }
     }
 }

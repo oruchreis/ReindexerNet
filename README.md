@@ -40,19 +40,19 @@ If you have any questions about Reindexer, please use [main page](https://github
 ```xml
 <ItemGroup>
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.4.10.3300"
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.5.0.3310"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference
-    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.4.10.3300"
+    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.5.0.3310"
     Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.4.10.3300"
+    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.5.0.3310"
     Condition="$([MSBuild]::IsOSPlatform('OSX'))"  />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.4.10.3300"
+    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.5.0.3310"
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.4.10.3300" 
+    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.5.0.3310" 
     Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
 </ItemGroup>
 ```
@@ -135,10 +135,10 @@ You can find Reindexer Documentation at [their github page](https://github.com/R
 The first three parts of the package versions refer to ReindexerNet's own version. If the version has a fourth part, this refers to the Reindexer version it supports or defines.
 For example:
 ```
-v 0.4.10. 3300
+v 0.5.0. 3310
   ╚══╦══╝ ╚═╦═╝
-     ╚══════╬═══ ReindexerNET version 0.4.10
-            ╚═══ Reindexer version 3.30.0
+     ╚══════╬═══ ReindexerNET version 0.5.0
+            ╚═══ Reindexer version 3.31.0
 ```
 
 ### ReindexerNet.Embedded [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
@@ -147,6 +147,24 @@ This package contains embedded Reindexer implementation(**builtin**) and embedde
 If you use .net heap for memory caching, you will eventually encounter long GC pauses because of enlarged .net heap and LOH. And if you can't use remote caching because of performance considerations, you have to use native memory for caching. 
 
 There are a few native memory cache solutions, and we choose Reindexer over them because of its performance. You can check Reindexer's benchmark results in their [main page](https://github.com/Restream/reindexer). Also you can check below for comparison of .net embedded db solutions with Reindexer.
+
+#### Async native operation scheduling
+Embedded async APIs execute native Reindexer calls on a bounded dedicated worker pool instead of the default .NET ThreadPool. This helps cache-heavy applications keep request/application ThreadPool threads available under high parallel load.
+
+You can tune this behavior with `ReindexerEmbeddedOptions`:
+
+```csharp
+var rx = new ReindexerEmbedded(
+    dbPath,
+    options: new ReindexerEmbeddedOptions
+    {
+        MaxNativeConcurrency = Environment.ProcessorCount,
+        NativeQueueCapacity = 2048,
+        NativeQueueFullMode = EmbeddedNativeQueueFullMode.Wait
+    });
+```
+
+The defaults are conservative: `MaxNativeConcurrency = Environment.ProcessorCount`, `NativeQueueCapacity = 1024`, and `NativeQueueFullMode = Wait`.
 
 #### Native Library Dependencies
 Reindexer Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `win-x64` and `win-x86` runtimes. We built Reindexer as a native library from source to use Reindexer c/c++ api via p/invoke. By doing this, we aimed at decreasing the native dependencies as much as possible and compiled dependencies such as leveldb, rocksdb, snappy into the native library as static linking. The following shows the native dependencies on some OSes, for which you should not normally need to install an extra package.:
@@ -174,6 +192,8 @@ Reindexer Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `w
 
 ### ReindexerNet.Remote.Grpc [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
 This package contains Grpc client to use Reindexer server over grpc protocol. It uses new [grpc for dotnet](https://github.com/grpc/grpc-dotnet) library by Microsoft for .Net Core 3.1, .Net 5.0 and up. And it uses legacy [grpc-core](https://github.com/grpc/grpc/tree/master/src/csharp) library for .Net Framework and .Net Standard 2.0 because of http/2 support.
+
+The Reindexer gRPC protocol used by this package does not expose item precepts. Passing precepts to gRPC item modification APIs throws `NotSupportedException`.
 
 ### ReindexerNet.Core [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
 This package contains base types and common models for Reindexer and .net packages. You can use the models in this package as OpenApi/Rest models. Every model in this package has `DataContract` and `JsonPropertyName` attributes to support valid json serialization for Reindexer rest api.

@@ -17,7 +17,8 @@ namespace ReindexerNet
         /// <summary>
         /// Commits the transaction.
         /// </summary>
-        /// <returns>Number of items to be affected.</returns>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>The number of items affected by the transaction.</returns>
         Task<int> CommitAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Cancels and rolls back the transaction.
@@ -26,42 +27,45 @@ namespace ReindexerNet
         /// <summary>
         /// Cancels and rolls back the transaction.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>A task representing the rollback operation.</returns>
         Task RollbackAsync(CancellationToken cancellationToken = default);
         /// <summary>
         /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item.
         /// </summary>
-        /// <param name="mode">Action to perform on item</param>
-        /// <param name="items">Items</param>
-        /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="items">Items to modify.</param>
+        /// <param name="precepts">Precepts to apply after the modify action, such as <c>UpdateTime=now()</c> or <c>Id=serial()</c>.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         int ModifyItems<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null);
         /// <summary>
         /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item.
         /// </summary>
-        /// <param name="mode">Action to perform on item</param>
-        /// <param name="items">Items</param>
-        /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="items">Items to modify.</param>
+        /// <param name="precepts">Precepts to apply after the modify action, such as <c>UpdateTime=now()</c> or <c>Id=serial()</c>.</param>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         Task<int> ModifyItemsAsync<TItem>(ItemModifyMode mode, IEnumerable<TItem> items, string[] precepts = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item with preserialized data
+        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) with preserialized item data.
         /// </summary>
-        /// <param name="mode">Action to perform on item</param>
-        /// <param name="itemDatas">Items</param>
-        /// <param name="dataEncoding"></param>
-        /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="itemDatas">Serialized item payloads.</param>
+        /// <param name="dataEncoding">Encoding used by the serialized item payloads.</param>
+        /// <param name="precepts">Precepts to apply after the modify action, such as <c>UpdateTime=now()</c> or <c>Id=serial()</c>.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         int ModifyItems(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null);
         /// <summary>
-        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) an item with preserialized data
+        /// Performs one of these actions: Insert, Update, Delete or Upsert(Insert or Update) with preserialized item data.
         /// </summary>
-        /// <param name="mode">Action to perform on item</param>
-        /// <param name="itemDatas">Items</param>
-        /// <param name="dataEncoding"></param>
-        /// <param name="precepts">Precepts to be done after modify action. For example, you can update time by <c>UpdateTime=now()</c> or you can increase id by <c>Id=serial()</c></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="itemDatas">Serialized item payloads.</param>
+        /// <param name="dataEncoding">Encoding used by the serialized item payloads.</param>
+        /// <param name="precepts">Precepts to apply after the modify action, such as <c>UpdateTime=now()</c> or <c>Id=serial()</c>.</param>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default);
     }
 }

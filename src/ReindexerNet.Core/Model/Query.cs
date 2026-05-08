@@ -122,7 +122,7 @@ namespace ReindexerNet
         /// </summary>
         [DataMember(Name = "strict_mode ", EmitDefaultValue = false)]
         [JsonPropertyName("strict_mode ")]
-        public string? StrictMode { get; set; }
+        public string StrictMode { get; set; }
 
         /// <summary>
         /// Get the string presentation of the object

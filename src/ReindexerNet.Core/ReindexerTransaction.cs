@@ -13,9 +13,9 @@ namespace ReindexerNet
     {
         private readonly ITransactionInvoker _invoker;
         /// <summary>
-        /// Creates a reindexer transacrtion.
+        /// Creates a Reindexer transaction wrapper.
         /// </summary>
-        /// <param name="invoker"></param>
+        /// <param name="invoker">Implementation that executes transaction operations against a Reindexer client.</param>
         public ReindexerTransaction(ITransactionInvoker invoker)
         {
             _invoker = invoker;
@@ -130,11 +130,28 @@ namespace ReindexerNet
             }
         }
 
+        /// <summary>
+        /// Adds preserialized item data to the transaction.
+        /// </summary>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="itemDatas">Serialized item payloads.</param>
+        /// <param name="dataEncoding">Encoding used by the serialized item payloads.</param>
+        /// <param name="precepts">Precepts to apply after the modify action.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         public int ModifyItems(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null)
         {
             return CheckOperation(() => _invoker.ModifyItems(mode, itemDatas, dataEncoding, precepts));
         }
 
+        /// <summary>
+        /// Adds preserialized item data to the transaction asynchronously.
+        /// </summary>
+        /// <param name="mode">Action to perform for each item.</param>
+        /// <param name="itemDatas">Serialized item payloads.</param>
+        /// <param name="dataEncoding">Encoding used by the serialized item payloads.</param>
+        /// <param name="precepts">Precepts to apply after the modify action.</param>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>The number of items affected by the operation.</returns>
         public async Task<int> ModifyItemsAsync(ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding, string[] precepts = null, CancellationToken cancellationToken = default)
         {
             return await CheckOperationAsync(async () => await _invoker.ModifyItemsAsync(mode, itemDatas, dataEncoding, precepts, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);

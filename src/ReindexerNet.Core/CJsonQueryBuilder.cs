@@ -1,5 +1,6 @@
 ﻿using ReindexerNet.Internal;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,11 +12,26 @@ using static ReindexerNet.Internal.Bindings;
 
 namespace ReindexerNet;
 
+/// <summary>
+/// Specifies how strictly Reindexer validates fields and indexes used by a query.
+/// </summary>
 public enum QueryStrictMode
 {
+    /// <summary>
+    /// Uses the Reindexer server default strict mode.
+    /// </summary>
     QueryStrictModeNotSet = 0,
+    /// <summary>
+    /// Disables strict query validation.
+    /// </summary>
     QueryStrictModeNone = 1,
+    /// <summary>
+    /// Validates that referenced field names exist.
+    /// </summary>
     QueryStrictModeNames = 2,
+    /// <summary>
+    /// Validates that referenced indexes exist.
+    /// </summary>
     QueryStrictModeIndexes = 3
 }
 
@@ -48,8 +64,8 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
     /// <summary>
     /// Builds CJson query from given query.
     /// </summary>
-    /// <param name="jsonSerializer"></param>
-    /// <param name="namespace"></param>
+    /// <param name="jsonSerializer">Serializer used for values embedded in the query.</param>
+    /// <param name="namespace">Namespace name to query.</param>
     public CJsonQueryBuilder(ReindexerJsonSerializer jsonSerializer, string @namespace)
     {
         if (Debugger.IsAttached)
@@ -69,15 +85,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
             AddToDebugView([index, condition, keys]);
         }
 
-        Type t = keys.GetType();
         List<object> keysList = [];
-        if (t.IsArray)
+        if (keys is IEnumerable enumerableKeys && keys is not string)
         {
-            keysList = ((Array)keys).Cast<object>().ToList();
-        }
-        else if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(List<>))
-        {
-            keysList = ((List<object>)keys).ToList();
+            keysList = enumerableKeys.Cast<object>().ToList();
         }
         else
         {
@@ -117,6 +128,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         return this;
     }
 
+    /// <summary>
+    /// Opens a grouped query expression. The group is closed by <see cref="CloseBracket"/>.
+    /// </summary>
+    /// <returns>The current query builder.</returns>
     public IQueryBuilder OpenBracket()
     {
         if (Debugger.IsAttached)
@@ -131,6 +146,10 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         return this;
     }
 
+    /// <summary>
+    /// Closes the latest grouped query expression opened by <see cref="OpenBracket"/>.
+    /// </summary>
+    /// <returns>The current query builder.</returns>
     public IQueryBuilder CloseBracket()
     {
         if (Debugger.IsAttached)
@@ -750,6 +769,11 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         return this;
     }
 
+    /// <summary>
+    /// Adds the Reindexer debug level flag to the query.
+    /// </summary>
+    /// <param name="level">The debug verbosity level requested from Reindexer.</param>
+    /// <returns>The current query builder.</returns>
     public IQueryBuilder Debug(int level)
     {
         if (Debugger.IsAttached)
@@ -828,7 +852,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         throw new ReindexerNetException(msg);
     }
 
-    private string getValueJSON(object? value)
+    private string getValueJSON(object value)
     {
         bool ok = false;
         ReadOnlySpan<byte> objectJSON = Array.Empty<byte>();
@@ -837,7 +861,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         {
             objectJSON = Encoding.UTF8.GetBytes("{}");
         }
-        else if (t == typeof(object) || t.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        else if (t == typeof(object) || (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>)))
         {
             objectJSON = _jsonSerializer.Serialize(value);
         }
@@ -902,7 +926,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
         if (values != null)
         {
             Type t = values.GetType();
-            if (t == typeof(object) || t.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            if (t == typeof(object) || (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Dictionary<,>)))
             {
                 return SetObject(field, values);
             }
@@ -949,7 +973,7 @@ public sealed class CJsonQueryBuilder : IQueryBuilder, IUpdateQueryBuilder, ISer
             }
             _ser.PutVarCUInt(1);
             _ser.PutVarUInt(0);
-            PutValue(v);
+            PutValue(values);
         }
         return this;
     }

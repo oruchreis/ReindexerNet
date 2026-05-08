@@ -47,7 +47,7 @@ namespace ReindexerNet
         /// <summary>
         /// Creates connection string from <c>key1=value1;key2=value2</c> string
         /// </summary>
-        /// <param name="keyValueString"></param>
+        /// <param name="keyValueString">Connection string in <c>key1=value1;key2=value2</c> format.</param>
         public ReindexerConnectionString(string keyValueString)
         {
             var connStringParts = keyValueString.Split(';');
@@ -60,7 +60,7 @@ namespace ReindexerNet
         /// <summary>
         /// Creates connection string from <c>key1=value1;key2=value2</c> string
         /// </summary>
-        /// <param name="keyValueString"></param>
+        /// <param name="keyValueString">Connection string in <c>key1=value1;key2=value2</c> format.</param>
         public static implicit operator ReindexerConnectionString(string keyValueString)
         {
             return new ReindexerConnectionString(keyValueString);
@@ -69,8 +69,8 @@ namespace ReindexerNet
         /// <summary>
         /// Fills key value to corresponds with properties in the connection string.
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
+        /// <param name="key">Connection string key.</param>
+        /// <param name="value">Connection string value.</param>
         protected virtual void FillValue(string key, string value)
         {
             if (key.Equals("dbname", StringComparison.InvariantCultureIgnoreCase))

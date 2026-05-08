@@ -24,19 +24,27 @@ namespace ReindexerNet.Remote.Grpc;
 public sealed class ReindexerGrpcClient : IAsyncReindexerClient
 {
     private readonly ReindexerConnectionString _connectionString;
-    private readonly IReindexerSerializer _serializer;
+    private readonly IReindexerSerializer _itemSerializer;
     private readonly GrpcChannel _channel;
     private readonly ReindexerGrpc.ReindexerClient _grpcClient;
     private readonly OutputFlags _outputFlags;
     private static readonly ReindexerJsonSerializer _defaultJsonSerializer = new();
 
+    private static void ThrowIfPreceptsUnsupported(string[] precepts)
+    {
+        if (precepts?.Length > 0)
+        {
+            throw new NotSupportedException("Reindexer gRPC protocol does not support precepts for item modification requests.");
+        }
+    }
+
     /// <param name="connectionString">Connection string for the implementation.</param>
-    /// <param name="serializer"></param>
-    /// <param name="maxSendMessageSize"></param>
-    /// <param name="maxReceiveMessageSize"></param>
-    /// <param name="configureChannelOptions">Experimental parameter, maybe removed in future</param>
-    /// <param name="grpcInterceptor">Experimental parameter, maybe removed in future</param>
-    public ReindexerGrpcClient(ReindexerConnectionString connectionString, IReindexerSerializer serializer = null,
+    /// <param name="itemSerializer">Serializer used to encode request items and decode query results. Uses <see cref="ReindexerJsonSerializer"/> when omitted.</param>
+    /// <param name="maxSendMessageSize">Maximum outbound gRPC message size in bytes.</param>
+    /// <param name="maxReceiveMessageSize">Maximum inbound gRPC message size in bytes.</param>
+    /// <param name="configureChannelOptions">Optional callback for customizing gRPC channel options.</param>
+    /// <param name="grpcInterceptor">Optional gRPC interceptor applied to the generated client.</param>
+    public ReindexerGrpcClient(ReindexerConnectionString connectionString, IReindexerSerializer itemSerializer = null,
         int? maxSendMessageSize = null, int? maxReceiveMessageSize = null
 #if LEGACY_GRPC_CORE
         , Action<IList<ChannelOption>> configureChannelOptions = null
@@ -47,10 +55,10 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
         )
     {
         _connectionString = connectionString;
-        _serializer = serializer ?? new ReindexerJsonSerializer();
+        _itemSerializer = itemSerializer ?? new ReindexerJsonSerializer();
         _outputFlags = new OutputFlags
         {
-            EncodingType = _serializer.Type switch
+            EncodingType = _itemSerializer.Type switch
             {
                 SerializerType.Json => EncodingType.Json,
                 SerializerType.Msgpack => EncodingType.Msgpack,
@@ -67,7 +75,7 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
             "System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 #endif
 
-        if (!_connectionString.GrpcAddress.StartsWith("http://") || !_connectionString.GrpcAddress.StartsWith("https://"))
+        if (!_connectionString.GrpcAddress.StartsWith("http://") && !_connectionString.GrpcAddress.StartsWith("https://"))
             _connectionString.GrpcAddress = "http://" + _connectionString.GrpcAddress;
 #if LEGACY_GRPC_CORE
         var ipEndpoint = new Uri(_connectionString.GrpcAddress, UriKind.Absolute);
@@ -167,6 +175,7 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
     /// <inheritdoc/>
     public async Task OpenNamespaceAsync(string nsName, NamespaceOptions options = null, CancellationToken cancellationToken = default)
     {
+        options ??= new NamespaceOptions();
         (await _grpcClient.OpenNamespaceAsync(new OpenNamespaceRequest
         {
             DbName = _connectionString.DatabaseName,
@@ -208,11 +217,11 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
     /// <summary>
     /// Not supported by Reindexer grpc server.
     /// </summary>
-    /// <param name="oldName"></param>
-    /// <param name="newName"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
+    /// <param name="oldName">Current namespace name.</param>
+    /// <param name="newName">New namespace name.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>This method always throws.</returns>
+    /// <exception cref="NotSupportedException">Always thrown because the gRPC API does not expose namespace rename.</exception>
     public Task RenameNamespaceAsync(string oldName, string newName, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Not supported by Reindexer grpc server");
@@ -318,7 +327,7 @@ After:
         }, cancellationToken: cancellationToken);
 
         tranRsp.Status.HandleErrorResponse();
-        return new ReindexerTransaction(new GrpcTransactionInvoker(_grpcClient, tranRsp.Id, _serializer));
+        return new ReindexerTransaction(new GrpcTransactionInvoker(_grpcClient, tranRsp.Id, _itemSerializer));
     }
 
     private async Task<int> ModifyItemAsync(string nsName, ItemModifyMode mode, IEnumerable<ByteString> itemsBytes, EncodingType dataEncoding
@@ -348,7 +357,8 @@ After:
     public async Task<int> ModifyItemsAsync<TItem>(string nsName, ItemModifyMode mode, IEnumerable<TItem> items,
         string[] precepts = null, CancellationToken cancellationToken = default)
     {
-        return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_serializer.Serialize(item))),
+        ThrowIfPreceptsUnsupported(precepts);
+        return await ModifyItemAsync(nsName, mode, items.Select(item => ByteString.CopyFrom(_itemSerializer.Serialize(item))),
             _outputFlags.EncodingType, cancellationToken);
     }
 
@@ -356,6 +366,7 @@ After:
     public Task<int> ModifyItemsAsync(string nsName, ItemModifyMode mode, IEnumerable<byte[]> itemDatas, SerializerType dataEncoding,
         string[] precepts = null, CancellationToken cancellationToken = default)
     {
+        ThrowIfPreceptsUnsupported(precepts);
         return ModifyItemAsync(nsName, mode, itemDatas.Select(itemData => ByteString.CopyFrom(itemData)),
             dataEncoding switch
             {
@@ -420,10 +431,10 @@ After:
                 _ => throw new NotImplementedException(),
             } },
             Flags = _outputFlags
-        });
+        }, cancellationToken: cancellationToken);
         var result = new QueryItemsOf<TItem> { Items = [] };
         var hasResultOptSet = false;
-        await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_serializer, cancellationToken))
+        await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_itemSerializer, cancellationToken))
         {
             if (!hasResultOptSet)
             {
@@ -437,9 +448,12 @@ After:
                 hasResultOptSet = true;
             }
             if (queryItems.Items?.Count > 0)
-                result.Items = queryItems.Items;
+                result.Items.AddRange(queryItems.Items);
             if (queryItems.Aggregations?.Count > 0)
-                result.Aggregations = queryItems.Aggregations;
+            {
+                result.Aggregations ??= [];
+                result.Aggregations.AddRange(queryItems.Aggregations);
+            }
         }
 
         return result;
@@ -459,10 +473,10 @@ After:
             DbName = _connectionString.DatabaseName,
             Sql = sql,
             Flags = _outputFlags
-        });
+        }, cancellationToken: cancellationToken);
         var result = new QueryItemsOf<TItem> { Items = [] };
         var hasResultOptSet = false;
-        await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_serializer, cancellationToken))
+        await foreach (var (queryItems, resultOpt) in asyncReq.HandleResponseAsync<TItem>(_itemSerializer, cancellationToken))
         {
             if (!hasResultOptSet)
             {
@@ -476,9 +490,12 @@ After:
                 hasResultOptSet = true;
             }
             if (queryItems.Items?.Count > 0)
-                result.Items = queryItems.Items;
+                result.Items.AddRange(queryItems.Items);
             if (queryItems.Aggregations?.Count > 0)
-                result.Aggregations = queryItems.Aggregations;
+            {
+                result.Aggregations ??= [];
+                result.Aggregations.AddRange(queryItems.Aggregations);
+            }
         }
 
         return result;

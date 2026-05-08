@@ -44,7 +44,9 @@ namespace ReindexerNet.Embedded
 
         }
 
-        /// <summary></summary>
+        /// <summary>
+        /// Creates server options from a semicolon-delimited key-value string.
+        /// </summary>
         /// <param name="keyValuePair">Connection string in this format of string <c>key1=value1;key2=value2</c>.
         /// <list type="bullet">
         /// <listheader>Supported parameters:</listheader>
@@ -125,7 +127,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Creates server options from <c>key1=value1;key2=value2</c> string
         /// </summary>
-        /// <param name="keyValueString"></param>
+        /// <param name="keyValueString">Connection string in <c>key1=value1;key2=value2</c> format.</param>
         public static implicit operator ServerOptions(string keyValueString)
         {
             return new ServerOptions(keyValueString);
@@ -134,7 +136,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Gets yaml representation of the server option.
         /// </summary>
-        /// <param name="serverOptions"></param>
+        /// <param name="serverOptions">Server options to convert to YAML.</param>
         public static implicit operator string(ServerOptions serverOptions)
         {
             return serverOptions?.ToYaml();
@@ -143,7 +145,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Gets yaml representation of the server option.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The YAML representation of the server options.</returns>
         public override string ToString()
         {
             return ToYaml();
@@ -152,7 +154,7 @@ namespace ReindexerNet.Embedded
         /// <summary>
         /// Gets yaml representation of the server option.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The YAML representation of the server options.</returns>
         public string ToYaml()
         {
             return $"""

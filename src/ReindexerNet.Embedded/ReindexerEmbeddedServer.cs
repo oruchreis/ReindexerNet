@@ -21,9 +21,10 @@ namespace ReindexerNet.Embedded
         /// Creates a reindexer server instance
         /// </summary>
         /// <param name="serverOptions">Connection string for the server.</param>
-        /// <param name="serializer"></param>
-        public ReindexerEmbeddedServer(ServerOptions serverOptions, IReindexerSerializer serializer = null)
-            : base(serverOptions.DatabaseName, serializer)
+        /// <param name="serializer">Serializer used to encode request items and decode query results.</param>
+        /// <param name="embeddedOptions">Embedded client options used by async native operations.</param>
+        public ReindexerEmbeddedServer(ServerOptions serverOptions, IReindexerSerializer serializer = null, ReindexerEmbeddedOptions embeddedOptions = null)
+            : base(serverOptions.DatabaseName, serializer, embeddedOptions)
         {
             _serverOptions = serverOptions;
             _pServer = ReindexerBinding.init_reindexer_server();
@@ -76,9 +77,9 @@ namespace ReindexerNet.Embedded
         /// Starts the server with server yaml and waits for ready for 5 seconds. Use <see cref="Connect(ConnectionOptions)"/> instead.
         /// </summary>
         /// <param name="serverConfigYaml">Reindexer server configuration yaml</param>        
-        /// <param name="dbName"></param>
-        /// <param name="user"></param>
-        /// <param name="pass"></param>
+        /// <param name="dbName">Database name served by the embedded server.</param>
+        /// <param name="user">Optional username for server authentication.</param>
+        /// <param name="pass">Optional password for server authentication.</param>
         /// <param name="waitTimeoutForReady">Wait timeout for the server is ready. Default is 60sec.</param>
         /// <exception cref="TimeoutException">Throws if the server doesn't start in timeout interval.</exception>
         public void Start(string serverConfigYaml, string dbName, string user = null, string pass = null, TimeSpan? waitTimeoutForReady = null)

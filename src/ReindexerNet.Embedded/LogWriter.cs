@@ -5,8 +5,8 @@ namespace ReindexerNet.Embedded
     /// <summary>
     /// Log writer delegate to collect internal logs of Reindexer.
     /// </summary>
-    /// <param name="level"></param>
-    /// <param name="msg"></param>
+    /// <param name="level">Severity level of the log message.</param>
+    /// <param name="msg">Log message text emitted by the native Reindexer runtime.</param>
     [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public delegate void LogWriterAction(LogLevel level, [In, MarshalAs(UnmanagedType.LPStr)] string msg);
 

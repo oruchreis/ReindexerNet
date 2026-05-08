@@ -179,13 +179,13 @@ public abstract class BaseTest<TClient>
         [DataMember(Order = 8)]
         public int? NullableIntPayload { get; set; }
         [DataMember(Order = 9)]
-        public string? Utf8String { get; set; }
+        public string Utf8String { get; set; }
         [DataMember(Order = 10)]
         public int Group { get; set; }
         [DataMember(Order = 11)]
         public long? NullableInt64 { get; set; }
         [DataMember(Order = 12)]
-        public string?[]? NullableArray { get; set; }
+        public string[] NullableArray { get; set; }
         [DataMember(Order = 13)]
         public double? NullableSortable { get; set; }
         [DataMember(Order = 14)]

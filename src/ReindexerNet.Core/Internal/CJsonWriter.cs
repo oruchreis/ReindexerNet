@@ -12,6 +12,7 @@ namespace ReindexerNet.Internal;
 //TODO: Will be public when ensure stability.
 internal sealed class CJsonWriter : IDisposable
 {
+    private const int MaxStackallocBytes = 1024;
     private readonly ArrayPool<byte> _pool;
     private byte[] _buffer;
     private int _pos;
@@ -36,7 +37,7 @@ internal sealed class CJsonWriter : IDisposable
                 );
             try
             {
-                Memory<byte> oldBufferMemory = oldBufferRef.AsMemory(0, oldBufferRef.Length);
+                Memory<byte> oldBufferMemory = oldBufferRef.AsMemory(0, _pos);
                 oldBufferMemory.Span.CopyTo(_buffer.AsSpan());
             }
             finally
@@ -48,34 +49,54 @@ internal sealed class CJsonWriter : IDisposable
 
     public void Truncate(int pos)
     {
-        _buffer = _buffer[..pos];
+        if ((uint)pos > (uint)_pos)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pos));
+        }
+
+        _pos = pos;
     }
 
     public void TruncateStart(int pos)
     {
-        _buffer = _buffer[pos..];
-        _pos = 0;//?
+        if ((uint)pos > (uint)_pos)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pos));
+        }
+
+        _buffer.AsSpan(pos, _pos - pos).CopyTo(_buffer);
+        _pos -= pos;
     }
 
     public void PutUInt32(uint v)
     {
         EnsureRemainingSize(sizeof(uint));
-        MemoryMarshal.Write(_buffer.AsSpan(_pos), ref v);
+        WriteValue(_buffer.AsSpan(_pos), v);
         _pos += sizeof(uint);
     }
 
     public void PutUInt64(ulong v)
     {
         EnsureRemainingSize(sizeof(ulong));
-        MemoryMarshal.Write(_buffer.AsSpan(_pos), ref v);
+        WriteValue(_buffer.AsSpan(_pos), v);
         _pos += sizeof(ulong);
     }
 
     public void PutDouble(double v)
     {
         EnsureRemainingSize(sizeof(double));
-        MemoryMarshal.Write(_buffer.AsSpan(_pos), ref v);
+        WriteValue(_buffer.AsSpan(_pos), v);
         _pos += sizeof(double);
+    }
+
+    private static void WriteValue<T>(Span<byte> destination, T value)
+        where T : struct
+    {
+#if NET8_0_OR_GREATER
+        MemoryMarshal.Write(destination, in value);
+#else
+        MemoryMarshal.Write(destination, ref value);
+#endif
     }
 
     public void PutVarInt(long v)
@@ -101,26 +122,43 @@ internal sealed class CJsonWriter : IDisposable
     {
         if (v == null)
         {
+            EnsureRemainingSize(1);
             _buffer[_pos++] = 0;
             return;
         }
 
 
 #if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-        Span<byte> strArr = stackalloc byte[v.Length * 2];
-        var strByteLength = Encoding.UTF8.GetBytes(v, strArr);
-        strArr = strArr[..strByteLength];
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(v.Length);
+        byte[] rentedStringBuffer = null;
+        Span<byte> strArr = maxByteCount <= MaxStackallocBytes
+            ? stackalloc byte[maxByteCount]
+            : rentedStringBuffer = _pool.Rent(maxByteCount);
+        try
+        {
+            var strByteLength = Encoding.UTF8.GetBytes(v, strArr);
+            strArr = strArr[..strByteLength];
 #else
-        var strArrArr = new byte[v.Length*2];
+        var strArrArr = new byte[Encoding.UTF8.GetMaxByteCount(v.Length)];
         var strByteLength = Encoding.UTF8.GetBytes(v, 0, v.Length, strArrArr, 0);
         var strArr = strArrArr.AsSpan(0, strByteLength);
 #endif
-        EnsureRemainingSize(10 + strByteLength);
-        var currentPos = _buffer.AsSpan()[_pos..];
-        var lenSize = (int)Uint32_pack((uint)strByteLength, currentPos);
-        currentPos = currentPos[lenSize..];
-        strArr.CopyTo(currentPos);
-        _pos += lenSize + strByteLength;
+            EnsureRemainingSize(10 + strByteLength);
+            var currentPos = _buffer.AsSpan()[_pos..];
+            var lenSize = (int)Uint32_pack((uint)strByteLength, currentPos);
+            currentPos = currentPos[lenSize..];
+            strArr.CopyTo(currentPos);
+            _pos += lenSize + strByteLength;
+#if NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+        }
+        finally
+        {
+            if (rentedStringBuffer != null)
+            {
+                _pool.Return(rentedStringBuffer);
+            }
+        }
+#endif
     }
 
     public void PutUuid(Guid uuid)
@@ -240,7 +278,7 @@ internal sealed class CJsonWriter : IDisposable
     #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
 
-    protected void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!disposedValue)
         {

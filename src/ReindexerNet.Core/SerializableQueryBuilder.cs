@@ -22,8 +22,8 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     /// <summary>
     /// Builds <see cref="Query"/> object from given query, and serialize with target serializer.
     /// </summary>
-    /// <param name="serializer"></param>
-    /// <param name="namespace"></param>
+    /// <param name="serializer">Serializer used to serialize the built query.</param>
+    /// <param name="namespace">Namespace name to query.</param>
     public SerializableQueryBuilder(IReindexerSerializer serializer, string @namespace)
     {
         _serializer = serializer;

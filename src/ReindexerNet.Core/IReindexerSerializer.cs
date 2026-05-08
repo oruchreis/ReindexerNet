@@ -20,17 +20,17 @@ namespace ReindexerNet
         /// <summary>
         /// Serialize the <paramref name="item"/> as byte array.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="item"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">Item type to serialize.</typeparam>
+        /// <param name="item">Item instance to serialize.</param>
+        /// <returns>Serialized item bytes.</returns>
         public ReadOnlySpan<byte> Serialize<T>(T item);
 
         /// <summary>
         /// Deserialize byte array <paramref name="bytes"/> to <typeparamref name="T"/> type.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">Item type to deserialize.</typeparam>
+        /// <param name="bytes">Serialized item bytes.</param>
+        /// <returns>The deserialized item.</returns>
         public T Deserialize<T>(ReadOnlySpan<byte> bytes);
     }
 

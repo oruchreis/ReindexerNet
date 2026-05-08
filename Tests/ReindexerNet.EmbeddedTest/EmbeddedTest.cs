@@ -2,7 +2,9 @@
 using ReindexerNet.CoreTest;
 using ReindexerNet.Embedded;
 using ReindexerNet.Embedded.Internal.Helpers;
+using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ReindexerNet.EmbeddedTest;
@@ -59,5 +61,15 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
     {
         await Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowsExceptionAsync<ReindexerException>(base.ExecuteQueryJson,
             "Reindexer returned an error response, ErrCode: 8, Msg:Unknown type 34 while parsing binary buffer");
+    }
+
+    [TestMethod]
+    public async Task AsyncOperationWithPreCanceledTokenThrowsTaskCanceled()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Microsoft.VisualStudio.TestTools.UnitTesting.Assert.ThrowsExceptionAsync<OperationCanceledException>(
+            async () => await Client.OpenNamespaceAsync(NsName, cancellationToken: cts.Token));
     }
 }

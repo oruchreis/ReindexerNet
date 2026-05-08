@@ -2,6 +2,9 @@
 #region record Fix
 namespace System.Runtime.CompilerServices
 {
+    /// <summary>
+    /// Provides compiler support for init-only setters on target frameworks that do not include it.
+    /// </summary>
     public class IsExternalInit { }
 }
 #endregion
@@ -127,7 +130,7 @@ namespace System
 
         /// <summary>Indicates whether the current Index object is equal to another object of the same type.</summary>
         /// <param name="value">An object to compare with this object</param>
-        public override bool Equals(object? value) => value is Index && _value == ((Index)value)._value;
+        public override bool Equals(object value) => value is Index && _value == ((Index)value)._value;
 
         /// <summary>Indicates whether the current Index object is equal to another Index object.</summary>
         /// <param name="other">An object to compare with this object</param>
@@ -177,7 +180,7 @@ namespace System
 
         /// <summary>Indicates whether the current Range object is equal to another object of the same type.</summary>
         /// <param name="value">An object to compare with this object</param>
-        public override bool Equals(object? value) =>
+        public override bool Equals(object value) =>
             value is Range r &&
             r.Start.Equals(Start) &&
             r.End.Equals(End);
@@ -285,8 +288,19 @@ namespace System.Runtime.CompilerServices
 #region Dictionary deconstruct
 namespace System.Collections.Generic
 {
+    /// <summary>
+    /// Provides tuple deconstruction support for <see cref="KeyValuePair{TKey, TValue}"/> on older target frameworks.
+    /// </summary>
     public static class KeyValuePairExtension
     {
+        /// <summary>
+        /// Deconstructs a key-value pair into separate key and value variables.
+        /// </summary>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The value type.</typeparam>
+        /// <param name="source">The key-value pair to deconstruct.</param>
+        /// <param name="key">The deconstructed key.</param>
+        /// <param name="value">The deconstructed value.</param>
         public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> source, out TKey key, out TValue value)
         {
             key = source.Key;

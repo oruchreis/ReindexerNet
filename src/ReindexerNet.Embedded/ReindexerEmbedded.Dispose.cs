@@ -19,6 +19,7 @@ namespace ReindexerNet.Embedded
             {
                 if (disposing && Rx != default)
                 {
+                    _nativeScheduler.Dispose();
                     DebugHelper.Log("Stopping reindexer...");
                     Parallel.ForEach(ExecuteSql<Namespace>(GetNamespacesQuery).Items, ns =>
                     {
@@ -51,13 +52,17 @@ namespace ReindexerNet.Embedded
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Asynchronously disposes the Reindexer native object.
+        /// </summary>
+        /// <returns>A task-like value that completes when disposal has finished.</returns>
         public async ValueTask DisposeAsync()
         {
             // Perform async cleanup.
             await DisposeAsyncCore().ConfigureAwait(false);
 
             // Dispose of unmanaged resources.
-            Dispose(false);
+            Dispose(true);
 
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
             // Suppress finalization.
@@ -68,6 +73,10 @@ namespace ReindexerNet.Embedded
 #if !NET5_0_OR_GREATER
         private static readonly ValueTask _completedTask = new();
 #endif
+        /// <summary>
+        /// Performs asynchronous cleanup for derived embedded Reindexer implementations.
+        /// </summary>
+        /// <returns>A task-like value that completes when asynchronous cleanup has finished.</returns>
         protected virtual ValueTask DisposeAsyncCore()
         {
 #if NET5_0_OR_GREATER
