@@ -227,20 +227,18 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
             joinType = Bindings.JoinType.OrInnerJoin;
         }
 
-        _query.Filters.Add(new FilterDef
+        var joinDef = new JoinedDef
         {
-            Field = field,
-            JoinQuery = new JoinedDef
-            {
-                Namespace = otherQueryBuilder._namespace,
-                Filters = otherQueryBuilder._query.Filters,
-                Limit = otherQueryBuilder._query.Limit,
-                Offset = otherQueryBuilder._query.Offset,
-                Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
-                Type = GetJsonJoinType(joinType),
-                On = otherQueryBuilder._onDefs
-            }
-        });
+            Namespace = otherQueryBuilder._namespace,
+            Filters = otherQueryBuilder._query.Filters,
+            Limit = otherQueryBuilder._query.Limit,
+            Offset = otherQueryBuilder._query.Offset,
+            Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
+            Type = GetJsonJoinType(joinType),
+            On = otherQueryBuilder._onDefs
+        };
+        _lastJoinDef = joinDef;
+        _query.Filters.Add(new FilterDef { Field = field, JoinQuery = joinDef });
 
         return this;
     }
@@ -257,20 +255,18 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
         _query.Filters ??= [];
         var otherQueryBuilder = new SerializableQueryBuilder(_serializer, otherNamespace);
         otherQuery(otherQueryBuilder);
-        _query.Filters.Add(new FilterDef
+        var joinDef = new JoinedDef
         {
-            Field = field,
-            JoinQuery = new JoinedDef
-            {
-                Namespace = otherQueryBuilder._namespace,
-                Filters = otherQueryBuilder._query.Filters,
-                Limit = otherQueryBuilder._query.Limit,
-                Offset = otherQueryBuilder._query.Offset,
-                Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
-                Type = GetJsonJoinType(Bindings.JoinType.LeftJoin),
-                On = otherQueryBuilder._onDefs
-            }
-        });
+            Namespace = otherQueryBuilder._namespace,
+            Filters = otherQueryBuilder._query.Filters,
+            Limit = otherQueryBuilder._query.Limit,
+            Offset = otherQueryBuilder._query.Offset,
+            Sort = otherQueryBuilder._query.Sort?.FirstOrDefault(),
+            Type = GetJsonJoinType(Bindings.JoinType.LeftJoin),
+            On = otherQueryBuilder._onDefs
+        };
+        _lastJoinDef = joinDef;
+        _query.Filters.Add(new FilterDef { Field = field, JoinQuery = joinDef });
 
         return this;
     }
@@ -313,11 +309,21 @@ public sealed class SerializableQueryBuilder : IQueryBuilder, ISerializableQuery
     }
 
     private readonly List<OnDef> _onDefs = [];
+    private JoinedDef _lastJoinDef;
     /// <inheritdoc/>
     public IQueryBuilder On(string index, Condition condition, string joinIndex)
     {
-        _onDefs.Add(new OnDef { LeftField = index, Cond = condition.ToString("g"), RightField = joinIndex, Op = _nextOp?.ToString("g") });
+        var onDef = new OnDef { LeftField = index, Cond = condition.ToString("g"), RightField = joinIndex, Op = _nextOp?.ToString("g") };
         _nextOp = Bindings.Op.And;
+        if (_lastJoinDef != null)
+        {
+            _lastJoinDef.On ??= [];
+            _lastJoinDef.On.Add(onDef);
+        }
+        else
+        {
+            _onDefs.Add(onDef);
+        }
         return this;
     }
     /// <inheritdoc/>

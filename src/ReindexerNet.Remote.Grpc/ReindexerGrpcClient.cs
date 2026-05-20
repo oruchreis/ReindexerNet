@@ -138,7 +138,6 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
             ConnectOpts = new ConnectOptions
             {
                 AllowNamespaceErrors = options.AllowNamespaceErrors,
-                Autorepair = options.AutoRepair,
                 DisableReplication = options.DisableReplication,
                 ExpectedClusterID = options.ExpectedClusterId,
                 OpenNamespaces = options.OpenNamespaces,
@@ -181,13 +180,11 @@ public sealed class ReindexerGrpcClient : IAsyncReindexerClient
             DbName = _connectionString.DatabaseName,
             StorageOptions = new StorageOptions
             {
-                Autorepair = options.AutoRepair,
                 CreateIfMissing = options.CreateIfMissing,
                 DropOnFileFormatError = options.DropOnFileFormatError,
                 Enabled = options.EnableStorage,
                 FillCache = options.FillCache,
                 NsName = nsName,
-                SlaveMode = options.SlaveMode,
                 Sync = options.Sync,
                 VerifyChecksums = options.VerifyChecksums
             }
@@ -422,7 +419,7 @@ After:
         var asyncReq = _grpcClient.Select(new SelectRequest
         {
             DbName = _connectionString.DatabaseName,
-            Query = new Reindexer.Grpc.Query{ Data = ByteString.CopyFrom(query), EncdoingType = queryEncoding switch
+            Query = new Reindexer.Grpc.Query{ Data = ByteString.CopyFrom(query), EncodingType = queryEncoding switch
             {
                 SerializerType.Json => EncodingType.Json,
                 SerializerType.Msgpack => EncodingType.Msgpack,
@@ -468,7 +465,7 @@ After:
     /// <inheritdoc/>
     public async Task<QueryItemsOf<TItem>> ExecuteSqlAsync<TItem>(string sql, CancellationToken cancellationToken = default)
     {
-        var asyncReq = _grpcClient.SelectSql(new SelectSqlRequest
+        var asyncReq = _grpcClient.ExecSql(new SqlRequest
         {
             DbName = _connectionString.DatabaseName,
             Sql = sql,

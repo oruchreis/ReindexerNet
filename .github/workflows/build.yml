@@ -24,15 +24,22 @@ jobs:
     runs-on: windows-2022
     strategy:
       matrix:
-        project: 
+        project:
         - 'Core'
         - 'Embedded'
         - 'Remote.Grpc'
-        - 'Embedded.NativeAssets.Win-x64'
-        - 'Embedded.NativeAssets.Win-x86'
-        - 'Embedded.NativeAssets.Osx-x64'
-        - 'Embedded.NativeAssets.Linux-x64'
-        - 'Embedded.NativeAssets.AlpineLinux-x64'
+        - 'Embedded.NativeAssets.Win-x64.Full'
+        - 'Embedded.NativeAssets.Win-x86.Full'
+        - 'Embedded.NativeAssets.Osx-x64.Full'
+        - 'Embedded.NativeAssets.Linux-x64.Full'
+        - 'Embedded.NativeAssets.AlpineLinux-x64.Full'
+        - 'Embedded.NativeAssets.Osx-arm64.Full'
+        - 'Embedded.NativeAssets.Win-x64.Min'
+        - 'Embedded.NativeAssets.Win-x86.Min'
+        - 'Embedded.NativeAssets.Osx-x64.Min'
+        - 'Embedded.NativeAssets.Linux-x64.Min'
+        - 'Embedded.NativeAssets.AlpineLinux-x64.Min'
+        - 'Embedded.NativeAssets.Osx-arm64.Min'
     steps:
     - uses: actions/checkout@v2
       with:

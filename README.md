@@ -1,4 +1,4 @@
-﻿# ReindexerNet
+# ReindexerNet
 
 [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
 [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
@@ -8,56 +8,32 @@
 [![Unix Test](https://github.com/oruchreis/ReindexerNet/actions/workflows/unix-test.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/unix-test.yml)
 [![Windows Test](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml/badge.svg)](https://github.com/oruchreis/ReindexerNet/actions/workflows/windows-test.yml)
 
-ReindexerNet is a .NET binding(builtin & builtinserver) and connector(Grpc, ~~OpenApi~~) for embeddable in-memory document db [Reindexer](https://github.com/Restream/reindexer).
+ReindexerNet is a .NET binding (builtin & builtinserver) and connector (gRPC, ~~OpenApi~~) for the embeddable in-memory document database [Reindexer](https://github.com/Restream/reindexer).
 
-According to our last benchmark, Reindexer is the **fastest** in every category compared to other embedded db's and it really works faster than other embedded db's. Below you can find benchmarks made with some well-known embedded dbs: ( [Performance Benchmarks](#performance) )
+**Why ReindexerNet?**
+- **Fastest embedded database** — benchmarks show Reindexer outperforms LiteDB, Realm, and Cachalot in every category ([see benchmarks](#performance))
+- **Zero GC pressure** — data lives in native memory, keeping the .NET heap small and eliminating LOH-driven GC pause spikes
+- **Rich query support** — SQL and DSL queries beyond simple key-value: range, array, and multi-field filters out of the box
+- **Flexible deployment** — run in-process (builtin/builtinserver) or connect to a standalone Reindexer server via gRPC; also significantly outperforms Redis and KeyDB in remote cache scenarios
 
-In addition, when used as a cache server in remote use, it works much faster than many in memory db's that have proven themselves at the point of performance such as redis or keydb. With this performance, it does not only work as key-value like other db's, but also has extra sql, dsl query support.
+We have been using ReindexerNet in production environments for a long time. Even if all unit tests pass, we encourage you to test thoroughly in your own environment before deploying to production.
 
-We are using ReindexerNET in production environments for a long time, and even if all unit tests are passed, we don't encourge you to use in a prod environment without testing. So please test in your environment before using.
-
-If you have any questions about Reindexer, please use [main page](https://github.com/Restream/reindexer) of Reindexer. Feel free to report issues and contribute about **ReindexerNet**. You can check the [change logs here](CHANGELOG.md).
+If you have any questions about Reindexer itself, please refer to the [main Reindexer page](https://github.com/Restream/reindexer). Feel free to report issues and contribute to **ReindexerNet**. You can check the [change log here](CHANGELOG.md).
 
 ## Contents
-- [Sample Usage](#sample-usage)
+- [Quick Start](#quick-start)
 - [Packages](#packages)
 - [Performance](#performance)
 - [Roadmap](#to-do-list)
 
-## Sample Usage:
-- Add one of these client packages according to your use case
-  - For builtin/builtinserver mode which is embedded client: [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
-  - For grpc usage to remote reindexer server: [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
-  - For rest api usage to remote reindexer server:  [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
-- If you plan to use ReindexerNet.Embedded client, you must add at least one of these native packages
-  - [![Windows-x64 Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x64?label=Embedded.Native.Win-x64&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x64)
-  - [![Windows-x86 Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x86?label=Embedded.Native.Win-x86&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x86)
-  - [![Osx Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-x64?label=Embedded.Native.Osx&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-x64)
-  - [![Linux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Linux-x64?label=Embedded.Native.Linux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Linux-x64)
-  - [![AlpineLinux Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.AlpineLinux-x64?label=Embedded.Native.AlpineLinux&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.AlpineLinux-x64)
- - Or you can use conditon to add native packages that are only needed according to the operating system:
+## Quick Start
 
-```xml
-<ItemGroup>
-  <PackageReference 
-    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64" Version="0.5.0.3310"
-    Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
-  <PackageReference
-    Include="ReindexerNet.Embedded.Native.Linux-x64" Version="0.5.0.3310"
-    Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
-  <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Osx-x64" Version="0.5.0.3310"
-    Condition="$([MSBuild]::IsOSPlatform('OSX'))"  />
-  <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x64" Version="0.5.0.3310"
-    Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-  <PackageReference 
-    Include="ReindexerNet.Embedded.Native.Win-x86" Version="0.5.0.3310" 
-    Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
-</ItemGroup>
-```
+- Add one of these client packages according to your use case:
+  - For builtin/builtinserver mode (embedded client): [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
+  - For gRPC connection to a remote Reindexer server: [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
+  - For REST API connection to a remote Reindexer server: [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
 
-- You should start to create a client object, connect to a remote server or builtin/builtinserver like in this example:
+Create a client and connect:
 ```csharp
 private static readonly IReindexerClient _rxClient;
 
@@ -65,12 +41,12 @@ public async Task InitClientAsync()
 {
     DbPath = Path.Combine(Path.GetTempPath(), "ReindexerDB");
     _rxClient = new ReindexerEmbedded(DbPath);
-    await _rxClient.ConnectAsync();	
+    await _rxClient.ConnectAsync();
 }
 ```
-Normally ReindexerEmbedded client is IDisposable, and you should dispose it if you want to use it for a short period of time. But usually cache operations are used for a long time in the lifetime of the application. So we defined client object here as a static object. If you want to close connection at shutdown of the application, you should call Dispose method on the shutdown event of the application. This frees the file handles kept on the disk.
+`ReindexerEmbedded` is `IDisposable`. For short-lived use, dispose it when done. In most cache scenarios it lives for the entire application lifetime — define it as a static object and call `Dispose` on application shutdown to release file handles.
 
-- Then you need a class for schema and you should create cache table and add proper indicies for searching:
+Define your schema and create a namespace with indexes:
 ```csharp
 internal class CacheEntity
 {
@@ -93,17 +69,18 @@ public async Task CreateCacheTable()
     await _rxClient.AddIndexAsync("CacheTable", new Index { Name = nameof(CacheEntity.IntArray), IndexType = IndexType.Hash, FieldType = FieldType.Int, IsDense = true, IsArray = true });
     await _rxClient.AddIndexAsync("CacheTable", new Index { Name = nameof(CacheEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true, IsArray = true });
 
-    //Please refer to Reindexer's documentation for more index specifications
+    // Please refer to Reindexer's documentation for more index specifications.
 }
 ```
-- Insert and Query operations:
+
+Insert and query:
 ```csharp
 public async Task InsertAsync()
 {
     var data = new CacheEntity[10];
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i < data.Length; i++)
     {
-        _data[i] = new CacheEntity()
+        data[i] = new CacheEntity()
         {
             Id = Guid.NewGuid(),
             IntProperty = i,
@@ -111,45 +88,108 @@ public async Task InsertAsync()
             CreateDate = DateTime.UtcNow,
             IntArray = new[] { 123, 124, 456, 456, 6777, 3123, 123123, 333 },
             StrArray = new[] { "", "Abc", "Def", "FFF", "GGG", "HHH", "HGFDF", "asd" },
-            Paylod = "Not Indexed DATA here.."
+            Payload = "Not Indexed DATA here.."
         };
     }
-    await _rxClient.InsertAsync("CacheTable", data); //for performance reasons don't call client in a loop, instead send multiple items at once in a single client call.
-    //or
-    await _rxClient.UpsertAsync("CacheTable", data); //for update or insert
+    await _rxClient.InsertAsync("CacheTable", data); // for best performance, pass multiple items in a single call instead of looping
+    // or
+    await _rxClient.UpsertAsync("CacheTable", data); // update if exists, otherwise insert
 }
 
 public async Task QueryAsync()
 {
-    var result1 = await _rxClient.ExecuteSqlASync("Select * FROM CacheTable WHERE StringProperty IN ('abc', 'def')");
-    var result2 = await _rxClient.ExecuteSqlASync("Select * FROM CacheTable WHERE IntProperty > 1000");
-    var result3 = await _rxClient.ExecuteSqlASync("Select * FROM CacheTable WHERE IntArray IN (100, 500, 20)");
-    //Please refer to Reindexer's documentation for more query samples.
+    var result1 = await _rxClient.ExecuteSqlAsync("Select * FROM CacheTable WHERE StringProperty IN ('abc', 'def')");
+    var result2 = await _rxClient.ExecuteSqlAsync("Select * FROM CacheTable WHERE IntProperty > 1000");
+    var result3 = await _rxClient.ExecuteSqlAsync("Select * FROM CacheTable WHERE IntArray IN (100, 500, 20)");
+    // Please refer to Reindexer's documentation for more query samples.
 }
 ```
-You can find Reindexer Documentation at [their github page](https://github.com/Restream/reindexer). You can also check unit tests and benchmark project for usage samples in this repository.
+You can find Reindexer documentation on [their GitHub page](https://github.com/Restream/reindexer). Unit tests and the benchmark project in this repository also contain additional usage samples.
+
+### Native Packages for Embedded Client
+
+If you use `ReindexerNet.Embedded`, you must add at least one native package for your target platform. Starting from v0.5.1, each platform ships two variants:
+- **Full** — includes RocksDB storage engine and gRPC builtinserver support
+- **Min** — minimal build without RocksDB and gRPC (smaller footprint, faster startup)
+
+| Package | Full | Min |
+|---------|------|-----|
+| Windows x64 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x64.Full?label=Win-x64.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x64.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x64.Min?label=Win-x64.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x64.Min) |
+| Windows x86 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x86.Full?label=Win-x86.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x86.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Win-x86.Min?label=Win-x86.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Win-x86.Min) |
+| macOS x64 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-x64.Full?label=Osx-x64.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-x64.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-x64.Min?label=Osx-x64.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-x64.Min) |
+| macOS arm64 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-arm64.Full?label=Osx-arm64.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-arm64.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Osx-arm64.Min?label=Osx-arm64.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Osx-arm64.Min) |
+| Linux x64 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Linux-x64.Full?label=Linux-x64.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Linux-x64.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.Linux-x64.Min?label=Linux-x64.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.Linux-x64.Min) |
+| Alpine Linux x64 | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.AlpineLinux-x64.Full?label=AlpineLinux-x64.Full&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.AlpineLinux-x64.Full) | [![](https://img.shields.io/nuget/v/ReindexerNet.Embedded.Native.AlpineLinux-x64.Min?label=AlpineLinux-x64.Min&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded.Native.AlpineLinux-x64.Min) |
+
+Use conditional references to include only the package that matches your target OS and architecture. Choose the **Full** variant if you need RocksDB storage or the Reindexer gRPC builtinserver; otherwise use **Min**:
+
+```xml
+<!-- Full variant example (with RocksDB and gRPC) -->
+<ItemGroup>
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Linux-x64.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Osx-arm64.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('OSX')) and $(RuntimeIdentifier.StartsWith('osx-arm64'))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Osx-x64.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('OSX')) and !$(RuntimeIdentifier.StartsWith('osx-arm64'))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Win-x64.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' == 'x64'" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Win-x86.Full" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' != 'x64'" />
+</ItemGroup>
+
+<!-- Min variant example (without RocksDB and gRPC) -->
+<ItemGroup>
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.AlpineLinux-x64.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and ($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Linux-x64.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Linux')) and !($(RuntimeIdentifier.StartsWith('linux-musl')) or $(RuntimeIdentifier.StartsWith('alpine')))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Osx-arm64.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('OSX')) and $(RuntimeIdentifier.StartsWith('osx-arm64'))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Osx-x64.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('OSX')) and !$(RuntimeIdentifier.StartsWith('osx-arm64'))" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Win-x64.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' == 'x64'" />
+  <PackageReference
+    Include="ReindexerNet.Embedded.Native.Win-x86.Min" Version="0.5.1.5010"
+    Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' != 'x64'" />
+</ItemGroup>
+```
 
 ## Packages
 
 ### Versioning
-The first three parts of the package versions refer to ReindexerNet's own version. If the version has a fourth part, this refers to the Reindexer version it supports or defines.
+The first three parts of the package version refer to ReindexerNet's own version. If the version has a fourth part, it refers to the native Reindexer library version it is built against.
 For example:
 ```
-v 0.5.0. 3310
+v 0.5.1. 5010
   ╚══╦══╝ ╚═╦═╝
-     ╚══════╬═══ ReindexerNET version 0.5.0
-            ╚═══ Reindexer version 3.31.0
+     ╚══════╬═══ ReindexerNet version 0.5.1
+            ╚═══ Reindexer version 5.1.0
 ```
 
 ### ReindexerNet.Embedded [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
-This package contains embedded Reindexer implementation(**builtin**) and embedded server implementation(**builtinserver**). You can use this for memory caching in .net without using .net heap. Also you can use server implementation to run Reindexer server in your .net application.
+This package contains the embedded Reindexer implementation (**builtin**) and the embedded server implementation (**builtinserver**). You can use it for in-process memory caching without touching the .NET heap, or run a Reindexer server inside your .NET application.
 
-If you use .net heap for memory caching, you will eventually encounter long GC pauses because of enlarged .net heap and LOH. And if you can't use remote caching because of performance considerations, you have to use native memory for caching. 
+Using the .NET heap for memory caching eventually causes long GC pauses due to an enlarged heap and LOH pressure. When remote caching is not an option due to latency constraints, native memory is the right choice.
 
-There are a few native memory cache solutions, and we choose Reindexer over them because of its performance. You can check Reindexer's benchmark results in their [main page](https://github.com/Restream/reindexer). Also you can check below for comparison of .net embedded db solutions with Reindexer.
+There are a few native memory cache solutions available; we chose Reindexer for its performance. You can check Reindexer's own benchmark results on their [main page](https://github.com/Restream/reindexer), and see the comparison against other .NET embedded database solutions below.
 
-#### Async native operation scheduling
-Embedded async APIs execute native Reindexer calls on a bounded dedicated worker pool instead of the default .NET ThreadPool. This helps cache-heavy applications keep request/application ThreadPool threads available under high parallel load.
+#### Async Native Operation Scheduling
+Embedded async APIs execute native Reindexer calls on a bounded dedicated worker pool instead of the default .NET ThreadPool. This keeps ThreadPool threads available for application work under high parallel load.
 
 You can tune this behavior with `ReindexerEmbeddedOptions`:
 
@@ -164,12 +204,13 @@ var rx = new ReindexerEmbedded(
     });
 ```
 
-The defaults are conservative: `MaxNativeConcurrency = Environment.ProcessorCount`, `NativeQueueCapacity = 1024`, and `NativeQueueFullMode = Wait`.
+The defaults work well for most workloads — tune these settings only when profiling shows ThreadPool contention under heavy parallel native load. Defaults: `MaxNativeConcurrency = Environment.ProcessorCount`, `NativeQueueCapacity = 1024`, `NativeQueueFullMode = Wait`.
 
 #### Native Library Dependencies
-Reindexer Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `win-x64` and `win-x86` runtimes. We built Reindexer as a native library from source to use Reindexer c/c++ api via p/invoke. By doing this, we aimed at decreasing the native dependencies as much as possible and compiled dependencies such as leveldb, rocksdb, snappy into the native library as static linking. The following shows the native dependencies on some OSes, for which you should not normally need to install an extra package.:
+The Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `osx-arm64`, `win-x64`, and `win-x86` runtimes. The native library is built from source to expose Reindexer's C/C++ API via P/Invoke. Dependencies such as leveldb, rocksdb, and snappy are statically linked to minimize runtime requirements. The following lists the remaining system dependencies per OS:
+
 ##### linux-x64 (`libreindexer_embedded_server.so`)
-> Tested on Ubuntu 18.04, 20.04
+> Tested on Ubuntu 22.04, 24.04
 > ```
 > GLIBC_2.2.5(libdl, libpthread, librt, libm, libc)
 > GCC_3.3.1(libgcc)
@@ -177,7 +218,14 @@ Reindexer Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `w
 > ```
 
 ##### osx-x64 (`libreindexer_embedded_server.dylib`)
-> Tested on MacOs 10.15
+> Tested on macOS 13+ (Intel)
+> ```
+> libc++
+> libresolv
+> ```
+
+##### osx-arm64 (`libreindexer_embedded_server.dylib`)
+> Tested on macOS 15 (Apple Silicon)
 > ```
 > libc++
 > libresolv
@@ -186,20 +234,23 @@ Reindexer Embedded package supports `linux-x64`, `linux-musl-x64`, `osx-x64`, `w
 ##### win-x64/win-x86 (`reindexer_embedded_server.dll`)
 > Tested on Windows 10, Server 2022
 > ```
-> No c/c++ library or other dependencies, it has been statically linked.
+> No C/C++ library or other dependencies — fully statically linked.
 > ```
 
 
 ### ReindexerNet.Remote.Grpc [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
-This package contains Grpc client to use Reindexer server over grpc protocol. It uses new [grpc for dotnet](https://github.com/grpc/grpc-dotnet) library by Microsoft for .Net Core 3.1, .Net 5.0 and up. And it uses legacy [grpc-core](https://github.com/grpc/grpc/tree/master/src/csharp) library for .Net Framework and .Net Standard 2.0 because of http/2 support.
+This package contains a gRPC client for connecting to a remote Reindexer server. It uses the [grpc-dotnet](https://github.com/grpc/grpc-dotnet) library by Microsoft for .NET Core 3.1, .NET 5.0, and later. For .NET Framework and .NET Standard 2.0 it falls back to the legacy [grpc-core](https://github.com/grpc/grpc/tree/master/src/csharp) library due to HTTP/2 support requirements.
 
 The Reindexer gRPC protocol used by this package does not expose item precepts. Passing precepts to gRPC item modification APIs throws `NotSupportedException`.
 
 ### ReindexerNet.Core [![Core Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&style=flat-square&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
-This package contains base types and common models for Reindexer and .net packages. You can use the models in this package as OpenApi/Rest models. Every model in this package has `DataContract` and `JsonPropertyName` attributes to support valid json serialization for Reindexer rest api.
+This package contains base types and shared models used across all ReindexerNet packages. The models can be used directly as REST request and response types — every type has `DataContract` and `JsonPropertyName` attributes for valid JSON serialization against the Reindexer REST API. A full REST client will be introduced in a future release alongside the OpenApi connector.
 
 ## Performance
-## ReindexerNet.Embedded Benchmarks
+
+> **Note:** The benchmarks below were measured with ReindexerNet v0.4.8 (Reindexer v3.29). Updated results for v0.5.x will be added once available.
+
+### ReindexerNet.Embedded Benchmarks
 ```
 ReindexerNet  v0.4.8 (Reindexer v3.29)
 Cachalot      v2.5.13
@@ -212,7 +263,7 @@ Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical 
   [Host]     : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
 ```
 ### Insert Benchmarks
-> #### Insert (Without controlling existance)
+> #### Insert (Without controlling existence)
 ```markdown
 | Method             | N      | Mean        | Error | Gen0         | Gen1       | Gen2      | Allocated   |
 |------------------- |------- |------------:|------:|-------------:|-----------:|----------:|------------:|
@@ -254,7 +305,7 @@ Intel Core i7-8700K CPU 3.70GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical 
 ```
 
 ### Select Benchmarks
-#### Search Single Primary Key(Guid) in a loop
+#### Search Single Primary Key (Guid) in a Loop
 ```
 foreach (id in ids)
 {
@@ -282,7 +333,7 @@ foreach (id in ids)
 | Realm                | 2000 | 862.604 ms |  9.0422 ms |  8.4581 ms | 847.850 ms | 879.566 ms | 14000.0000 |  7000.0000 |         - |  88968.97 KB |
 ```
 
-#### Search Multiple Primary Key(Guid) at once
+#### Search Multiple Primary Keys (Guid) at Once
 ```
 WHERE Id IN (id_1,id_2,id_3,...,id_N)
 
@@ -308,7 +359,7 @@ WHERE Id IN (id_1,id_2,id_3,...,id_N)
 ```
 
 
-#### Search Single Hash Index(string) in a loop
+#### Search Single Hash Index (string) in a Loop
 ```
 foreach (value in values)
 {
@@ -336,7 +387,7 @@ foreach (value in values)
 | Realm                | 2000 | 1,132.95 ms | 15.543 ms | 13.779 ms | 1,102.39 ms | 1,150.81 ms | 17000.0000 |  8000.0000 |         - | 103.47 MB |
 ```
 
-#### Search Single Hash Index(string) in a Parallel loop
+#### Search Single Hash Index (string) in a Parallel Loop
 ```
 Parallel.Foreach(values, value =>
 {
@@ -364,7 +415,7 @@ Parallel.Foreach(values, value =>
 | LiteDb               | 2000 | 929.36 ms | 18.461 ms | 49.911 ms | 944.01 ms | 786.25 ms | 1,037.86 ms | 101000.0000 | 34000.0000 | 1000.0000 | 566.75 MB |
 ```
 
-#### Search Multiple Hash at once
+#### Search Multiple Hash Values at Once
 ```
 WHERE StringProperty IN ('abc', 'def', .... )
 
@@ -415,7 +466,7 @@ WHERE IntProperty >= i
 | Realm                | 2000 | 849.74 ms | 10.906 ms |  9.107 ms | 831.99 ms | 864.90 ms | 14000.0000 |  7000.0000 |         - |  86.46 MB |
 ```
 
-#### Array Column Filtering(Single Item IN)
+#### Array Column Filtering (Single Item IN)
 ```
 WHERE N IN Integer_Array 
 WHERE 'N' IN String_Array
@@ -440,7 +491,8 @@ WHERE 'N' IN String_Array
 | Cachalot             | 2000 |    356.124 us |   2.3146 us |   2.0518 us |    353.328 us |    360.685 us |  9.2773 | 4.3945 |      - |  58.73 KB |
 | Realm                | 2000 | 74,558.110 us | 524.0327 us | 464.5413 us | 73,957.771 us | 75,606.629 us |       - |      - |      - |   4.31 KB |
 ```
-#### Array Column Filtering(Contains, All)
+
+#### Array Column Filtering (Contains, All)
 ```
 WHERE Integer_Array CONTAINS (1,2,3,....,N) 
 WHERE String_Array CONTAINS ('abc', 'def', .... )
@@ -473,12 +525,12 @@ WHERE Integer_Array ALL (1,2,3,....,N)
  - [x] RestApi models [![Core  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Core?label=Core&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Core)
  - [x] Embedded mode binding (Builtin) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
  - [x] Embedded Server mode binding (Builtin-server) [![Embedded  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Embedded?label=Embedded&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Embedded)
- - [x] Embedded bindings for win-x64, linux-x64, linux-musl-x64, osx-x64 and win-x86
+ - [x] Embedded bindings for win-x64, win-x86, linux-x64, linux-musl-x64, osx-x64, and osx-arm64
  - [x] GRPC connector for remote servers (Standalone server/Grpc) [![Remote.Grpc  Nuget](https://img.shields.io/nuget/v/ReindexerNet.Remote.Grpc?label=Remote.Grpc&color=1182c2&logo=nuget)](https://www.nuget.org/packages/ReindexerNet.Remote.Grpc)
  - [x] Query Interface
  - [x] CJson Serializer for Query
- - [ ] CJson Serializer for items(encoder/decoder)
+ - [ ] CJson Serializer for items (encoder/decoder)
  - [x] Dsl Query Builder
  - [ ] OpenApi/Json connector for remote servers
  - [ ] CProto connector for remote servers
- - [ ] Documentation 
+ - [ ] Documentation

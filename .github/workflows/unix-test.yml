@@ -6,12 +6,16 @@ on:
 
 jobs:
   ubuntu-test:
+    name: unix-test (${{ matrix.target.name }})
     runs-on: ${{ matrix.target.runs-on }}
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
-      VSTEST_DUMP_FORCEPROCDUMP: 1
+      DOTNET_DbgEnableMiniDump: 1
+      DOTNET_DbgMiniDumpType: 1
+      DOTNET_DbgMiniDumpName: /tmp/crash.%p.dmp
     strategy:
+      fail-fast: false
       matrix:
         target:
           - name: ubuntu22
@@ -30,11 +34,16 @@ jobs:
             runs-on: 'macos-15-intel'
             shell: bash -e
             rid: osx-x64
+          - name: osx-arm64
+            runs-on: 'macos-15'
+            shell: bash -e
+            rid: osx-arm64
     steps:
     - uses: actions/checkout@v2
     - name: Setup Shell
-      run: |        
+      run: |
         echo "#!/bin/sh
+        ulimit -c unlimited
         ${{matrix.target.shell}} \"\$@\"" > shell.sh
         cat shell.sh
         chmod +x shell.sh
@@ -69,8 +78,6 @@ jobs:
       run: |
         wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
         chmod +x ./dotnet-install.sh        
-        ./dotnet-install.sh --channel 3.1 --install-dir ~/.dotnet
-        ./dotnet-install.sh --channel 5.0 --install-dir ~/.dotnet
         ./dotnet-install.sh --channel 6.0 --install-dir ~/.dotnet
         ./dotnet-install.sh --channel 7.0 --install-dir ~/.dotnet
         ./dotnet-install.sh --channel 8.0 --install-dir ~/.dotnet
@@ -79,14 +86,19 @@ jobs:
         echo "$DOTNET_ROOT" >> $GITHUB_PATH
         echo "$DOTNET_ROOT/tools" >> $GITHUB_PATH
       shell: shell.sh {0}
-    - name: Install OpenSSL 1.1 for Ubuntu24 and below net 5
-      if: matrix.target.name == 'ubuntu24'
+    - name: Configure core dumps
       run: |
-        wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
-        sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
+        if [ "$(uname)" = "Linux" ]; then
+          echo '/tmp/core.%p.%e' | sudo tee /proc/sys/kernel/core_pattern
+          echo 0 | sudo tee /proc/sys/kernel/ptrace_scope
+        elif [ "$(uname)" = "Darwin" ]; then
+          sudo sysctl -w kern.coredump=1
+          sudo mkdir -p /cores && sudo chmod 777 /cores
+        fi
+      continue-on-error: true
     - name: GrpcTool Fix on Alpine
       if: startsWith(matrix.target.name,'alpine')
-      run: |       
+      run: |
         # grpc protoc wants glibc on Alpine builds. so we build at ubuntu instead. https://github.com/grpc/grpc/issues/18428#issuecomment-535041155        
         # wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
         # wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.35-r1/glibc-2.35-r1.apk
@@ -125,16 +137,21 @@ jobs:
     - name: Test .NET 6
       run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net6.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
       shell: shell.sh {0}
-    - name: Test .NET 5
-      run: ~/.dotnet/dotnet test -v quiet --blame-crash --blame-hang-dump-type=mini -f net5.0 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
-      shell: shell.sh {0}
-    - name: Test .NET Core 3.1
-      run: ~/.dotnet/dotnet test -v quiet -f netcoreapp3.1 -r ${{ matrix.target.rid }} --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo
-      shell: shell.sh {0}
+    - name: Collect crash dumps
+      if: failure()
+      run: |
+        mkdir -p crash-dumps
+        find /tmp -maxdepth 1 \( -name 'crash.*.dmp' -o -name 'core.*' \) -exec cp {} crash-dumps/ \; 2>/dev/null || true
+        find /cores -maxdepth 1 -name 'core.*' -exec cp {} crash-dumps/ \; 2>/dev/null || true
+        find "${HOME}/Library/Logs/DiagnosticReports" -maxdepth 1 \( -name '*.crash' -o -name '*.ips' \) -exec cp {} crash-dumps/ \; 2>/dev/null || true
+        ls -lh crash-dumps/ || true
+      continue-on-error: true
     - name: Test Results
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.target.name }}-test-results
+        if-no-files-found: ignore
         path: |
             **/TestResults/**
+            crash-dumps/

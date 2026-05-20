@@ -9,6 +9,7 @@ using System.Text;
 using int8_t = System.SByte;
 using int32_t = System.Int32;
 using int64_t = System.Int64;
+using uint32_t = System.UInt32;
 using uint64_t = System.UInt64;
 using uintptr_t = System.UIntPtr;
 
@@ -19,6 +20,14 @@ struct reindexer_config
 {
     int64_t allocator_cache_limit;
     float allocator_max_cache_part;
+    uint64_t max_updates_size;
+    reindexer_string sub_db_name;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+struct BindingCapabilities
+{
+    public int64_t caps;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -229,6 +238,15 @@ internal sealed class ReindexerStringHandle : IDisposable
 struct reindexer_ret
 {
     public reindexer_resbuffer @out;
+    public int err_code;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+struct reindexer_array_ret
+{
+    public IntPtr out_buffers; // reindexer_buffer*
+    public uint32_t out_size;
+    public uintptr_t data;
     public int err_code;
 }
 

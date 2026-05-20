@@ -1,0 +1,41 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Libraries/">
+    <File Path="src/Directory.Build.props" />
+    <Project Path="src/ReindexerNet.Core/ReindexerNet.Core.csproj" />
+    <Project Path="src/ReindexerNet.Embedded/ReindexerNet.Embedded.csproj" />
+    <Project Path="src/ReindexerNet.Remote.Grpc/ReindexerNet.Remote.Grpc.csproj" />
+    <Project Path="src/ReindexerNet.Remote.OpenApi/ReindexerNet.Remote.OpenApi.csproj" />
+  </Folder>
+  <Folder Name="/NativeAssets/">
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.Full/ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.Min/ReindexerNet.Embedded.NativeAssets.AlpineLinux-x64.Min.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Linux-x64.Full/ReindexerNet.Embedded.NativeAssets.Linux-x64.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Linux-x64.Min/ReindexerNet.Embedded.NativeAssets.Linux-x64.Min.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Osx-arm64.Full/ReindexerNet.Embedded.NativeAssets.Osx-arm64.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Osx-arm64.Min/ReindexerNet.Embedded.NativeAssets.Osx-arm64.Min.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Osx-x64.Full/ReindexerNet.Embedded.NativeAssets.Osx-x64.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Osx-x64.Min/ReindexerNet.Embedded.NativeAssets.Osx-x64.Min.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Win-x64.Full/ReindexerNet.Embedded.NativeAssets.Win-x64.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Win-x64.Min/ReindexerNet.Embedded.NativeAssets.Win-x64.Min.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Win-x86.Full/ReindexerNet.Embedded.NativeAssets.Win-x86.Full.csproj" />
+    <Project Path="src/ReindexerNet.Embedded.NativeAssets.Win-x86.Min/ReindexerNet.Embedded.NativeAssets.Win-x86.Min.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/unix-test.yml" />
+    <File Path=".github/workflows/windows-test.yml" />
+    <File Path="CHANGELOG.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/ReindexerNet.CoreTest/ReindexerNet.CoreTest.csproj" />
+    <Project Path="Tests/ReindexerNet.EmbeddedBenchmarks/ReindexerNet.EmbeddedBenchmarks.csproj" />
+    <Project Path="Tests/ReindexerNet.EmbeddedTest/ReindexerNet.EmbeddedTest.csproj" />
+    <Project Path="Tests/ReindexerNet.RemoteTest/ReindexerNet.RemoteTest.csproj" />
+  </Folder>
+</Solution>

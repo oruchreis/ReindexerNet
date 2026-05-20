@@ -1,20 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 <PropertyGroup>
-    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;net472</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0;net472</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOsPlatform('Windows'))">net9.0;net8.0;net7.0;net6.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(RuntimeIdentifier)' != 'win-x86'"> 
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != 'win-x86' and !$(RuntimeIdentifier.Contains('arm64'))">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x86'"> 
     <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
   
   <ItemGroup>

@@ -13,6 +13,7 @@ using System.Runtime.Loader;
 #endif
 
 using int32_t = System.Int32;
+using uint32_t = System.UInt32;
 using uintptr_t = System.UIntPtr;
 using System.Linq;
 using System.Security;
@@ -23,7 +24,7 @@ namespace ReindexerNet.Embedded.Internal;
 
 internal static partial class ReindexerBinding
 {
-    public const string ReindexerVersion = "v3.31.0";
+    public const string ReindexerVersion = "v5.1.0";
 
     private const string BindingLibrary = "reindexer_embedded_server";
     private static partial class Windows
@@ -311,8 +312,6 @@ internal static partial class ReindexerBinding
 
     public static readonly Delegate.reindexer_connect reindexer_connect;
     public static readonly Delegate.reindexer_ping reindexer_ping;
-    public static readonly Delegate.reindexer_enable_storage reindexer_enable_storage;
-    public static readonly Delegate.reindexer_init_system_namespaces reindexer_init_system_namespaces;
     public static readonly Delegate.reindexer_open_namespace reindexer_open_namespace;
     public static readonly Delegate.reindexer_drop_namespace reindexer_drop_namespace;
     public static readonly Delegate.reindexer_truncate_namespace reindexer_truncate_namespace;
@@ -368,11 +367,10 @@ internal static partial class ReindexerBinding
     public static reindexer_ret reindexer_update_query(uintptr_t rx, reindexer_buffer @in, reindexer_ctx_info ctx_info)
     {
         _responseBufferConcurrenyLimit.Wait();
-        return reindexer_update_query_native(rx, @in, ctx_info);
+        return reindexer_update_query_native(rx, @in, null, 0, ctx_info);
     }
     public static readonly Delegate.reindexer_free_buffer reindexer_free_buffer;
     public static readonly Delegate.reindexer_free_buffers reindexer_free_buffers;
-    public static readonly Delegate.reindexer_commit reindexer_commit;
     public static readonly Delegate.reindexer_put_meta reindexer_put_meta;
 
     private static readonly Delegate.reindexer_get_meta reindexer_get_meta_native;
@@ -386,6 +384,30 @@ internal static partial class ReindexerBinding
     public static readonly Delegate.reindexer_enable_logger reindexer_enable_logger;
     public static readonly Delegate.reindexer_disable_logger reindexer_disable_logger;
     public static readonly Delegate.reindexer_init_locale reindexer_init_locale;
+    public static readonly Delegate.reindexer_version reindexer_version;
+    public static readonly Delegate.reindexer_delete_meta reindexer_delete_meta;
+    public static readonly Delegate.reindexer_cptr2cjson reindexer_cptr2cjson;
+    public static readonly Delegate.reindexer_free_cjson reindexer_free_cjson;
+
+    private static readonly Delegate.init_reindexer_with_config init_reindexer_with_config_native;
+    public static uintptr_t init_reindexer_with_config(reindexer_config config)
+    {
+        var newInstance = init_reindexer_with_config_native(config);
+        _instances[newInstance] = true;
+        return newInstance;
+    }
+
+    private static readonly Delegate.reindexer_enum_meta reindexer_enum_meta_native;
+    public static reindexer_ret reindexer_enum_meta(uintptr_t rx, reindexer_string ns, reindexer_ctx_info ctx_info)
+    {
+        _responseBufferConcurrenyLimit.Wait();
+        return reindexer_enum_meta_native(rx, ns, ctx_info);
+    }
+
+    public static readonly Delegate.reindexer_subscribe reindexer_subscribe;
+    public static readonly Delegate.reindexer_unsubscribe reindexer_unsubscribe;
+    public static readonly Delegate.reindexer_read_events reindexer_read_events;
+    public static readonly Delegate.reindexer_erase_events reindexer_erase_events;
     #endregion
 
     #region server_c.h
@@ -429,13 +451,9 @@ internal static partial class ReindexerBinding
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate void destroy_reindexer(uintptr_t rx);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public delegate reindexer_error reindexer_connect(uintptr_t rx, reindexer_string dsn, ConnectOpts opts, reindexer_string client_vers);
+        public delegate reindexer_error reindexer_connect(uintptr_t rx, reindexer_string dsn, ConnectOpts opts, reindexer_string client_vers, BindingCapabilities caps);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_error reindexer_ping(uintptr_t rx);
-        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public delegate reindexer_error reindexer_enable_storage(uintptr_t rx, reindexer_string path, reindexer_ctx_info ctx_info);
-        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public delegate reindexer_error reindexer_init_system_namespaces(uintptr_t rx);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_error reindexer_open_namespace(uintptr_t rx, reindexer_string nsName, StorageOpts opts, reindexer_ctx_info ctx_info);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
@@ -479,14 +497,12 @@ internal static partial class ReindexerBinding
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_ret reindexer_delete_query(uintptr_t rx, reindexer_buffer @in, reindexer_ctx_info ctx_info);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public delegate reindexer_ret reindexer_update_query(uintptr_t rx, reindexer_buffer @in, reindexer_ctx_info ctx_info);
+        public delegate reindexer_ret reindexer_update_query(uintptr_t rx, reindexer_buffer @in, int32_t[] tm_versions /* int32_t* */, int tm_versions_count, reindexer_ctx_info ctx_info);
 
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_error reindexer_free_buffer(reindexer_resbuffer @in);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_error reindexer_free_buffers(reindexer_resbuffer[] @in /* reindexer_resbuffer* */, int count);
-        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
-        public delegate reindexer_error reindexer_commit(uintptr_t rx, reindexer_string nsName);
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate reindexer_error reindexer_put_meta(uintptr_t rx, reindexer_string ns, reindexer_string key, reindexer_string data, reindexer_ctx_info ctx_info);
 
@@ -503,6 +519,26 @@ internal static partial class ReindexerBinding
 
         [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
         public delegate void reindexer_init_locale();
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate IntPtr reindexer_version();
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_error reindexer_delete_meta(uintptr_t rx, reindexer_string ns, reindexer_string key, reindexer_ctx_info ctx_info);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_buffer reindexer_cptr2cjson(uintptr_t results_ptr, uintptr_t cptr, int ns_id);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate void reindexer_free_cjson(reindexer_buffer b);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate uintptr_t init_reindexer_with_config(reindexer_config config);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_ret reindexer_enum_meta(uintptr_t rx, reindexer_string ns, reindexer_ctx_info ctx_info);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_error reindexer_subscribe(uintptr_t rx, reindexer_string optsJSON);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_error reindexer_unsubscribe(uintptr_t rx);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_array_ret reindexer_read_events(uintptr_t rx, IntPtr out_buffers /* reindexer_buffer* */, uint32_t buffers_count);
+        [SuppressUnmanagedCodeSecurity, UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Auto)]
+        public delegate reindexer_error reindexer_erase_events(uintptr_t rx, uint32_t events_count);
         #endregion
 
         #region server_c.h
@@ -584,7 +620,8 @@ internal static partial class ReindexerBinding
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             libraryFile = $"lib{BindingLibrary}.dylib";
-            platformPath = Path.Combine("runtimes", "osx" + arch, "native");
+            var osxArch = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "-arm64" : "-x64";
+            platformPath = Path.Combine("runtimes", "osx" + osxArch, "native");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -598,7 +635,7 @@ internal static partial class ReindexerBinding
             var runtimeIdentifier = RuntimeInformation.RuntimeIdentifier;
 #else
             var runtimeIdentifier = AppContext.GetData("RUNTIME_IDENTIFIER") as string;
-#endif            
+#endif
             if ((runtimeIdentifier == null && _searchBinPaths.Any(sp => File.Exists(Path.Combine(sp, "runtimes", "linux-musl" + arch, "native", libraryFile)))) ||
                 (runtimeIdentifier != null && (runtimeIdentifier.StartsWith("linux-musl") || runtimeIdentifier.StartsWith("alpine"))))
                 platformPath = Path.Combine("runtimes", "linux-musl" + arch, "native");
