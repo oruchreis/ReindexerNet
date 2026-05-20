@@ -240,7 +240,8 @@ public partial class ReindexerEmbedded : IReindexerClient
            ReindexerBinding.reindexer_connect(Rx,
                dsn,
                options ?? new ConnectionOptions(),
-               version)
+               version,
+               new BindingCapabilities())
        );
     }
 
@@ -725,7 +726,8 @@ public partial class ReindexerEmbedded : IReindexerClient
                ReindexerBinding.reindexer_connect(newRx,
                    dsn,
                    new ConnectionOptions(),
-                   version)
+                   version,
+                   new BindingCapabilities())
            );
         ReindexerBinding.destroy_reindexer(newRx);
     }

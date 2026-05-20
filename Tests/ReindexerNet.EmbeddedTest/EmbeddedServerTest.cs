@@ -37,7 +37,6 @@ namespace ReindexerNet.EmbeddedTest
             Client.Connect();
 
             Client.OpenNamespace(NsName);
-            await Client.TruncateNamespaceAsync(NsName).ConfigureAwait(false);
         }
 
         [TestCleanup]

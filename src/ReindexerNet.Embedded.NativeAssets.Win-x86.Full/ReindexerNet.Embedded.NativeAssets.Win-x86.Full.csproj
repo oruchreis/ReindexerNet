@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RuntimeIdentifiers>win-x86</RuntimeIdentifiers>
+    <RootNamespace>ReindexerNet.Embedded</RootNamespace>
+    <PackageId>ReindexerNet.Embedded.Native.Win-x86.Full</PackageId>
+    <Title>ReindexerNet.Embedded</Title>
+    <Description>Reindexer Embedded library (full build with RocksDB and gRPC) to embed and run in .net projects.</Description>
+    <PackageTags>reindexer embedded document-db in-memory rocksdb grpc full</PackageTags>
+	<Version>0.5.1.5010</Version>
+	<AssemblyVersion>0.5.1</AssemblyVersion>
+	<FileVersion>0.5.1</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="runtimes\**\*" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="runtimes" />
+  </ItemGroup>
+
+</Project>

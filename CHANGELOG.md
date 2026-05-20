@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-05-18
+### Added
+- Native asset packages now ship in two variants per platform:
+  - **Full** (`ReindexerNet.Embedded.Native.<Platform>.Full`) — full build including RocksDB storage engine and gRPC builtinserver support, identical to previous releases.
+  - **Min** (`ReindexerNet.Embedded.Native.<Platform>.Min`) — minimal build without RocksDB and gRPC for smaller footprint and faster startup.
+- Added **macOS arm64** native asset packages (`Osx-arm64.Full` and `Osx-arm64.Min`).
+- CI now tests on `macos-15` (Apple Silicon) in addition to `macos-15-intel`.
+
+### Changed
+- Updated package versions: `0.5.1` for Core; `0.5.1.5010` for Remote.Grpc, Embedded and all NativeAssets packages (Reindexer native library v5.1.0).
+- All existing native asset packages renamed with `.Full` suffix (`ReindexerNet.Embedded.Native.<Platform>` → `ReindexerNet.Embedded.Native.<Platform>.Full`).
+- Updated gRPC proto to Reindexer v5: `SelectSql(SelectSqlRequest)` renamed to `ExecSql(SqlRequest)`; added `DeleteMeta`; expanded error codes; removed deprecated `autorepair`/`slaveMode` fields; fixed `encodingType` typo in `Query` message.
+
+### Fixed
+- Fixed `ReindexerGrpcClient.ExecuteSqlAsync` failing with `StatusCode="Unimplemented"` on Reindexer v5 servers — the gRPC method was renamed from `SelectSql` to `ExecSql` in the v5 API.
+- Fixed `SerializableQueryBuilder` (used by the gRPC client) dropping `.On(...)` conditions when chained directly after `LeftJoin`/`InnerJoin`. ON conditions are now correctly attached to the join even when added via the outer query chain (e.g. `q.LeftJoin(...).On(...)`).
+- Fixed macOS arm64 native library resolution: `ReindexerBinding` now uses `RuntimeInformation.ProcessArchitecture` to correctly select the `osx-arm64` runtime path on Apple Silicon.
+
+### Removed
+- Dropped support for **net5.0** and **netcoreapp3.1** target frameworks. Both reached end-of-life in May 2022 and December 2022 respectively. Minimum supported runtime is now **.NET 6** (and .NET Framework 4.7.2 on Windows). The library packages still target `netstandard2.0` and `netstandard2.1` for broad compatibility.
+
 ## [0.5.0] - 2026-05-08
 ### Added
 - Added configurable bounded native worker scheduling for Embedded async operations to avoid filling the .NET ThreadPool under high parallel native call load.

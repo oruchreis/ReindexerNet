@@ -75,28 +75,14 @@ public class ReindexerBindingTest
                 options = ConnectOpt.kConnectOptAllowNamespaceErrors,
                 storage = StorageTypeOpt.kStorageTypeOptLevelDB,
                 expectedClusterID = 0
-            }, ReindexerBinding.ReindexerVersion.GetStringHandle()));
+            }, ReindexerBinding.ReindexerVersion.GetStringHandle(),
+            new BindingCapabilities()));
     }
 
     [TestMethod]
     public void Ping()
     {
         AssertError(ReindexerBinding.reindexer_ping(_rx));
-    }
-
-    [TestMethod]
-    public void EnableStorage()
-    {
-        var dbPath = Path.Combine(Path.GetTempPath(), "TestDbForEnableStorage");
-        if (Directory.Exists(dbPath))
-            Directory.Delete(dbPath, true);
-        AssertError(ReindexerBinding.reindexer_enable_storage(ReindexerBinding.init_reindexer(), dbPath.GetStringHandle(), _ctxInfo));
-    }
-
-    [TestMethod]
-    public void InitSystemNamespaces()
-    {
-        AssertError(ReindexerBinding.reindexer_init_system_namespaces(_rx));
     }
 
     [TestMethod]

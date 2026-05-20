@@ -63,7 +63,6 @@ public class GrpcTest: BaseTest<ReindexerGrpcClient>
         await Server.ConnectAsync();
 
         await Server.OpenNamespaceAsync(NsName);
-        await Server.TruncateNamespaceAsync(NsName).ConfigureAwait(false);
 
         Client = new ReindexerGrpcClient(new ReindexerConnectionString
         {

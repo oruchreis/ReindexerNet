@@ -11,6 +11,7 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_NOLOGO: 1
     strategy:
+      fail-fast: false
       matrix:
         target:
         - arch: 'x64'
@@ -30,8 +31,6 @@ jobs:
       run: |
         echo 'PROCESSOR_ARCHITEW6432=${{ matrix.target.arch }}' >> $env:GITHUB_ENV
         Invoke-WebRequest 'https://dot.net/v1/dotnet-install.ps1' -OutFile 'dotnet-install.ps1';      
-        ./dotnet-install.ps1 -Channel 3.1 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
-        ./dotnet-install.ps1 -Channel 5.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         ./dotnet-install.ps1 -Channel 6.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         ./dotnet-install.ps1 -Channel 7.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
         ./dotnet-install.ps1 -Channel 8.0 -Architecture ${{ matrix.target.arch }} -InstallDir "${{ matrix.target.programFiles }}\dotnet"
@@ -46,15 +45,20 @@ jobs:
     #        6.x
     #        7.x
     #        8.x    
+    - name: Test .NET 9 ${{ matrix.target.arch }}
+      run: dotnet test -v quiet -f net9.0 --blame-crash --blame-hang-dump-type=mini --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo --runtime win-${{ matrix.target.arch }}
     - name: Test .NET 8 ${{ matrix.target.arch }}
-      run: dotnet test -v quiet -f net9.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
-    - name: Test .NET 8 ${{ matrix.target.arch }}
-      run: dotnet test -v quiet -f net8.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
-    - name: Test .NET 7 ${{ matrix.target.arch }}                                                      
-      run: dotnet test -v quiet -f net7.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
-    - name: Test .NET 6 ${{ matrix.target.arch }}                                                      
-      run: dotnet test -v quiet -f net6.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
-    - name: Test .NET 5 ${{ matrix.target.arch }}                                                      
-      run: dotnet test -v quiet -f net5.0 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}      
-    - name: Test .NET Core 3.1 ${{ matrix.target.arch }}
-      run: dotnet test -v quiet -f netcoreapp3.1 --logger "console;verbosity=detailed" --runtime win-${{ matrix.target.arch }}
+      run: dotnet test -v quiet -f net8.0 --blame-crash --blame-hang-dump-type=mini --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo --runtime win-${{ matrix.target.arch }}
+    - name: Test .NET 7 ${{ matrix.target.arch }}
+      run: dotnet test -v quiet -f net7.0 --blame-crash --blame-hang-dump-type=mini --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo --runtime win-${{ matrix.target.arch }}
+    - name: Test .NET 6 ${{ matrix.target.arch }}
+      run: dotnet test -v quiet -f net6.0 --blame-crash --blame-hang-dump-type=mini --logger "trx;LogFilePrefix=testResults;verbosity=detailed" --nologo /nologo --runtime win-${{ matrix.target.arch }}
+    - name: Test Results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-${{ matrix.target.arch }}-test-results
+        if-no-files-found: ignore
+        path: |
+            **/TestResults/**
+            **/*.dmp

@@ -36,8 +36,6 @@ public class EmbeddedTest : BaseTest<IReindexerClient>
         await Client.ConnectAsync(new ConnectionOptions { Engine = Storage });
         TestContext.WriteLine($"Opening {NsName} namespace..");
         await Client.OpenNamespaceAsync(NsName);
-        TestContext.WriteLine($"Truncating {NsName} namespace..");
-        await Client.TruncateNamespaceAsync(NsName);
     }
 
 
