@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
 
@@ -7,35 +7,47 @@ namespace ReindexerNetBenchmark;
 public class SelectSingleHash : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>();
         for (int i = 0; i < N; i++)
         {
-            result.Add(RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
+            result.Add(RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         }
 
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>();
         for (int i = 0; i < N; i++)
         {
-            result.Add(RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
+            result.Add(RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         }
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>();
         for (int i = 0; i < N; i++)
         {
-            result.Add(RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty = '{Data[i].StringProperty}' LIMIT 1").CaptureResult());
+            result.Add(RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty = '{Data[i].StringProperty}' LIMIT 1").CaptureResult());
+        }
+
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>();
+        for (int i = 0; i < N; i++)
+        {
+            result.Add(RxClientV3!.Execute("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         }
 
         return result;
@@ -64,18 +76,6 @@ public class SelectSingleHash : SelectBenchmarkBase
         }
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var result = new List<object?>();
-    //    for (int i = 0; i < N; i++)
-    //    {
-    //        var str = Data[i].StringProperty;
-    //        result.Add(CaDSCompressed.FirstOrDefault(e => e.StringProperty == str).CaptureResult());
-    //    }
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

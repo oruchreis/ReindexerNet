@@ -353,3 +353,4 @@ MigrationBackup/
 
 # All hidden directories (dot-folders)
 .*/
+/Tests/ReindexerNet.EmbeddedBenchmarks/benchmark-results-*.md

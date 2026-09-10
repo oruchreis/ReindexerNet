@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
 using Realms;
@@ -8,40 +8,53 @@ namespace ReindexerNetBenchmark;
 public class SelectArrayMultiple : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>
         {
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, SearchItemsInt)).CaptureResult(),
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, SearchItemsStr)).CaptureResult(),
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.ALLSET, SearchItemsInt)).CaptureResult(),
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.ALLSET, SearchItemsStr)).CaptureResult()
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, SearchItemsInt)).CaptureResult(),
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, SearchItemsStr)).CaptureResult(),
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.ALLSET, SearchItemsInt)).CaptureResult(),
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.ALLSET, SearchItemsStr)).CaptureResult()
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>
         {
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, SearchItemsInt)).CaptureResult(),
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, SearchItemsStr)).CaptureResult(),
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.ALLSET, SearchItemsInt)).CaptureResult(),
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.ALLSET, SearchItemsStr)).CaptureResult()
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, SearchItemsInt)).CaptureResult(),
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, SearchItemsStr)).CaptureResult(),
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.ALLSET, SearchItemsInt)).CaptureResult(),
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.ALLSET, SearchItemsStr)).CaptureResult()
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>
         {
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray IN ({SearchItemsIntJoined})").CaptureResult(),
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray IN ({SearchItemsStrJoined})").CaptureResult(),
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray ALLSET ({SearchItemsIntJoined})").CaptureResult(),
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray ALLSET ({SearchItemsStrJoined})").CaptureResult()
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray IN ({SearchItemsIntJoined})").CaptureResult(),
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray IN ({SearchItemsStrJoined})").CaptureResult(),
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray ALLSET ({SearchItemsIntJoined})").CaptureResult(),
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray ALLSET ({SearchItemsStrJoined})").CaptureResult()
+        };
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>
+        {
+            RxClientV3!.Execute("Entities", q => q.WhereInt32("IntArray", Condition.SET, SearchItemsInt)).CaptureResult(),
+            RxClientV3!.Execute("Entities", q => q.WhereString("StrArray", Condition.SET, SearchItemsStr)).CaptureResult(),
+            RxClientV3!.Execute("Entities", q => q.WhereInt32("IntArray", Condition.ALLSET, SearchItemsInt)).CaptureResult(),
+            RxClientV3!.Execute("Entities", q => q.WhereString("StrArray", Condition.ALLSET, SearchItemsStr)).CaptureResult()
         };
         return result;
     }
@@ -71,19 +84,6 @@ public class SelectArrayMultiple : SelectBenchmarkBase
         };
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var result = new List<object?>
-    //    {
-    //        CaDSCompressed.Where(IntAnyQuery).AsEnumerable().CaptureResult(),
-    //        CaDSCompressed.Where(StrAnyQuery).AsEnumerable().CaptureResult(),
-    //        CaDSCompressed.Where(IntAllQuery).AsEnumerable().CaptureResult(),
-    //        CaDSCompressed.Where(StrAllQuery).AsEnumerable().CaptureResult()
-    //    };
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()
@@ -116,12 +116,12 @@ public class SelectArrayMultiple : SelectBenchmarkBase
     {
         var result = new List<object?>
         {
-            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY IntArray IN {{ {SearchItemsIntJoined} }}").CaptureResult(), //.@values
+            RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY IntArray IN {{ {SearchItemsIntJoined} }}").CaptureResult(),
             RealmCli.All<BenchmarkRealmEntity>().Filter($"ANY StrArray IN {{ {SearchItemsStrJoined} }}").CaptureResult(),
             RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL IntArray IN {{ {SearchItemsIntJoined} }}").CaptureResult(),
             RealmCli.All<BenchmarkRealmEntity>().Filter($"ALL StrArray IN {{ {SearchItemsStrJoined} }}").CaptureResult()
         };
-       
+
         return result;
     }
 }

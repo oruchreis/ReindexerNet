@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -23,7 +23,7 @@ namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 [Config(typeof(SelectBenchmarkConfig))]
 public abstract class SelectBenchmarkBase
 {
-    protected class SelectBenchmarkConfig: ManualConfig
+    protected class SelectBenchmarkConfig : ManualConfig
     {
         public SelectBenchmarkConfig()
         {
@@ -45,14 +45,18 @@ public abstract class SelectBenchmarkBase
     protected string DataPath;
     protected BenchmarkEntity[] Data;
 
-    [Params(500,2_000)]
+    [Params(500, 2_000)]
     public int N;
 
     #region Setups
 
+    // v5 clients
     protected ReindexerEmbedded? RxClient;
     protected ReindexerEmbedded? RxClientSpanJson;
     protected ReindexerEmbedded? RxClientSql;
+    // v3 client (isolated via AssemblyLoadContext)
+    protected RxV3ReindexerEmbedded? RxClientV3;
+
     protected Connector? CaConnector;
     protected Connector? CaConnectorMemory;
     //protected Connector? CaConnectorCompressed;
@@ -135,18 +139,17 @@ public abstract class SelectBenchmarkBase
     }
 
     [GlobalSetup(Targets = new[] {
-        "ReindexerNet"
+        "ReindexerNetV5"
         })]
-    public void ReindexerNetSetup()
+    public void ReindexerNetV5Setup()
     {
         Setup();
-        var dbPath = Path.Combine(DataPath, "ReindexerEmbedded");
+        var dbPath = Path.Combine(DataPath, "ReindexerEmbeddedV5");
         if (Directory.Exists(dbPath))
             Directory.Delete(dbPath, true);
         RxClient = new ReindexerEmbedded(dbPath);
         RxClient.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
         RxClient.OpenNamespace("Entities");
-        RxClient.TruncateNamespace("Entities");
         RxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
         RxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = false });
         RxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
@@ -157,9 +160,9 @@ public abstract class SelectBenchmarkBase
     }
 
     [GlobalCleanup(Targets = new[] {
-        "ReindexerNet"
+        "ReindexerNetV5"
         })]
-    public void ReindexerNetClean()
+    public void ReindexerNetV5Clean()
     {
         RxClient!.Dispose();
         Cleanup();
@@ -181,18 +184,17 @@ public abstract class SelectBenchmarkBase
     }
 
     [GlobalSetup(Targets = new[] {
-        "ReindexerNetSpanJson"
+        "ReindexerNetSpanJsonV5"
         })]
-    public void ReindexerNetSpanJsonSetup()
+    public void ReindexerNetSpanJsonV5Setup()
     {
         Setup();
-        var dbPathSpanJson = Path.Combine(DataPath, "ReindexerEmbeddedSpanJson");
+        var dbPathSpanJson = Path.Combine(DataPath, "ReindexerEmbeddedSpanJsonV5");
         if (Directory.Exists(dbPathSpanJson))
             Directory.Delete(dbPathSpanJson, true);
         RxClientSpanJson = new ReindexerEmbedded(dbPathSpanJson, new SpanJsonSerializer());
         RxClientSpanJson.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
         RxClientSpanJson.OpenNamespace("Entities");
-        RxClientSpanJson.TruncateNamespace("Entities");
         RxClientSpanJson.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
         RxClientSpanJson.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = true });
         RxClientSpanJson.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
@@ -203,27 +205,26 @@ public abstract class SelectBenchmarkBase
     }
 
     [GlobalCleanup(Targets = new[] {
-        "ReindexerNetSpanJson"
+        "ReindexerNetSpanJsonV5"
         })]
-    public void ReindexerNetSpanJsonClean()
+    public void ReindexerNetSpanJsonV5Clean()
     {
         RxClientSpanJson!.Dispose();
         Cleanup();
     }
 
     [GlobalSetup(Targets = new[] {
-        "ReindexerNetSql"
+        "ReindexerNetSqlV5"
         })]
-    public void ReindexerNetSqlSetup()
+    public void ReindexerNetSqlV5Setup()
     {
         Setup();
-        var dbPath = Path.Combine(DataPath, "ReindexerEmbeddedSql");
+        var dbPath = Path.Combine(DataPath, "ReindexerEmbeddedSqlV5");
         if (Directory.Exists(dbPath))
             Directory.Delete(dbPath, true);
         RxClientSql = new ReindexerEmbedded(dbPath);
         RxClientSql.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
         RxClientSql.OpenNamespace("Entities");
-        RxClientSql.TruncateNamespace("Entities");
         RxClientSql.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
         RxClientSql.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = false });
         RxClientSql.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
@@ -234,11 +235,41 @@ public abstract class SelectBenchmarkBase
     }
 
     [GlobalCleanup(Targets = new[] {
-        "ReindexerNetSql"
+        "ReindexerNetSqlV5"
         })]
-    public void ReindexerNetSqlClean()
+    public void ReindexerNetSqlV5Clean()
     {
         RxClientSql!.Dispose();
+        Cleanup();
+    }
+
+    [GlobalSetup(Targets = new[] {
+        "ReindexerNetV3"
+        })]
+    public void ReindexerNetV3Setup()
+    {
+        Setup();
+        var dbPath = Path.Combine(DataPath, "ReindexerEmbeddedV3");
+        if (Directory.Exists(dbPath))
+            Directory.Delete(dbPath, true);
+        RxClientV3 = new RxV3ReindexerEmbedded(dbPath);
+        RxClientV3.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
+        RxClientV3.OpenNamespace("Entities");
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = false });
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.CreateDate), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntArray), IndexType = IndexType.Hash, FieldType = FieldType.Int, IsDense = false, IsArray = true });
+        RxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false, IsArray = true });
+        RxClientV3.Insert("Entities", Data);
+    }
+
+    [GlobalCleanup(Targets = new[] {
+        "ReindexerNetV3"
+        })]
+    public void ReindexerNetV3Clean()
+    {
+        RxClientV3!.Dispose();
         Cleanup();
     }
 
@@ -250,12 +281,11 @@ public abstract class SelectBenchmarkBase
         Setup();
         //var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
         Directory.SetCurrentDirectory(DataPath);
-        CaConnector = new Connector(new ClientConfig { IsPersistent = true, ConnectionPoolCapacity=500, PreloadedConnections = 500  });
+        CaConnector = new Connector(new ClientConfig { IsPersistent = true, ConnectionPoolCapacity = 500, PreloadedConnections = 500 });
         CaConnector.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
         //CaConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
         CaDS = CaConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         CaDS.PutMany(Data);
-        //_caDS.Where(e => e.IntArray.Any(i => searchItemsInt.Contains(i))).ToList(),
         //Doesn't support .Any or All methods right now, so combining queries with OR
         GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
     }
@@ -271,43 +301,15 @@ public abstract class SelectBenchmarkBase
         Cleanup();
     }
 
-    //[GlobalSetup(Targets = new[] {
-    //    "CachalotCompressed"
-    //    })]
-    //public void CachalotCompressedSetup()
-    //{
-    //    Setup();
-    //    var server = new Server.Server(new NodeConfig { DataPath = DataPath, IsPersistent = true, ClusterName = "embedded" });
-    //    CaConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
-    //    CaConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-    //    CaConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
-    //    CaDSCompressed = CaConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-    //    CaDSCompressed.PutMany(Data);
-
-    //    //Doesn't support .Any or All methods right now, so combining queries with OR
-    //    GetArrayQueryExpressions(SearchItemsInt, SearchItemsStr, out IntAnyQuery, out IntAllQuery, out StrAnyQuery, out StrAllQuery);
-    //}
-
-    //[GlobalCleanup(Targets = new[] {
-    //    "CachalotCompressed"
-    //    })]
-    //public void CachalotCompressedClean()
-    //{
-    //    CaConnectorCompressed!.Dispose();
-    //    Cleanup();
-    //}
-
     [GlobalSetup(Targets = new[] {
         "CachalotMemory"
         })]
     public void CachalotMemorySetup()
     {
         Setup();
-        //var server = new Server.Server(new NodeConfig { DataPath = Path.Combine(DataPath, "CachalotMemory"), IsPersistent = false, ClusterName = "embeddedMemory" });
         Directory.SetCurrentDirectory(DataPath);
-        CaConnectorMemory = new Connector(new ClientConfig { IsPersistent = false, ConnectionPoolCapacity=500, PreloadedConnections = 500 });
+        CaConnectorMemory = new Connector(new ClientConfig { IsPersistent = false, ConnectionPoolCapacity = 500, PreloadedConnections = 500 });
         CaConnectorMemory.DeclareCollection<BenchmarkEntity>("BenchmarkEntityMemory");
-        //CaConnectorMemory.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
         CaDSMemory = CaConnectorMemory!.DataSource<BenchmarkEntity>("BenchmarkEntityMemory");
         CaDSMemory.PutMany(Data);
         //Doesn't support .Any or All methods right now, so combining queries with OR

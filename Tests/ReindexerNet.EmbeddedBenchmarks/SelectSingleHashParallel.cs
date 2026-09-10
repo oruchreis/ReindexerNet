@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Realms;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using System.Collections.Concurrent;
@@ -8,37 +8,46 @@ namespace ReindexerNetBenchmark;
 
 public class SelectSingleHashParallel : SelectBenchmarkBase
 {
-
-
     [Benchmark]
-    public ConcurrentBag<object?> ReindexerNet()
+    public ConcurrentBag<object?> ReindexerNetV5()
     {
         var result = new ConcurrentBag<object?>();
         Parallel.For(0, N, i =>
         {
-            result.Add(RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
+            result.Add(RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         });
         return result;
     }
 
     [Benchmark]
-    public ConcurrentBag<object?> ReindexerNetSpanJson()
+    public ConcurrentBag<object?> ReindexerNetSpanJsonV5()
     {
         var result = new ConcurrentBag<object?>();
         Parallel.For(0, N, i =>
         {
-            result.Add(RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
+            result.Add(RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         });
         return result;
     }
 
     [Benchmark]
-    public ConcurrentBag<object?> ReindexerNetSql()
+    public ConcurrentBag<object?> ReindexerNetSqlV5()
     {
         var result = new ConcurrentBag<object?>();
         Parallel.For(0, N, i =>
         {
-            result.Add(RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty = '{Data[i].StringProperty}' LIMIT 1").CaptureResult());
+            result.Add(RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty = '{Data[i].StringProperty}' LIMIT 1").CaptureResult());
+        });
+        return result;
+    }
+
+    [Benchmark]
+    public ConcurrentBag<object?> ReindexerNetV3()
+    {
+        var result = new ConcurrentBag<object?>();
+        Parallel.For(0, N, i =>
+        {
+            result.Add(RxClientV3!.Execute("Entities", q => q.WhereString("StringProperty", Condition.EQ, Data[i].StringProperty).Limit(1)).CaptureResult());
         });
         return result;
     }
@@ -66,18 +75,6 @@ public class SelectSingleHashParallel : SelectBenchmarkBase
         });
         return result;
     }
-
-    //[Benchmark]
-    //public ConcurrentBag<object?> CachalotCompressed()
-    //{
-    //    var result = new ConcurrentBag<object?>();
-    //    Parallel.For(0, N, i =>
-    //    {
-    //        var str = Data[i].StringProperty;
-    //        result.Add(CaDSCompressed.FirstOrDefault(e => e.StringProperty == str).CaptureResult());
-    //    });
-    //    return result;
-    //}
 
     [Benchmark]
     public ConcurrentBag<object?> LiteDb()

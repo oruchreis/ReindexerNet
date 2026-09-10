@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -9,17 +9,41 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
 		<PackageReference Include="Cachalot.Client" Version="2.5.13" />
 		<PackageReference Include="LiteDB" Version="5.0.21" />
-		<PackageReference Include="MessagePack" Version="2.5.192" />
-		<PackageReference Include="Realm" Version="20.0.0" />
+		<PackageReference Include="MessagePack" Version="3.1.6" />
+		<PackageReference Include="Realm" Version="20.1.0" />
 		<PackageReference Include="SpanJson" Version="4.2.1" />
 	</ItemGroup>
 
+	<!-- v5: NuGet packages (latest published) -->
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\ReindexerNet.Embedded.NativeAssets.Win-x64\ReindexerNet.Embedded.NativeAssets.Win-x64.csproj" />
-		<ProjectReference Include="..\..\src\ReindexerNet.Embedded\ReindexerNet.Embedded.csproj" />
+		<PackageReference Include="ReindexerNet.Embedded" Version="0.5.1.5010" Aliases="global,RxV5" />
+		<PackageReference Include="ReindexerNet.Embedded.Native.Win-x64.Full" Version="0.5.1.5010" />
 	</ItemGroup>
+
+	<!-- v3: Download to NuGet cache for AssemblyLoadContext isolation (not directly compiled) -->
+	<ItemGroup>
+		<PackageDownload Include="ReindexerNet.Embedded" Version="[0.5.0.3310]" />
+		<PackageDownload Include="ReindexerNet.Embedded.Native.Win-x64" Version="[0.5.0.3310]" />
+	</ItemGroup>
+
+	<!-- Extract v3 binaries to rxv3/ subdirectory after build for native library isolation -->
+	<Target Name="CopyV3Binaries" AfterTargets="Build">
+		<PropertyGroup>
+			<RxV3Dir>$(OutputPath)rxv3\</RxV3Dir>
+			<RxV3EmbeddedPkg>$([System.IO.Path]::Combine($(NuGetPackageRoot), 'reindexernet.embedded', '0.5.0.3310'))</RxV3EmbeddedPkg>
+			<RxV3NativePkg>$([System.IO.Path]::Combine($(NuGetPackageRoot), 'reindexernet.embedded.native.win-x64', '0.5.0.3310'))</RxV3NativePkg>
+		</PropertyGroup>
+		<ItemGroup>
+			<RxV3EmbeddedDll Include="$(RxV3EmbeddedPkg)\lib\net9.0\ReindexerNet.Embedded.dll" />
+			<RxV3NativeDll Include="$(RxV3NativePkg)\runtimes\win-x64\native\reindexer_embedded_server.dll" />
+		</ItemGroup>
+		<MakeDir Directories="$(RxV3Dir)" />
+		<MakeDir Directories="$(RxV3Dir)runtimes\win-x64\native\" />
+		<Copy SourceFiles="@(RxV3EmbeddedDll)" DestinationFolder="$(RxV3Dir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(RxV3NativeDll)" DestinationFolder="$(RxV3Dir)runtimes\win-x64\native\" SkipUnchangedFiles="true" />
+	</Target>
 
 </Project>

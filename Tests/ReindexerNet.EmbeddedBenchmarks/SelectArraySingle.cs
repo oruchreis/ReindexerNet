@@ -1,41 +1,52 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
 using Realms;
 
 namespace ReindexerNetBenchmark;
 
-public class SelectArraySingle: SelectBenchmarkBase
+public class SelectArraySingle : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>
         {
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, N)).CaptureResult(),
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, N.ToString())).CaptureResult(),
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, N)).CaptureResult(),
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, N.ToString())).CaptureResult(),
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>
         {
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, N)).CaptureResult(),
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, N.ToString())).CaptureResult(),
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntArray", Condition.SET, N)).CaptureResult(),
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StrArray", Condition.SET, N.ToString())).CaptureResult(),
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>
         {
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray IN ({N})").CaptureResult(),
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray IN ('{N}')").CaptureResult(),
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntArray IN ({N})").CaptureResult(),
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StrArray IN ('{N}')").CaptureResult(),
+        };
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>
+        {
+            RxClientV3!.Execute("Entities", q => q.WhereInt32("IntArray", Condition.SET, N)).CaptureResult(),
+            RxClientV3!.Execute("Entities", q => q.WhereString("StrArray", Condition.SET, N.ToString())).CaptureResult(),
         };
         return result;
     }
@@ -63,18 +74,6 @@ public class SelectArraySingle: SelectBenchmarkBase
         };
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var nstr = N.ToString();
-    //    var result = new List<object?>
-    //    {
-    //        CaDSCompressed.Where(e => e.IntArray.Contains(N)).AsEnumerable().CaptureResult(),
-    //        CaDSCompressed.Where(e => e.StrArray.Contains(nstr)).AsEnumerable().CaptureResult(),
-    //    };
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()
@@ -109,7 +108,7 @@ public class SelectArraySingle: SelectBenchmarkBase
             RealmCli.All<BenchmarkRealmEntity>().Filter("ANY IntArray == $0", N).CaptureResult(),
             RealmCli.All<BenchmarkRealmEntity>().Filter("ANY StrArray == $0", N.ToString()).CaptureResult()
         };
-       
+
         return result;
     }
 }

@@ -1,0 +1,55 @@
+{
+  "ShardIndex": 0,
+  "ShardCount": 1,
+  "CollectionsDescriptions": {
+    "BenchmarkEntity": {
+      "ServerSide": [
+        {
+          "Name": "Id",
+          "IndexType": "Primary",
+          "JsonName": "Id",
+          "Order": 0,
+          "IsCollection": false
+        },
+        {
+          "Name": "IntProperty",
+          "IndexType": "Ordered",
+          "JsonName": "IntProperty",
+          "Order": 1,
+          "IsCollection": false
+        },
+        {
+          "Name": "StringProperty",
+          "IndexType": "Dictionary",
+          "JsonName": "StringProperty",
+          "Order": 2,
+          "IsCollection": false
+        },
+        {
+          "Name": "CreateDate",
+          "IndexType": "Dictionary",
+          "JsonName": "CreateDate",
+          "Order": 3,
+          "IsCollection": false
+        },
+        {
+          "Name": "IntArray",
+          "IndexType": "Dictionary",
+          "JsonName": "IntArray",
+          "Order": 0,
+          "IsCollection": true
+        },
+        {
+          "Name": "StrArray",
+          "IndexType": "Dictionary",
+          "JsonName": "StrArray",
+          "Order": 1,
+          "IsCollection": true
+        }
+      ],
+      "CollectionName": "BenchmarkEntity",
+      "StorageLayout": "Default",
+      "FullText": []
+    }
+  }
+}

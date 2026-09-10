@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Realms;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
@@ -8,31 +8,41 @@ namespace ReindexerNetBenchmark;
 public class SelectMultipleHash : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>
         {
-            RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.SET, SearchStringProperties)).CaptureResult()
+            RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.SET, SearchStringProperties)).CaptureResult()
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>
         {
-            RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.SET, SearchStringProperties)).CaptureResult()
+            RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereString("StringProperty", Condition.SET, SearchStringProperties)).CaptureResult()
         };
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>
         {
-            RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty IN ({SearchStringPropertiesJoined})").CaptureResult()
+            RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE StringProperty IN ({SearchStringPropertiesJoined})").CaptureResult()
+        };
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>
+        {
+            RxClientV3!.Execute("Entities", q => q.WhereString("StringProperty", Condition.SET, SearchStringProperties)).CaptureResult()
         };
         return result;
     }
@@ -52,14 +62,6 @@ public class SelectMultipleHash : SelectBenchmarkBase
         result.Add(CaDSMemory.Where(e => SearchStringProperties.Contains(e.StringProperty)).AsEnumerable().CaptureResult());
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var result = new List<object?>();
-    //    result.Add(CaDSCompressed.Where(e => SearchStringProperties.Contains(e.StringProperty)).AsEnumerable().CaptureResult());
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

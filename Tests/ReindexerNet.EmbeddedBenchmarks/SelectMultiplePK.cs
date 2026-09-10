@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Realms;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
@@ -8,26 +8,34 @@ namespace ReindexerNetBenchmark;
 public class SelectMultiplePK : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>();
-        result.Add(RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereGuid("Id", Condition.SET, SearchIds)).CaptureResult());
+        result.Add(RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereGuid("Id", Condition.SET, SearchIds)).CaptureResult());
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>();
-        result.Add(RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereGuid("Id", Condition.SET, SearchIds)).CaptureResult());
+        result.Add(RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereGuid("Id", Condition.SET, SearchIds)).CaptureResult());
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>();
-        result.Add(RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE Id IN ({SearchIdsJoined})").CaptureResult());
+        result.Add(RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE Id IN ({SearchIdsJoined})").CaptureResult());
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>();
+        result.Add(RxClientV3!.Execute("Entities", q => q.WhereGuid("Id", Condition.SET, SearchIds)).CaptureResult());
         return result;
     }
 
@@ -46,14 +54,6 @@ public class SelectMultiplePK : SelectBenchmarkBase
         result.Add(CaDSMemory.Where(e => SearchIds.Contains(e.Id)).AsEnumerable().CaptureResult());
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var result = new List<object?>();
-    //    result.Add(CaDSCompressed.Where(e => SearchIds.Contains(e.Id)).AsEnumerable().CaptureResult());
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()

@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Cachalot.Linq;
 using Client.Interface;
 using LiteDB;
@@ -14,25 +14,38 @@ using System.Reflection;
 
 namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 
-//[Config(typeof(AntiVirusFriendlyConfig))]
-[SimpleJob(launchCount: 0, warmupCount: 0, iterationCount: 1)]
+// [Config] and job are inherited from InsertBenchmark (ConfigAttribute has Inherited = true).
+// Do NOT redeclare [SimpleJob] here — a second job declaration would cause BenchmarkDotNet
+// to run each benchmark twice (once per job).
 [MemoryDiagnoser()]
 [CustomCategoryDiscoverer]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams, BenchmarkLogicalGroupRule.ByCategory)]
 [PlainExporter]
 [Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
-public class UpsertBenchmark: InsertBenchmark
-{    
-    public override void ReindexerNetSetup()
+public class UpsertBenchmark : InsertBenchmark
+{
+    public override void ReindexerNetV5Setup()
     {
-        base.ReindexerNetSetup();
-        base.ReindexerNet();
-    }    
-    
-    public override void ReindexerNetDenseSetup()
+        base.ReindexerNetV5Setup();
+        base.ReindexerNetV5();
+    }
+
+    public override void ReindexerNetDenseV5Setup()
     {
-        base.ReindexerNetDenseSetup();
-        base.ReindexerNetDense();
+        base.ReindexerNetDenseV5Setup();
+        base.ReindexerNetDenseV5();
+    }
+
+    public override void ReindexerNetV3Setup()
+    {
+        base.ReindexerNetV3Setup();
+        base.ReindexerNetV3();
+    }
+
+    public override void ReindexerNetDenseV3Setup()
+    {
+        base.ReindexerNetDenseV3Setup();
+        base.ReindexerNetDenseV3();
     }
 
     public override void CachalotSetup()
@@ -40,47 +53,53 @@ public class UpsertBenchmark: InsertBenchmark
         base.CachalotSetup();
         base.Cachalot();
     }
-    
-    //public override void CachalotCompressedSetup()
-    //{
-    //    base.CachalotCompressedSetup();
-    //    base.CachalotCompressed();
-    //}
 
     public override void CachalotOnlyMemorySetup()
     {
         base.CachalotOnlyMemorySetup();
         base.CachalotOnlyMemory();
     }
-    
+
     public override void LiteDbSetup()
     {
         base.LiteDbSetup();
         base.LiteDb();
     }
-    
+
     public override void LiteDbMemorySetup()
     {
         base.LiteDbMemorySetup();
         base.LiteDbMemory();
     }
-    
+
     public override void RealmSetup()
     {
         base.RealmSetup();
         base.Realm();
     }
-    
+
     [Benchmark]
-    public override void ReindexerNet()
+    public override void ReindexerNetV5()
     {
         _rxClient!.Upsert("Entities", _data);
     }
 
     [Benchmark]
-    public override void ReindexerNetDense()
+    public override void ReindexerNetDenseV5()
     {
         _rxClientDense!.Upsert("Entities", _data);
+    }
+
+    [Benchmark]
+    public override void ReindexerNetV3()
+    {
+        _rxClientV3!.Upsert("Entities", _data);
+    }
+
+    [Benchmark]
+    public override void ReindexerNetDenseV3()
+    {
+        _rxClientDenseV3!.Upsert("Entities", _data);
     }
 
     [Benchmark]
@@ -89,13 +108,6 @@ public class UpsertBenchmark: InsertBenchmark
         var entities = _caConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         entities.PutMany(_data);
     }
-
-    //[Benchmark]
-    //public override void CachalotCompressed()
-    //{
-    //    var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-    //    entities.PutMany(_data);
-    //}
 
     [Benchmark]
     public override void CachalotOnlyMemory()

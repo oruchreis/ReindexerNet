@@ -1,7 +1,10 @@
-﻿using BenchmarkDotNet.Configs;
+﻿using BenchmarkDotNet.Columns;
+using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.InProcess.NoEmit;
+using BenchmarkDotNet.Validators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,12 +32,25 @@ public class Program
 #endif
 }
 
+/// <summary>
+/// Runs benchmarks in-process (no subprocess spawn) to avoid Windows Defender
+/// killing the short-lived child processes that BenchmarkDotNet normally creates.
+/// Uses the same iteration parameters as the [SimpleJob] it replaces.
+/// Column providers, logger, and validator are added explicitly because ManualConfig
+/// does not inherit DefaultConfig's infrastructure.
+/// </summary>
 public class AntiVirusFriendlyConfig : ManualConfig
 {
     public AntiVirusFriendlyConfig()
     {
         AddJob(
-            Job.MediumRun
-            .WithToolchain(InProcessNoEmitToolchain.Instance));
+            Job.Default
+                .WithToolchain(InProcessNoEmitToolchain.Instance)
+                .WithLaunchCount(0)
+                .WithWarmupCount(0)
+                .WithIterationCount(1));
+        AddColumnProvider(DefaultColumnProviders.Instance);
+        AddLogger(ConsoleLogger.Default);
+        AddValidator(JitOptimizationsValidator.DontFailOnError);
     }
 }

@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Cachalot.Linq;
 using Client.Interface;
 using LiteDB;
@@ -14,8 +14,7 @@ using System.Reflection;
 
 namespace ReindexerNetBenchmark.EmbeddedBenchmarks;
 
-//[Config(typeof(AntiVirusFriendlyConfig))]
-[SimpleJob(launchCount: 0, warmupCount: 0, iterationCount: 1)]
+[Config(typeof(AntiVirusFriendlyConfig))]
 [MemoryDiagnoser()]
 [CustomCategoryDiscoverer]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByParams, BenchmarkLogicalGroupRule.ByCategory)]
@@ -47,15 +46,19 @@ public class InsertBenchmark
     [Params(10_000, 100_000)]
     public int N;
 
+    // v5 clients
     protected ReindexerEmbedded? _rxClient;
     protected ReindexerEmbedded? _rxClientDense;
+    // v3 clients (RxV3 alias via AssemblyLoadContext isolation)
+    protected RxV3ReindexerEmbedded? _rxClientV3;
+    protected RxV3ReindexerEmbedded? _rxClientDenseV3;
+
     protected LiteDatabase _liteDb;
     protected LiteDatabase _liteDbMemory;
     protected ILiteCollection<BenchmarkEntity> _liteColl;
     protected ILiteCollection<BenchmarkEntity> _liteCollMemory;
     protected Server.Server _caServer;
     protected Connector? _caConnector;
-    //protected Connector? _caConnectorCompressed;
     protected Connector _caMemoryConnector;
     protected Realm _realm;
 
@@ -83,44 +86,45 @@ public class InsertBenchmark
         Directory.Delete(_dataPath, true);
     }
 
-    [IterationSetup(Targets = new[] { nameof(ReindexerNet) })]
-    public virtual void ReindexerNetSetup()
+    // ── v5 ReindexerNet ──────────────────────────────────────────────────────
+
+    [IterationSetup(Targets = new[] { nameof(ReindexerNetV5) })]
+    public virtual void ReindexerNetV5Setup()
     {
         Setup();
-        var rxDbPath = Path.Combine(_dataPath, "ReindexerEmbedded");
+        var rxDbPath = Path.Combine(_dataPath, "ReindexerEmbeddedV5");
         if (Directory.Exists(rxDbPath))
             Directory.Delete(rxDbPath, true);
         _rxClient = new ReindexerEmbedded(rxDbPath);
         _rxClient.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
         _rxClient.OpenNamespace("Entities");
-        _rxClient.TruncateNamespace("Entities");
+        // TruncateNamespace removed: the path was just freshly deleted above,
+        // so OpenNamespace creates an empty namespace. v5 rejects Truncate before PK is added.
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = false });
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.CreateDate), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntArray), IndexType = IndexType.Hash, FieldType = FieldType.Int, IsDense = false, IsArray = true });
         _rxClient.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false, IsArray = true });
-
     }
 
-    [IterationCleanup(Targets = new[] { nameof(ReindexerNet) })]
-    public void ReindexerNetClean()
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNetV5) })]
+    public void ReindexerNetV5Clean()
     {
         _rxClient!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(ReindexerNetDense) })]    
-    public virtual void ReindexerNetDenseSetup()
+    [IterationSetup(Targets = new[] { nameof(ReindexerNetDenseV5) })]
+    public virtual void ReindexerNetDenseV5Setup()
     {
         Setup();
-        var rxDensedbPath = Path.Combine(_dataPath, "ReindexerEmbeddedDense");
+        var rxDensedbPath = Path.Combine(_dataPath, "ReindexerEmbeddedDenseV5");
         if (Directory.Exists(rxDensedbPath))
             Directory.Delete(rxDensedbPath, true);
         _rxClientDense = new ReindexerEmbedded(rxDensedbPath);
         _rxClientDense.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
         _rxClientDense.OpenNamespace("Entities");
-        _rxClientDense.TruncateNamespace("Entities");
         _rxClientDense.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
         _rxClientDense.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = true });
         _rxClientDense.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
@@ -129,14 +133,68 @@ public class InsertBenchmark
         _rxClientDense.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true, IsArray = true });
     }
 
-    [IterationCleanup(Targets = new[] { nameof(ReindexerNetDense) })]
-    public void ReindexerNetDenseClean()
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNetDenseV5) })]
+    public void ReindexerNetDenseV5Clean()
     {
         _rxClientDense!.Dispose();
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(Cachalot) })]    
+    // ── v3 ReindexerNet (NuGet 0.5.0.3310, isolated via AssemblyLoadContext) ─
+
+    [IterationSetup(Targets = new[] { nameof(ReindexerNetV3) })]
+    public virtual void ReindexerNetV3Setup()
+    {
+        Setup();
+        var rxDbPath = Path.Combine(_dataPath, "ReindexerEmbeddedV3");
+        if (Directory.Exists(rxDbPath))
+            Directory.Delete(rxDbPath, true);
+        _rxClientV3 = new RxV3ReindexerEmbedded(rxDbPath);
+        _rxClientV3.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
+        _rxClientV3.OpenNamespace("Entities");
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = false });
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.CreateDate), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false });
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntArray), IndexType = IndexType.Hash, FieldType = FieldType.Int, IsDense = false, IsArray = true });
+        _rxClientV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = false, IsArray = true });
+    }
+
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNetV3) })]
+    public void ReindexerNetV3Clean()
+    {
+        _rxClientV3!.Dispose();
+        Cleanup();
+    }
+
+    [IterationSetup(Targets = new[] { nameof(ReindexerNetDenseV3) })]
+    public virtual void ReindexerNetDenseV3Setup()
+    {
+        Setup();
+        var rxDensedbPath = Path.Combine(_dataPath, "ReindexerEmbeddedDenseV3");
+        if (Directory.Exists(rxDensedbPath))
+            Directory.Delete(rxDensedbPath, true);
+        _rxClientDenseV3 = new RxV3ReindexerEmbedded(rxDensedbPath);
+        _rxClientDenseV3.Connect(new ConnectionOptions { Engine = StorageEngine.LevelDb });
+        _rxClientDenseV3.OpenNamespace("Entities");
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.Id), IsPk = true, IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntProperty), IndexType = IndexType.Tree, FieldType = FieldType.Int, IsDense = true });
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StringProperty), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.CreateDate), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true });
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.IntArray), IndexType = IndexType.Hash, FieldType = FieldType.Int, IsDense = true, IsArray = true });
+        _rxClientDenseV3.AddIndex("Entities", new Index { Name = nameof(BenchmarkEntity.StrArray), IndexType = IndexType.Hash, FieldType = FieldType.String, IsDense = true, IsArray = true });
+    }
+
+    [IterationCleanup(Targets = new[] { nameof(ReindexerNetDenseV3) })]
+    public void ReindexerNetDenseV3Clean()
+    {
+        _rxClientDenseV3!.Dispose();
+        Cleanup();
+    }
+
+    // ── Cachalot ─────────────────────────────────────────────────────────────
+
+    [IterationSetup(Targets = new[] { nameof(Cachalot) })]
     public virtual void CachalotSetup()
     {
         Setup();
@@ -145,7 +203,6 @@ public class InsertBenchmark
         _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "Cachalot"), IsPersistent = true, ClusterName = "Cachalot" });
         _caConnector = new Connector(new ClientConfig { IsPersistent = true });
         _caConnector.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-        //_caConnector.GetCollectionSchema("BenchmarkEntity").UseCompression = false;
     }
 
     [IterationCleanup(Targets = new[] { nameof(Cachalot) })]
@@ -156,27 +213,7 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    //[IterationSetup(Targets = new[] { nameof(CachalotCompressed) })]    
-    //public virtual void CachalotCompressedSetup()
-    //{
-    //    Setup();
-    //    Directory.CreateDirectory(Path.Combine(_dataPath, "CachalotCompressed"));
-    //    _caServer?.Stop();
-    //    _caServer = new Server.Server(new NodeConfig { DataPath = Path.Combine(_dataPath, "CachalotCompressed"), IsPersistent = true, ClusterName = "CachalotCompressed" });
-    //    _caConnectorCompressed = new Connector(new ClientConfig { IsPersistent = true });
-    //    _caConnectorCompressed.DeclareCollection<BenchmarkEntity>("BenchmarkEntity");
-    //    _caConnectorCompressed.GetCollectionSchema("BenchmarkEntity").UseCompression = true;
-    //}
-
-    //[IterationCleanup(Targets = new[] { nameof(CachalotCompressed) })]
-    //public void CachalotCompressedClean()
-    //{
-    //    _caConnectorCompressed!.Dispose();
-    //    _caServer.Stop();
-    //    Cleanup();
-    //}
-
-    [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory) })]    
+    [IterationSetup(Targets = new[] { nameof(CachalotOnlyMemory) })]
     public virtual void CachalotOnlyMemorySetup()
     {
         Setup();
@@ -193,7 +230,7 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(LiteDb) })]    
+    [IterationSetup(Targets = new[] { nameof(LiteDb) })]
     public virtual void LiteDbSetup()
     {
         Setup();
@@ -214,7 +251,7 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(LiteDbMemory) })]    
+    [IterationSetup(Targets = new[] { nameof(LiteDbMemory) })]
     public virtual void LiteDbMemorySetup()
     {
         Setup();
@@ -235,7 +272,7 @@ public class InsertBenchmark
         Cleanup();
     }
 
-    [IterationSetup(Targets = new[] { nameof(Realm) })]    
+    [IterationSetup(Targets = new[] { nameof(Realm) })]
     public virtual void RealmSetup()
     {
         Setup();
@@ -250,16 +287,30 @@ public class InsertBenchmark
         Cleanup();
     }
 
+    // ── Benchmark methods ────────────────────────────────────────────────────
+
     [Benchmark]
-    public virtual void ReindexerNet()
+    public virtual void ReindexerNetV5()
     {
         _rxClient!.Insert("Entities", _data);
     }
 
     [Benchmark]
-    public virtual void ReindexerNetDense()
+    public virtual void ReindexerNetDenseV5()
     {
         _rxClientDense!.Insert("Entities", _data);
+    }
+
+    [Benchmark]
+    public virtual void ReindexerNetV3()
+    {
+        _rxClientV3!.Insert("Entities", _data);
+    }
+
+    [Benchmark]
+    public virtual void ReindexerNetDenseV3()
+    {
+        _rxClientDenseV3!.Insert("Entities", _data);
     }
 
     [Benchmark]
@@ -268,13 +319,6 @@ public class InsertBenchmark
         var entities = _caConnector!.DataSource<BenchmarkEntity>("BenchmarkEntity");
         entities.PutMany(_data);
     }
-
-    //[Benchmark]
-    //public virtual void CachalotCompressed()
-    //{
-    //    var entities = _caConnectorCompressed!.DataSource<BenchmarkEntity>("BenchmarkEntity");
-    //    entities.PutMany(_data);
-    //}
 
     [Benchmark]
     public virtual void CachalotOnlyMemory()

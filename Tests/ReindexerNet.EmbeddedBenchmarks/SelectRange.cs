@@ -1,38 +1,48 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using ReindexerNetBenchmark.EmbeddedBenchmarks;
 using ReindexerNet;
 
 namespace ReindexerNetBenchmark;
 
-public class SelectRange: SelectBenchmarkBase
+public class SelectRange : SelectBenchmarkBase
 {
     [Benchmark]
-    public IList<object?> ReindexerNet()
+    public IList<object?> ReindexerNetV5()
     {
         var result = new List<object?>();
         var entity = Data[N / 2];
-        result.Add(RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.LT, entity.IntProperty ?? 0)).CaptureResult());
-        result.Add(RxClient.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.GE, entity.IntProperty ?? 0)).CaptureResult());
+        result.Add(RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.LT, entity.IntProperty ?? 0)).CaptureResult());
+        result.Add(RxClient!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.GE, entity.IntProperty ?? 0)).CaptureResult());
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSpanJson()
+    public IList<object?> ReindexerNetSpanJsonV5()
     {
         var result = new List<object?>();
         var entity = Data[N / 2];
-        result.Add(RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.LT, entity.IntProperty ?? 0)).CaptureResult());
-        result.Add(RxClientSpanJson.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.GE, entity.IntProperty ?? 0)).CaptureResult());
+        result.Add(RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.LT, entity.IntProperty ?? 0)).CaptureResult());
+        result.Add(RxClientSpanJson!.Execute<BenchmarkEntity>("Entities", q => q.WhereInt32("IntProperty", Condition.GE, entity.IntProperty ?? 0)).CaptureResult());
         return result;
     }
 
     [Benchmark]
-    public IList<object?> ReindexerNetSql()
+    public IList<object?> ReindexerNetSqlV5()
     {
         var result = new List<object?>();
         var entity = Data[N / 2];
-        result.Add(RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntProperty < {entity.IntProperty}").CaptureResult());
-        result.Add(RxClientSql.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntProperty >= {entity.IntProperty}").CaptureResult());
+        result.Add(RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntProperty < {entity.IntProperty}").CaptureResult());
+        result.Add(RxClientSql!.ExecuteSql<BenchmarkEntity>($"SELECT * FROM Entities WHERE IntProperty >= {entity.IntProperty}").CaptureResult());
+        return result;
+    }
+
+    [Benchmark]
+    public IList<object?> ReindexerNetV3()
+    {
+        var result = new List<object?>();
+        var entity = Data[N / 2];
+        result.Add(RxClientV3!.Execute("Entities", q => q.WhereInt32("IntProperty", Condition.LT, entity.IntProperty ?? 0)).CaptureResult());
+        result.Add(RxClientV3!.Execute("Entities", q => q.WhereInt32("IntProperty", Condition.GE, entity.IntProperty ?? 0)).CaptureResult());
         return result;
     }
 
@@ -55,16 +65,6 @@ public class SelectRange: SelectBenchmarkBase
         result.Add(CaDSMemory.Where(e => e.IntProperty >= entity.IntProperty).AsEnumerable().CaptureResult());
         return result;
     }
-
-    //[Benchmark]
-    //public IList<object?> CachalotCompressed()
-    //{
-    //    var result = new List<object?>();
-    //    var entity = Data[N / 2];
-    //    result.Add(CaDSCompressed.Where(e => e.IntProperty < entity.IntProperty).AsEnumerable().CaptureResult());
-    //    result.Add(CaDSCompressed.Where(e => e.IntProperty >= entity.IntProperty).AsEnumerable().CaptureResult());
-    //    return result;
-    //}
 
     [Benchmark]
     public IList<object?> LiteDb()
